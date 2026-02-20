@@ -1,0 +1,22 @@
+{
+  "artworks": [
+    {
+      "id": "fuji",
+      "title": "Фудзияма в тумане",
+      "subtitle": "Серия: Рисунки Даши",
+      "imageUrl": "./01_fuji.png"
+    },
+    {
+      "id": "clouds",
+      "title": "Свет в облаках",
+      "subtitle": "Эскиз к будущей серии",
+      "imageUrl": "./00_start_clouds.png"
+    },
+    {
+      "id": "dasha",
+      "title": "Даша",
+      "subtitle": "Автопортрет",
+      "imageUrl": "./02_dasha.png"
+    }
+  ]
+}

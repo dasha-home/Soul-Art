@@ -3,7 +3,11 @@ const APP_STATES = {
   INTRO: "INTRO",
   GALLERY: "GALLERY",
   ABOUT: "ABOUT",
+  ADMIN: "ADMIN",
 };
+
+const GITHUB_REPO = { owner: "dasha-home", repo: "Soul-Art" };
+const ADMIN_TOKEN_KEY = "soulart_github_token";
 
 // Глобальный объект состояния. Через него можно добавлять новые режимы.
 const AppState = {
@@ -22,48 +26,43 @@ const AppState = {
   },
 };
 
-// ---------- ЗАГРУЗКА ДАННЫХ (позже GitHub / Prose.io) ----------
+// ---------- ЗАГРУЗКА ДАННЫХ (из репозитория / Prose.io) ----------
+
+const ARTWORKS_JSON =
+  "https://raw.githubusercontent.com/dasha-home/Soul-Art/main/data/artworks.json";
 
 /**
- * Загружает список работ Даши.
- * В будущем сюда можно добавить запрос к GitHub (JSON в репозитории),
- * а пока возвращаем заглушки, чтобы видеть структуру слайдера.
+ * Загружает список работ Даши из репозитория GitHub.
+ * Даша может редактировать data/artworks.json и загружать картинки через Prose.io.
  */
 async function fetchArtworks() {
-  // Пример будущей интеграции:
-  //
-  // const response = await fetch(
-  //   "https://raw.githubusercontent.com/<user>/<repo>/main/data/artworks.json",
-  //   { cache: "no-store" }
-  // );
-  // if (!response.ok) {
-  //   throw new Error("Не удалось загрузить список работ");
-  // }
-  // const data = await response.json();
-  // return data.artworks;
+  try {
+    const response = await fetch(ARTWORKS_JSON + "?t=" + Date.now(), {
+      cache: "no-store",
+    });
+    if (!response.ok) throw new Error("Не удалось загрузить список работ");
+    const data = await response.json();
+    if (Array.isArray(data.artworks) && data.artworks.length > 0) {
+      return data.artworks;
+    }
+  } catch (_) {
+    // Локальная разработка или нет сети — пробуем локальный файл
+    try {
+      const local = await fetch("./data/artworks.json", { cache: "no-store" });
+      if (local.ok) {
+        const data = await local.json();
+        if (Array.isArray(data.artworks) && data.artworks.length > 0) {
+          return data.artworks;
+        }
+      }
+    } catch (_) {}
+  }
 
-  // Пока данных нет — возвращаем заглушки.
-  await new Promise((resolve) => setTimeout(resolve, 300));
-
+  // Запасной вариант: минимум картинок с корня сайта
   return [
-    {
-      id: "placeholder-1",
-      title: "Фудзияма в тумане",
-      subtitle: "Серия: Рисунки Даши",
-      imageUrl: "./placeholder_fuji_1.jpg",
-    },
-    {
-      id: "placeholder-2",
-      title: "Свет в облаках",
-      subtitle: "Эскиз к будущей серии",
-      imageUrl: "./placeholder_clouds_2.jpg",
-    },
-    {
-      id: "placeholder-3",
-      title: "Тихий снег",
-      subtitle: "Опыт с фактурой бумаги",
-      imageUrl: "./placeholder_snow_3.jpg",
-    },
+    { id: "fuji", title: "Фудзияма в тумане", subtitle: "Серия: Рисунки Даши", imageUrl: "./01_fuji.png" },
+    { id: "clouds", title: "Свет в облаках", subtitle: "Эскиз", imageUrl: "./00_start_clouds.png" },
+    { id: "dasha", title: "Даша", subtitle: "Автопортрет", imageUrl: "./02_dasha.png" },
   ];
 }
 
@@ -84,13 +83,14 @@ function createArtSlider(artworks) {
       Рисунки <span class="gallery-view__accent">Даши</span>
     </h2>
     <p class="gallery-view__lead">
-      Живая коллекция иллюстраций, которая будет расти вместе с художником.
-      Сейчас вы видите демонстрационный режим с заглушками — позже сюда
-      подгрузятся реальные работы из GitHub.
+      Живая коллекция иллюстраций. Новые работы подгружаются из репозитория — Даша может добавлять картинки и подписи через редактор Prose.
     </p>
     <p class="gallery-view__hint">
-      Используйте стрелки вверху кадра, чтобы листать рисунки.
+      Стрелки вверху кадра — листать рисунки.
     </p>
+    <a href="https://prose.io/#dasha-home/Soul-Art" target="_blank" rel="noopener" class="gallery-view__prose-link" title="Открыть редактор Prose для этого репозитория">
+      Добавить или изменить работы в галерее (Prose)
+    </a>
   `;
 
   const sliderColumn = document.createElement("div");
@@ -244,14 +244,210 @@ function renderAbout() {
   appContent.appendChild(wrapper);
 }
 
+// ---------- АДМИНКА: ЗАГРУЗКА ФОТО НА САЙТ (через GitHub API) ----------
+
+function getStoredToken() {
+  try {
+    return sessionStorage.getItem(ADMIN_TOKEN_KEY) || "";
+  } catch (_) {
+    return "";
+  }
+}
+
+function setStoredToken(token) {
+  try {
+    sessionStorage.setItem(ADMIN_TOKEN_KEY, token);
+  } catch (_) {}
+}
+
+async function githubApi(path, options, token) {
+  const url = "https://api.github.com/repos/" + GITHUB_REPO.owner + "/" + GITHUB_REPO.repo + "/contents/" + path;
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      Accept: "application/vnd.github.v3+json",
+      Authorization: "token " + token,
+      ...options.headers,
+    },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || res.statusText || "Ошибка запроса");
+  }
+  return res.json();
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result;
+      const base64 = dataUrl.replace(/^data:[^;]+;base64,/, "");
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function sanitizeFilename(name) {
+  const base = name.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 40) || "image";
+  const ext = (name.match(/\.[^.]+$/) || [".png"])[0].toLowerCase();
+  return base + ext;
+}
+
+function renderAdmin() {
+  clearView();
+
+  const token = getStoredToken();
+  const wrapper = document.createElement("section");
+  wrapper.className = "admin-view";
+
+  function renderTokenStep() {
+    wrapper.innerHTML = `
+      <div class="admin-view__eyebrow">для Даши</div>
+      <h2 class="admin-view__title">Загрузить фото на сайт</h2>
+      <p class="admin-view__text">Один раз введите токен GitHub — он сохранится до закрытия вкладки. Токен нужен, чтобы загружать файлы в репозиторий.</p>
+      <p class="admin-view__hint">Как получить токен: GitHub → Настройки → Developer settings → Personal access tokens → создать токен с правом <strong>repo</strong>.</p>
+      <div class="admin-view__form">
+        <label class="admin-view__label">
+          <span>Токен GitHub</span>
+          <input type="password" id="admin-token" class="admin-view__input" placeholder="ghp_..." autocomplete="off" />
+        </label>
+        <button type="button" id="admin-save-token" class="admin-view__btn">Сохранить и открыть загрузчик</button>
+      </div>
+      <p class="admin-view__note">Токен хранится только в этой вкладке. Никому не передавайте его.</p>
+    `;
+    const btn = wrapper.querySelector("#admin-save-token");
+    const input = wrapper.querySelector("#admin-token");
+    btn.addEventListener("click", () => {
+      const t = (input.value || "").trim();
+      if (!t) return;
+      setStoredToken(t);
+      renderUploadForm();
+    });
+  }
+
+  function renderUploadForm() {
+    wrapper.innerHTML = `
+      <div class="admin-view__eyebrow">для Даши</div>
+      <h2 class="admin-view__title">Загрузить фото с компьютера</h2>
+      <p class="admin-view__text">Выберите картинку, подпись — и она появится в галерее на сайте.</p>
+      <form id="admin-upload-form" class="admin-view__form">
+        <label class="admin-view__label">
+          <span>Файл (фото)</span>
+          <input type="file" id="admin-file" name="file" accept="image/*" required class="admin-view__input" />
+        </label>
+        <label class="admin-view__label">
+          <span>Название работы</span>
+          <input type="text" id="admin-title" name="title" placeholder="Например: Закат над морем" class="admin-view__input" required />
+        </label>
+        <label class="admin-view__label">
+          <span>Подпись (необязательно)</span>
+          <input type="text" id="admin-subtitle" name="subtitle" placeholder="Серия, год, техника" class="admin-view__input" />
+        </label>
+        <button type="submit" id="admin-upload-btn" class="admin-view__btn admin-view__btn--primary">Загрузить на сайт</button>
+      </form>
+      <p id="admin-message" class="admin-view__message" aria-live="polite"></p>
+      <button type="button" id="admin-forget-token" class="admin-view__link">Выйти (удалить токен из этой вкладки)</button>
+    `;
+
+    const form = wrapper.querySelector("#admin-upload-form");
+    const msgEl = wrapper.querySelector("#admin-message");
+    const uploadBtn = wrapper.querySelector("#admin-upload-btn");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const fileInput = wrapper.querySelector("#admin-file");
+      const titleInput = wrapper.querySelector("#admin-title");
+      const subtitleInput = wrapper.querySelector("#admin-subtitle");
+      const file = fileInput.files[0];
+      if (!file) {
+        msgEl.textContent = "Выберите файл.";
+        return;
+      }
+      const title = (titleInput.value || "").trim() || file.name;
+      const subtitle = (subtitleInput.value || "").trim() || "";
+      uploadBtn.disabled = true;
+      msgEl.textContent = "Загружаю…";
+
+      try {
+        const token = getStoredToken();
+        if (!token) throw new Error("Токен не найден. Введите его снова.");
+        const base64 = await fileToBase64(file);
+        const filename = sanitizeFilename(file.name);
+        const imagePath = "data/images/" + filename;
+
+        await githubApi(imagePath, {
+          method: "PUT",
+          body: JSON.stringify({
+            message: "Добавить фото в галерею: " + filename,
+            content: base64,
+          }),
+        }, token);
+
+        const jsonPath = "data/artworks.json";
+        let getRes;
+        try {
+          getRes = await githubApi(jsonPath, { method: "GET" }, token);
+        } catch (_) {
+          throw new Error("Не удалось прочитать список работ. Проверьте, что в репозитории есть data/artworks.json");
+        }
+        const content = JSON.parse(atob(getRes.content.replace(/\n/g, "")));
+        const id = filename.replace(/\.[^.]+$/, "").replace(/[^a-z0-9]/gi, "-").toLowerCase() || "work";
+        content.artworks = content.artworks || [];
+        content.artworks.push({
+          id: id,
+          title: title,
+          subtitle: subtitle,
+          imageUrl: "./" + imagePath,
+        });
+        const newContent = btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2))));
+        await githubApi(jsonPath, {
+          method: "PUT",
+          body: JSON.stringify({
+            message: "Добавить работу в галерею: " + title,
+            content: newContent,
+            sha: getRes.sha,
+          }),
+        }, token);
+
+        msgEl.textContent = "Готово. Фото добавлено в галерею.";
+        msgEl.className = "admin-view__message admin-view__message--success";
+        form.reset();
+      } catch (err) {
+        msgEl.textContent = "Ошибка: " + (err.message || "не удалось загрузить");
+        msgEl.className = "admin-view__message admin-view__message--error";
+      }
+      uploadBtn.disabled = false;
+    });
+
+    wrapper.querySelector("#admin-forget-token").addEventListener("click", () => {
+      setStoredToken("");
+      renderTokenStep();
+    });
+  }
+
+  if (token) {
+    renderUploadForm();
+  } else {
+    renderTokenStep();
+  }
+
+  appContent.appendChild(wrapper);
+  currentViewCleanup = null;
+}
+
 async function renderState(state) {
-  // Intro управляется отдельно через оверлей, здесь нас интересуют "страницы".
   switch (state) {
     case APP_STATES.GALLERY:
       await renderGallery();
       break;
     case APP_STATES.ABOUT:
       renderAbout();
+      break;
+    case APP_STATES.ADMIN:
+      renderAdmin();
       break;
   }
 }
@@ -286,16 +482,25 @@ function setupIntroScene() {
 
       appShell.classList.add("app-shell--active");
 
-      // Переход в GALLERY_MODE.
-      AppState.setState(APP_STATES.GALLERY);
+      // Переход в галерею или в загрузчик, если в ссылке #admin
+      AppState.setState(location.hash === "#admin" ? APP_STATES.ADMIN : APP_STATES.GALLERY);
     }, 1000);
+  }
+
+  const adminLink = document.getElementById("intro-admin-link");
+  if (adminLink) {
+    adminLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      location.hash = "admin";
+      startSequence();
+    }, { once: true });
   }
 
   startButton.addEventListener("click", startSequence, { once: true });
   intro.addEventListener(
     "click",
     (event) => {
-      if (event.target === startButton) return;
+      if (event.target === startButton || event.target === adminLink) return;
       startSequence();
     },
     { once: true }
@@ -329,7 +534,18 @@ function setupTopNav() {
   AppState.subscribe((state) => {
     if (state === APP_STATES.INTRO) return;
     updateActiveButton(state);
+    if (state === APP_STATES.ADMIN) {
+      location.hash = "admin";
+    } else {
+      if (location.hash === "#admin") location.hash = "";
+    }
     renderState(state);
+  });
+
+  window.addEventListener("hashchange", () => {
+    if (location.hash === "#admin" && AppState.current !== APP_STATES.INTRO) {
+      AppState.setState(APP_STATES.ADMIN);
+    }
   });
 }
 

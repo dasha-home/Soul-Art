@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Админка — Даша Художник</title>
+    <script>
+      // Сразу перенаправляем на главную страницу с открытой админкой (комната загрузки фото)
+      var path = window.location.pathname.replace(/\/admin\.html?\/?$/i, "") || "/";
+      if (!path.endsWith("/")) path += "/";
+      window.location.replace(path + "index.html#admin");
+    </script>
+  </head>
+  <body>
+    <p>Переход в админку…</p>
+  </body>
+</html>
