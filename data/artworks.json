@@ -2,21 +2,27 @@
   "artworks": [
     {
       "id": "fuji",
-      "title": "Фудзияма в тумане",
-      "subtitle": "Серия: Рисунки Даши",
+      "title": "Ð¤ÑÐ´Ð·Ð¸ÑÐ¼Ð° Ð² ÑÑÐ¼Ð°Ð½Ðµ",
+      "subtitle": "Ð¡ÐµÑÐ¸Ñ: Ð Ð¸ÑÑÐ½ÐºÐ¸ ÐÐ°ÑÐ¸",
       "imageUrl": "./01_fuji.png"
     },
     {
       "id": "clouds",
-      "title": "Свет в облаках",
-      "subtitle": "Эскиз к будущей серии",
+      "title": "Ð¡Ð²ÐµÑ Ð² Ð¾Ð±Ð»Ð°ÐºÐ°Ñ",
+      "subtitle": "Ð­ÑÐºÐ¸Ð· Ðº Ð±ÑÐ´ÑÑÐµÐ¹ ÑÐµÑÐ¸Ð¸",
       "imageUrl": "./00_start_clouds.png"
     },
     {
       "id": "dasha",
-      "title": "Даша",
-      "subtitle": "Автопортрет",
+      "title": "ÐÐ°ÑÐ°",
+      "subtitle": "ÐÐ²ÑÐ¾Ð¿Ð¾ÑÑÑÐµÑ",
       "imageUrl": "./02_dasha.png"
+    },
+    {
+      "id": "2",
+      "title": "Рисунок",
+      "subtitle": "",
+      "imageUrl": "./data/images/2.jpg"
     }
   ]
 }
