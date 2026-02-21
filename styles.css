@@ -170,11 +170,15 @@ body,
   opacity: 0; /* Фон берётся с уровня body, этот слой не вмешивается */
 }
 
+.intro__layer--clouds {
+  transition: transform 1.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: transform;
+}
+
 .intro__layer--clouds img {
   width: 120%;
   height: auto;
   transform: translateX(0);
-  transition: transform var(--main-speed) ease-in-out;
   filter: brightness(var(--clouds-brightness));
   opacity: 0.92;
 }
@@ -201,10 +205,13 @@ body,
   align-items: flex-end;
   justify-content: flex-end;
   padding: 0 max(4vw, env(safe-area-inset-right)) max(2vh, env(safe-area-inset-bottom)) 0;
+  background: transparent;
+  transition: transform 1.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: transform;
 }
 
-.intro__layer--hero {
-  background: transparent;
+.intro__layer--hero.intro__layer--hero-off {
+  transform: translateX(-120vw);
 }
 
 .intro__layer--hero img {

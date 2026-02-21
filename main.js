@@ -586,27 +586,52 @@ function setupIntroScene() {
 
   if (!intro || !hero || !clouds || !title || !startButton || !appShell) return;
 
+  function playWhooshSound() {
+    try {
+      const C = window.AudioContext || window.webkitAudioContext;
+      if (!C) return;
+      const ctx = new C();
+      const buf = ctx.createBuffer(1, ctx.sampleRate * 0.9, ctx.sampleRate);
+      const ch = buf.getChannelData(0);
+      for (let i = 0; i < buf.length; i++) {
+        ch[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.15));
+      }
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      const filter = ctx.createBiquadFilter();
+      filter.type = "lowpass";
+      filter.frequency.value = 800;
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.12, ctx.currentTime + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.85);
+      src.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+      src.start(0);
+      src.stop(0.9);
+    } catch (_) {}
+  }
+
   function startSequence() {
     startButton.disabled = true;
 
-    // Туман уходит влево как завеса. Остальные слои (фон, Даша, UI) остаются на месте.
-    clouds.classList.add("intro__layer--clouds-off");
+    playWhooshSound();
 
-    // Текст интро плавно исчезает.
+    // Даша и туман синхронно уходят влево — как будто она сдвигает завесу.
+    clouds.classList.add("intro__layer--clouds-off");
+    hero.classList.add("intro__layer--hero-off");
+
     title.style.transition = "opacity 0.6s ease-out, transform 0.6s ease-out";
     title.style.opacity = "0";
     title.style.transform = "translateY(-6px)";
 
-    // После завершения анимации включаем основное приложение и скрываем интро.
     setTimeout(() => {
       intro.classList.remove("intro--active");
       intro.classList.add("intro--hidden");
-
       appShell.classList.add("app-shell--active");
-
-      // Переход в галерею или в загрузчик, если в ссылке #admin
       AppState.setState(location.hash === "#admin" ? APP_STATES.ADMIN : APP_STATES.GALLERY);
-    }, 1000);
+    }, 1400);
   }
 
   const adminLink = document.getElementById("intro-admin-link");
