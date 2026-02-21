@@ -39,18 +39,20 @@ async function fetchArtworks() {
   try {
     const response = await fetch(ARTWORKS_JSON + "?t=" + Date.now(), {
       cache: "no-store",
+      headers: { Accept: "application/json; charset=utf-8" },
     });
     if (!response.ok) throw new Error("Не удалось загрузить список работ");
-    const data = await response.json();
+    const text = await response.text();
+    const data = JSON.parse(text);
     if (Array.isArray(data.artworks) && data.artworks.length > 0) {
       return data.artworks;
     }
   } catch (_) {
-    // Локальная разработка или нет сети — пробуем локальный файл
     try {
       const local = await fetch("./data/artworks.json", { cache: "no-store" });
       if (local.ok) {
-        const data = await local.json();
+        const text = await local.text();
+        const data = JSON.parse(text);
         if (Array.isArray(data.artworks) && data.artworks.length > 0) {
           return data.artworks;
         }
@@ -200,12 +202,15 @@ function createArtSlider(artworks) {
       lightboxEl.innerHTML = `
         <button type="button" class="lightbox__close" aria-label="Закрыть"></button>
         <div class="lightbox__content">
-          <img class="lightbox__img" src="" alt="" />
+          <div class="lightbox__zoom-wrap">
+            <img class="lightbox__img" src="" alt="" draggable="false" />
+          </div>
           <div class="lightbox__meta">
             <div class="lightbox__title"></div>
             <div class="lightbox__subtitle"></div>
             <div class="lightbox__counter"></div>
           </div>
+          <button type="button" class="lightbox__zoom-btn" aria-label="Увеличить или уменьшить"></button>
         </div>
         <button type="button" class="lightbox__prev" aria-label="Предыдущее"></button>
         <button type="button" class="lightbox__next" aria-label="Следующее"></button>
@@ -214,19 +219,54 @@ function createArtSlider(artworks) {
       const closeBtn = lightboxEl.querySelector(".lightbox__close");
       const prevBtnLb = lightboxEl.querySelector(".lightbox__prev");
       const nextBtnLb = lightboxEl.querySelector(".lightbox__next");
+      const zoomWrap = lightboxEl.querySelector(".lightbox__zoom-wrap");
+      const zoomBtn = lightboxEl.querySelector(".lightbox__zoom-btn");
+      const img = lightboxEl.querySelector(".lightbox__img");
+      let scale = 1;
+      let pinchStartScale = 1;
+      let pinchStartDist = 0;
+      const setZoom = (s) => {
+        scale = Math.max(0.5, Math.min(4, s));
+        zoomWrap.style.transform = "scale(" + scale + ")";
+        zoomBtn.textContent = scale > 1 ? "−" : "+";
+        zoomBtn.setAttribute("aria-label", scale > 1 ? "Уменьшить" : "Увеличить");
+      };
+      const resetZoom = () => { setZoom(1); };
+      zoomBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        setZoom(scale > 1 ? 1 : 2);
+      });
+      img.addEventListener("click", (e) => {
+        e.stopPropagation();
+        setZoom(scale > 1 ? 1 : 2);
+      });
+      img.addEventListener("touchstart", (e) => {
+        if (e.touches.length === 2) {
+          pinchStartScale = scale;
+          pinchStartDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+        }
+      }, { passive: true });
+      img.addEventListener("touchmove", (e) => {
+        if (e.touches.length === 2 && pinchStartDist > 0) {
+          const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+          setZoom(pinchStartScale * (d / pinchStartDist));
+        }
+      }, { passive: true });
+      img.addEventListener("touchend", () => { pinchStartDist = 0; }, { passive: true });
       const updateLightbox = () => {
         const a = artworks[index];
-        const img = lightboxEl.querySelector(".lightbox__img");
         img.src = a.imageUrl;
         img.alt = a.title;
         lightboxEl.querySelector(".lightbox__title").textContent = a.title;
         lightboxEl.querySelector(".lightbox__subtitle").textContent = a.subtitle;
         lightboxEl.querySelector(".lightbox__counter").textContent = `${index + 1} / ${artworks.length}`;
+        resetZoom();
       };
       const close = () => {
         lightboxEl.classList.remove("lightbox--open");
         document.body.style.overflow = "";
         document.removeEventListener("keydown", onKey);
+        resetZoom();
       };
       const onKey = (e) => {
         if (e.key === "Escape") close();
