@@ -78,19 +78,16 @@ function createArtSlider(artworks) {
 
   const metaColumn = document.createElement("div");
   metaColumn.innerHTML = `
-    <div class="gallery-view__meta-title">онлайн-портал</div>
+    <div class="gallery-view__meta-title">галерея</div>
     <h2 class="gallery-view__heading">
       Рисунки <span class="gallery-view__accent">Даши</span>
     </h2>
     <p class="gallery-view__lead">
-      Живая коллекция иллюстраций. Новые работы подгружаются из репозитория — Даша может добавлять картинки и подписи через редактор Prose.
+      Живая коллекция иллюстраций. Нажмите на фото — откроется в полном размере.
     </p>
     <p class="gallery-view__hint">
-      Стрелки вверху кадра — листать рисунки.
+      Стрелки или свайп — листать. Клик по изображению — полноэкранный просмотр.
     </p>
-    <a href="https://prose.io/#dasha-home/Soul-Art" target="_blank" rel="noopener" class="gallery-view__prose-link" title="Открыть редактор Prose для этого репозитория">
-      Добавить или изменить работы в галерее (Prose)
-    </a>
   `;
 
   const sliderColumn = document.createElement("div");
@@ -121,9 +118,15 @@ function createArtSlider(artworks) {
     img.className = "art-slider__img" + (i === 0 ? " art-slider__img--active" : "");
     img.src = art.imageUrl;
     img.alt = art.title;
+    img.setAttribute("data-index", String(i));
     frame.appendChild(img);
     return img;
   });
+
+  frame.classList.add("art-slider__frame--clickable");
+  frame.setAttribute("role", "button");
+  frame.setAttribute("tabindex", "0");
+  frame.setAttribute("aria-label", "Открыть в полном размере");
 
   const metaBar = document.createElement("div");
   metaBar.className = "art-slider__meta";
@@ -178,18 +181,97 @@ function createArtSlider(artworks) {
     images[prevIndex].classList.remove("art-slider__img--active");
     images[index].classList.add("art-slider__img--active");
     renderMeta();
+    if (lightboxEl && lightboxEl.classList.contains("lightbox--open")) lightboxEl._update();
   }
 
-  prevBtn.addEventListener("click", () => goTo(-1));
-  nextBtn.addEventListener("click", () => goTo(1));
+  prevBtn.addEventListener("click", (e) => { e.stopPropagation(); goTo(-1); });
+  nextBtn.addEventListener("click", (e) => { e.stopPropagation(); goTo(1); });
+
+  let lightboxEl = null;
+
+  function openFullscreen() {
+    const art = artworks[index];
+    if (!lightboxEl) {
+      lightboxEl = document.createElement("div");
+      lightboxEl.className = "lightbox";
+      lightboxEl.setAttribute("role", "dialog");
+      lightboxEl.setAttribute("aria-modal", "true");
+      lightboxEl.setAttribute("aria-label", "Просмотр в полном размере");
+      lightboxEl.innerHTML = `
+        <button type="button" class="lightbox__close" aria-label="Закрыть"></button>
+        <div class="lightbox__content">
+          <img class="lightbox__img" src="" alt="" />
+          <div class="lightbox__meta">
+            <div class="lightbox__title"></div>
+            <div class="lightbox__subtitle"></div>
+            <div class="lightbox__counter"></div>
+          </div>
+        </div>
+        <button type="button" class="lightbox__prev" aria-label="Предыдущее"></button>
+        <button type="button" class="lightbox__next" aria-label="Следующее"></button>
+      `;
+      document.body.appendChild(lightboxEl);
+      const closeBtn = lightboxEl.querySelector(".lightbox__close");
+      const prevBtnLb = lightboxEl.querySelector(".lightbox__prev");
+      const nextBtnLb = lightboxEl.querySelector(".lightbox__next");
+      const updateLightbox = () => {
+        const a = artworks[index];
+        const img = lightboxEl.querySelector(".lightbox__img");
+        img.src = a.imageUrl;
+        img.alt = a.title;
+        lightboxEl.querySelector(".lightbox__title").textContent = a.title;
+        lightboxEl.querySelector(".lightbox__subtitle").textContent = a.subtitle;
+        lightboxEl.querySelector(".lightbox__counter").textContent = `${index + 1} / ${artworks.length}`;
+      };
+      const close = () => {
+        lightboxEl.classList.remove("lightbox--open");
+        document.body.style.overflow = "";
+        document.removeEventListener("keydown", onKey);
+      };
+      const onKey = (e) => {
+        if (e.key === "Escape") close();
+        else if (e.key === "ArrowLeft") goTo(-1);
+        else if (e.key === "ArrowRight") goTo(1);
+      };
+      closeBtn.addEventListener("click", close);
+      lightboxEl.addEventListener("click", (e) => { if (e.target === lightboxEl) close(); });
+      prevBtnLb.addEventListener("click", (e) => { e.stopPropagation(); goTo(-1); });
+      nextBtnLb.addEventListener("click", (e) => { e.stopPropagation(); goTo(1); });
+      lightboxEl._update = updateLightbox;
+      lightboxEl._close = close;
+      lightboxEl._onKey = onKey;
+    }
+    lightboxEl._update();
+    lightboxEl.classList.add("lightbox--open");
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", lightboxEl._onKey);
+  }
+
+  function onFrameClick() {
+    openFullscreen();
+  }
+
+  frame.addEventListener("click", onFrameClick);
+  frame.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onFrameClick(); } });
+
+  let touchStartX = 0;
+  frame.addEventListener("touchstart", (e) => { touchStartX = e.touches[0].clientX; }, { passive: true });
+  frame.addEventListener("touchend", (e) => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(dx) > 50) goTo(dx > 0 ? -1 : 1);
+  }, { passive: true });
 
   renderMeta();
 
   return {
     root,
     destroy() {
+      if (lightboxEl && lightboxEl.classList.contains("lightbox--open")) {
+        lightboxEl._close();
+      }
       prevBtn.replaceWith(prevBtn.cloneNode(true));
       nextBtn.replaceWith(nextBtn.cloneNode(true));
+      frame.removeEventListener("click", onFrameClick);
     },
   };
 }
