@@ -32,13 +32,14 @@ body {
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", system-ui, sans-serif;
   position: relative;
   color: var(--text-color);
   min-height: 100vh;
   min-height: 100dvh;
   overflow-x: hidden;
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  -webkit-font-smoothing: antialiased;
 }
 
 /* Фудзияма отдельным слоем, чтобы яркость менялась только у фона */
@@ -317,11 +318,10 @@ body,
   gap: 0.75rem;
   padding: clamp(0.75rem, 2vw, 1rem) max(4vw, env(safe-area-inset-right)) clamp(0.75rem, 2vw, 1rem) max(4vw, env(safe-area-inset-left));
   padding-top: max(clamp(0.75rem, 2vw, 1rem), env(safe-area-inset-top));
-  background: linear-gradient(to bottom, rgba(2, 3, 10, 0.72), rgba(2, 3, 10, 0.4));
-  backdrop-filter: blur(20px) saturate(1.2);
-  -webkit-backdrop-filter: blur(20px) saturate(1.2);
-  border-bottom: 1px solid var(--glass-border);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+  background: rgba(2, 3, 10, 0.18);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .top-nav__brand {
