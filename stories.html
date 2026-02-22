@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Рассказы — Даша Художник</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: max(1.5rem, env(safe-area-inset-top)) max(1.5rem, env(safe-area-inset-right)) max(3rem, env(safe-area-inset-bottom)) max(1.5rem, env(safe-area-inset-left));
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(1.05rem, 2.2vw, 1.25rem);
+      line-height: 1.7;
+      color: #1a1a2e;
+      background: #faf9f7;
+      min-height: 100vh;
+    }
+    a.back { display: inline-block; margin-bottom: 1.5rem; font-family: system-ui, sans-serif; font-size: 0.9rem; color: #6b6b8a; text-decoration: none; }
+    a.back:hover { text-decoration: underline; }
+    article { max-width: 720px; margin: 0 auto 3rem; }
+    article:last-child { margin-bottom: 2rem; }
+    .story-cover { width: 100%; max-height: 60vh; object-fit: cover; border-radius: 12px; margin-bottom: 1.5rem; display: block; }
+    .story-title { font-size: clamp(1.5rem, 4vw, 2.2rem); margin: 0 0 0.75em; font-weight: 600; color: #0d0d18; }
+    .story-content { white-space: pre-wrap; word-wrap: break-word; }
+    .loading { text-align: center; padding: 3rem; color: #6b6b8a; }
+    .error { color: #c44; padding: 1rem; }
+  </style>
+</head>
+<body>
+  <a class="back" href="index.html">← На главную</a>
+  <div id="root">
+    <p class="loading">Загрузка рассказов…</p>
+  </div>
+  <script>
+(function () {
+  const root = document.getElementById("root");
+  const url = "https://raw.githubusercontent.com/dasha-home/Soul-Art/main/data/stories.json";
+  fetch(url + "?t=" + Date.now(), { cache: "no-store" })
+    .then(r => r.ok ? r.text() : Promise.reject(new Error("Не удалось загрузить")))
+    .then(text => {
+      const data = JSON.parse(text);
+      const stories = Array.isArray(data.stories) ? data.stories : [];
+      if (stories.length === 0) {
+        root.innerHTML = "<p class=\"loading\">Пока нет рассказов.</p>";
+        return;
+      }
+      root.innerHTML = stories.map(s => {
+        const cover = s.coverUrl ? "<img class=\"story-cover\" src=\"" + escapeAttr(s.coverUrl) + "\" alt=\"\" loading=\"lazy\" />" : "";
+        return "<article>" + cover + "<h1 class=\"story-title\">" + escapeHtml(s.title || "") + "</h1><div class=\"story-content\">" + escapeHtml(s.content || "") + "</div></article>";
+      }).join("");
+    })
+    .catch(() => {
+      fetch("./data/stories.json", { cache: "no-store" })
+        .then(r => r.ok ? r.text() : Promise.reject())
+        .then(text => {
+          const data = JSON.parse(text);
+          const stories = Array.isArray(data.stories) ? data.stories : [];
+          if (stories.length === 0) { root.innerHTML = "<p class=\"loading\">Пока нет рассказов.</p>"; return; }
+          root.innerHTML = stories.map(s => {
+            const cover = s.coverUrl ? "<img class=\"story-cover\" src=\"" + escapeAttr(s.coverUrl) + "\" alt=\"\" loading=\"lazy\" />" : "";
+            return "<article>" + cover + "<h1 class=\"story-title\">" + escapeHtml(s.title || "") + "</h1><div class=\"story-content\">" + escapeHtml(s.content || "") + "</div></article>";
+          }).join("");
+        })
+        .catch(() => { root.innerHTML = "<p class=\"error\">Не удалось загрузить рассказы.</p>"; });
+    });
+
+  function escapeHtml(s) {
+    const d = document.createElement("div");
+    d.textContent = s;
+    return d.innerHTML;
+  }
+  function escapeAttr(s) {
+    return s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+})();
+  </script>
+</body>
+</html>

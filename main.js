@@ -28,39 +28,42 @@ const AppState = {
 
 // ---------- ЗАГРУЗКА ДАННЫХ (из репозитория / Prose.io) ----------
 
-const ARTWORKS_JSON =
-  "https://raw.githubusercontent.com/dasha-home/Soul-Art/main/data/artworks.json";
+const GALLERY_JSON = "https://raw.githubusercontent.com/dasha-home/Soul-Art/main/data/gallery.json";
+const ARTWORKS_JSON = "https://raw.githubusercontent.com/dasha-home/Soul-Art/main/data/artworks.json";
 
 /**
- * Загружает список работ Даши из репозитория GitHub.
- * Даша может редактировать data/artworks.json и загружать картинки через Prose.io.
+ * Загружает список работ: сначала data/gallery.json (админка), затем data/artworks.json.
  */
 async function fetchArtworks() {
-  try {
-    const response = await fetch(ARTWORKS_JSON + "?t=" + Date.now(), {
-      cache: "no-store",
-      headers: { Accept: "application/json; charset=utf-8" },
-    });
-    if (!response.ok) throw new Error("Не удалось загрузить список работ");
-    const text = await response.text();
-    const data = JSON.parse(text);
-    if (Array.isArray(data.artworks) && data.artworks.length > 0) {
-      return data.artworks;
-    }
-  } catch (_) {
+  for (const url of [GALLERY_JSON, ARTWORKS_JSON]) {
     try {
-      const local = await fetch("./data/artworks.json", { cache: "no-store" });
-      if (local.ok) {
-        const text = await local.text();
-        const data = JSON.parse(text);
-        if (Array.isArray(data.artworks) && data.artworks.length > 0) {
-          return data.artworks;
-        }
+      const response = await fetch(url + "?t=" + Date.now(), {
+        cache: "no-store",
+        headers: { Accept: "application/json; charset=utf-8" },
+      });
+      if (!response.ok) continue;
+      const text = await response.text();
+      const data = JSON.parse(text);
+      if (Array.isArray(data.artworks) && data.artworks.length > 0) {
+        return data.artworks;
       }
     } catch (_) {}
   }
+  try {
+    const local = await fetch("./data/gallery.json", { cache: "no-store" });
+    if (local.ok) {
+      const data = JSON.parse(await local.text());
+      if (Array.isArray(data.artworks) && data.artworks.length > 0) return data.artworks;
+    }
+  } catch (_) {}
+  try {
+    const local = await fetch("./data/artworks.json", { cache: "no-store" });
+    if (local.ok) {
+      const data = JSON.parse(await local.text());
+      if (Array.isArray(data.artworks) && data.artworks.length > 0) return data.artworks;
+    }
+  } catch (_) {}
 
-  // Запасной вариант: минимум картинок с корня сайта
   return [
     { id: "fuji", title: "Фудзияма в тумане", subtitle: "Серия: Рисунки Даши", imageUrl: "./01_fuji.png" },
     { id: "clouds", title: "Свет в облаках", subtitle: "Эскиз", imageUrl: "./00_start_clouds.png" },

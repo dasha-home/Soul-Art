@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Пульт управления — Soul-Art</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; margin: 0; padding: 1.5rem; max-width: 900px; margin-left: auto; margin-right: auto; background: #0f0e14; color: #e0e0e0; }
+    h1 { font-size: 1.5rem; margin-bottom: 1.5rem; }
+    h2 { font-size: 1.15rem; margin: 1.5rem 0 0.75rem; color: #ff9ebb; }
+    section { margin-bottom: 2rem; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); }
+    label { display: block; margin-top: 0.75rem; font-size: 0.9rem; }
+    input[type="text"], input[type="file"], textarea { width: 100%; padding: 0.5rem 0.75rem; margin-top: 0.25rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.06); color: #fff; font: inherit; }
+    textarea { min-height: 120px; resize: vertical; }
+    button { margin-top: 0.75rem; padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid rgba(255,107,156,0.4); background: rgba(255,107,156,0.2); color: #ff9ebb; cursor: pointer; font: inherit; }
+    button:hover { background: rgba(255,107,156,0.35); }
+    button.danger { border-color: rgba(255,100,100,0.5); background: rgba(255,100,100,0.15); color: #ff9999; }
+    .msg { margin-top: 0.5rem; font-size: 0.85rem; min-height: 1.2em; }
+    .msg.ok { color: #8dd; }
+    .msg.err { color: #f88; }
+    ul { list-style: none; padding: 0; margin: 0.5rem 0 0; }
+    li { display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.08); gap: 0.5rem; }
+    li span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  </style>
+</head>
+<body>
+  <h1>Пульт управления Soul-Art</h1>
+
+  <section>
+    <h2>Галерея</h2>
+    <label>Фото <input type="file" id="gallery-file" accept="image/*" /></label>
+    <label>Название <input type="text" id="gallery-title" placeholder="Название работы" /></label>
+    <button type="button" id="gallery-upload">Загрузить в галерею</button>
+    <p id="gallery-msg" class="msg" aria-live="polite"></p>
+    <h3>Элементы галереи</h3>
+    <ul id="gallery-list"></ul>
+  </section>
+
+  <section>
+    <h2>Рассказ</h2>
+    <label>Заголовок <input type="text" id="story-title" placeholder="Заголовок рассказа" /></label>
+    <label>Обложка <input type="file" id="story-cover" accept="image/*" /></label>
+    <label>Текст <textarea id="story-content" placeholder="Текст рассказа..."></textarea></label>
+    <button type="button" id="story-save">Сохранить рассказ</button>
+    <p id="story-msg" class="msg" aria-live="polite"></p>
+    <h3>Рассказы</h3>
+    <ul id="stories-list"></ul>
+  </section>
+
+  <script>
+(function () {
+  // Вставьте сюда свой токен (в репозиторий не коммитить файл с реальным токеном).
+  const GITHUB_TOKEN = "PASTE_YOUR_TOKEN";
+  const OWNER = "dasha-home";
+  const REPO = "Soul-Art";
+  const BRANCH = "main";
+
+  const API = "https://api.github.com/repos/" + OWNER + "/" + REPO + "/contents/";
+
+  function setMsg(id, text, ok) {
+    const el = document.getElementById(id);
+    el.textContent = text;
+    el.className = "msg " + (ok ? "ok" : "err");
+  }
+
+  async function api(path, method, body) {
+    const res = await fetch(API + path, {
+      method: method || "GET",
+      headers: {
+        "Accept": "application/vnd.github.v3+json",
+        "Authorization": "token " + GITHUB_TOKEN,
+        "Content-Type": "application/json"
+      },
+      body: body ? JSON.stringify(body) : undefined
+    });
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}));
+      throw new Error(j.message || res.statusText || "Ошибка API");
+    }
+    return res.status === 204 ? null : res.json();
+  }
+
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result.replace(/^data:[^;]+;base64,/, ""));
+      r.onerror = reject;
+      r.readAsDataURL(file);
+    });
+  }
+
+  function safeName(name) {
+    return name.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 40) || "img";
+  }
+
+  async function getJson(path) {
+    const data = await api(path, "GET");
+    const raw = atob(data.content.replace(/\n/g, ""));
+    return JSON.parse(decodeURIComponent(escape(raw)));
+  }
+
+  async function putJson(path, obj, message, sha) {
+    const str = JSON.stringify(obj, null, 2);
+    const content = btoa(unescape(encodeURIComponent(str)));
+    return api(path, "PUT", { message, content, sha: sha || undefined, branch: BRANCH });
+  }
+
+  async function deleteFile(path, message) {
+    const data = await api(path, "GET");
+    return api(path, "DELETE", { message, sha: data.sha, branch: BRANCH });
+  }
+
+  // ——— Галерея ———
+  async function loadGallery() {
+    try {
+      const data = await getJson("data/gallery.json");
+      return Array.isArray(data.artworks) ? data.artworks : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  document.getElementById("gallery-upload").addEventListener("click", async () => {
+    const fileInput = document.getElementById("gallery-file");
+    const titleInput = document.getElementById("gallery-title");
+    const file = fileInput.files[0];
+    if (!file) { setMsg("gallery-msg", "Выберите файл", false); return; }
+    const title = (titleInput.value || "").trim() || file.name;
+    setMsg("gallery-msg", "Загрузка…", true);
+    try {
+      if (GITHUB_TOKEN === "PASTE_YOUR_TOKEN") throw new Error("Вставьте токен в константу GITHUB_TOKEN");
+      const base64 = await fileToBase64(file);
+      const ext = (file.name.match(/\.[^.]+$/) || [".jpg"])[0].toLowerCase();
+      const filename = safeName(file.name) + ext;
+      const imgPath = "img/" + filename;
+      await api(imgPath, "PUT", {
+        message: "Добавить фото в галерею: " + filename,
+        content: base64,
+        branch: BRANCH
+      });
+      const items = await loadGallery();
+      const id = "g" + Date.now();
+      items.push({ id, title, subtitle: "", imageUrl: "./" + imgPath });
+      const data = await api("data/gallery.json", "GET").catch(() => null);
+      await putJson("data/gallery.json", { artworks: items }, "Добавить в галерею: " + title, data ? data.sha : undefined);
+      setMsg("gallery-msg", "Готово.", true);
+      fileInput.value = "";
+      titleInput.value = "";
+      renderGalleryList();
+    } catch (e) {
+      setMsg("gallery-msg", "Ошибка: " + (e.message || ""), false);
+    }
+  });
+
+  async function renderGalleryList() {
+    const list = document.getElementById("gallery-list");
+    const items = await loadGallery();
+    list.innerHTML = items.map(item => {
+      const path = (item.imageUrl || "").replace("./", "");
+      return "<li><span>" + escapeHtml(item.title) + "</span><button type=\"button\" class=\"danger\" data-path=\"" + escapeHtml(path) + "\" data-id=\"" + escapeHtml(item.id) + "\">Удалить</button></li>";
+    }).join("");
+    list.querySelectorAll("button").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("Удалить этот элемент и файл изображения?")) return;
+        const path = btn.getAttribute("data-path");
+        const id = btn.getAttribute("data-id");
+        try {
+          if (GITHUB_TOKEN === "PASTE_YOUR_TOKEN") throw new Error("Вставьте токен");
+          if (path) await deleteFile(path, "Удалить из галереи");
+          const items = (await loadGallery()).filter(x => x.id !== id);
+          const data = await api("data/gallery.json", "GET");
+          await putJson("data/gallery.json", { artworks: items }, "Удалить из галереи", data.sha);
+          renderGalleryList();
+          setMsg("gallery-msg", "Удалено.", true);
+        } catch (e) {
+          setMsg("gallery-msg", "Ошибка: " + (e.message || ""), false);
+        }
+      });
+    });
+  }
+
+  // ——— Рассказы ———
+  async function loadStories() {
+    try {
+      const data = await getJson("data/stories.json");
+      return Array.isArray(data.stories) ? data.stories : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  document.getElementById("story-save").addEventListener("click", async () => {
+    const titleInput = document.getElementById("story-title");
+    const contentInput = document.getElementById("story-content");
+    const coverInput = document.getElementById("story-cover");
+    const title = (titleInput.value || "").trim();
+    const content = (contentInput.value || "").trim();
+    if (!title) { setMsg("story-msg", "Введите заголовок", false); return; }
+    setMsg("story-msg", "Сохранение…", true);
+    try {
+      if (GITHUB_TOKEN === "PASTE_YOUR_TOKEN") throw new Error("Вставьте токен в GITHUB_TOKEN");
+      let coverUrl = "";
+      const coverFile = coverInput.files[0];
+      if (coverFile) {
+        const base64 = await fileToBase64(coverFile);
+        const ext = (coverFile.name.match(/\.[^.]+$/) || [".jpg"])[0].toLowerCase();
+        const filename = "story-" + safeName(coverFile.name) + ext;
+        const path = "img/" + filename;
+        await api(path, "PUT", { message: "Обложка рассказа", content: base64, branch: BRANCH });
+        coverUrl = "./" + path;
+      }
+      const stories = await loadStories();
+      const id = "s" + Date.now();
+      stories.push({ id, title, coverUrl, content });
+      const data = await api("data/stories.json", "GET").catch(() => null);
+      await putJson("data/stories.json", { stories }, "Добавить рассказ: " + title, data ? data.sha : undefined);
+      setMsg("story-msg", "Готово.", true);
+      titleInput.value = "";
+      contentInput.value = "";
+      coverInput.value = "";
+      renderStoriesList();
+    } catch (e) {
+      setMsg("story-msg", "Ошибка: " + (e.message || ""), false);
+    }
+  });
+
+  async function renderStoriesList() {
+    const list = document.getElementById("stories-list");
+    const items = await loadStories();
+    list.innerHTML = items.map(s => "<li><span>" + escapeHtml(s.title) + "</span><button type=\"button\" class=\"danger\" data-id=\"" + escapeHtml(s.id) + "\">Удалить</button></li>").join("");
+    list.querySelectorAll("button").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("Удалить этот рассказ?")) return;
+        const id = btn.getAttribute("data-id");
+        try {
+          if (GITHUB_TOKEN === "PASTE_YOUR_TOKEN") throw new Error("Вставьте токен");
+          const stories = await loadStories();
+          const one = stories.find(x => x.id === id);
+          if (one && one.coverUrl) {
+            const path = one.coverUrl.replace("./", "");
+            try { await deleteFile(path, "Удалить обложку"); } catch (_) {}
+          }
+          const next = stories.filter(x => x.id !== id);
+          const data = await api("data/stories.json", "GET");
+          await putJson("data/stories.json", { stories: next }, "Удалить рассказ", data.sha);
+          renderStoriesList();
+          setMsg("story-msg", "Удалено.", true);
+        } catch (e) {
+          setMsg("story-msg", "Ошибка: " + (e.message || ""), false);
+        }
+      });
+    });
+  }
+
+  function escapeHtml(s) {
+    const d = document.createElement("div");
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  renderGalleryList();
+  renderStoriesList();
+})();
+  </script>
+</body>
+</html>
