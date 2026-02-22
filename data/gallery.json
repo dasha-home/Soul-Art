@@ -1,3 +1,10 @@
 {
-  "artworks": []
+  "artworks": [
+    {
+      "id": "g1771761125023",
+      "title": "Часы",
+      "subtitle": "",
+      "imageUrl": "./img/3.jpg"
+    }
+  ]
 }
