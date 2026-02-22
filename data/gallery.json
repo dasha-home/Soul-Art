@@ -5,6 +5,12 @@
       "title": "Часы",
       "subtitle": "",
       "imageUrl": "./img/3.jpg"
+    },
+    {
+      "id": "g1771761258195",
+      "title": "4.jpg",
+      "subtitle": "",
+      "imageUrl": "./img/4.jpg"
     }
   ]
 }
