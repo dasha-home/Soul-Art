@@ -176,7 +176,7 @@ function createArtSlider(artworks) {
     e.stopPropagation();
     expanded = !expanded;
     dragOffsetX = 0;
-    sliderWrap.style.transform = "";
+    sliderWrap.style.removeProperty("transform");
     sliderWrap.classList.toggle("gallery-view__slider-wrap--expanded", expanded);
     expandBtn.setAttribute("aria-label", expanded ? "Свернуть слайдер" : "Развернуть слайдер");
     expandBtn.querySelector(".art-slider__expand-icon").textContent = expanded ? "⊟" : "⊞";
