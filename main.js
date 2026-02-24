@@ -1,6 +1,7 @@
 // Центральное описание возможных состояний приложения.
 const APP_STATES = {
   INTRO: "INTRO",
+  MAIN: "MAIN",
   GALLERY: "GALLERY",
   ABOUT: "ABOUT",
   ADMIN: "ADMIN",
@@ -179,6 +180,38 @@ function createArtSlider(artworks) {
     expandBtn.querySelector(".art-slider__expand-icon").textContent = expanded ? "⊟" : "⊞";
   });
 
+  let dragOffsetX = 0;
+  let isDragging = false;
+  let startClientX = 0;
+  let startTranslateX = 0;
+
+  function onDragStart(e) {
+    if (e.target.closest(".art-slider__btn, .art-slider__expand") || e.target.closest(".art-slider__frame")) return;
+    isDragging = true;
+    startClientX = e.type.indexOf("touch") >= 0 ? e.touches[0].clientX : e.clientX;
+    startTranslateX = dragOffsetX;
+    sliderWrap.classList.add("gallery-view__slider-wrap--dragging");
+  }
+  function onDragMove(e) {
+    if (!isDragging) return;
+    const clientX = e.type.indexOf("touch") >= 0 ? e.touches[0].clientX : e.clientX;
+    const dx = clientX - startClientX;
+    const max = Math.max(0, (window.innerWidth - sliderWrap.offsetWidth) / 2);
+    dragOffsetX = Math.max(-max, Math.min(max, startTranslateX + dx));
+    sliderWrap.style.transform = "translateX(" + dragOffsetX + "px)";
+  }
+  function onDragEnd() {
+    isDragging = false;
+    sliderWrap.classList.remove("gallery-view__slider-wrap--dragging");
+  }
+
+  sliderWrap.addEventListener("mousedown", onDragStart);
+  sliderWrap.addEventListener("touchstart", onDragStart, { passive: true });
+  document.addEventListener("mousemove", onDragMove);
+  document.addEventListener("touchmove", onDragMove, { passive: true });
+  document.addEventListener("mouseup", onDragEnd);
+  document.addEventListener("touchend", onDragEnd);
+
   function goTo(delta) {
     const prevIndex = index;
     index = (index + delta + artworks.length) % artworks.length;
@@ -312,6 +345,12 @@ function createArtSlider(artworks) {
       if (lightboxEl && lightboxEl.classList.contains("lightbox--open")) {
         lightboxEl._close();
       }
+      sliderWrap.removeEventListener("mousedown", onDragStart);
+      sliderWrap.removeEventListener("touchstart", onDragStart);
+      document.removeEventListener("mousemove", onDragMove);
+      document.removeEventListener("touchmove", onDragMove);
+      document.removeEventListener("mouseup", onDragEnd);
+      document.removeEventListener("touchend", onDragEnd);
       prevBtn.replaceWith(prevBtn.cloneNode(true));
       nextBtn.replaceWith(nextBtn.cloneNode(true));
       frame.removeEventListener("click", onFrameClick);
@@ -332,8 +371,17 @@ function clearView() {
   appContent.innerHTML = "";
 }
 
+function renderMain() {
+  clearView();
+  appContent.classList.remove("app-content--gallery");
+  appContent.classList.add("app-content--main");
+}
+
 async function renderGallery() {
   clearView();
+
+  appContent.classList.remove("app-content--main");
+  appContent.classList.add("app-content--gallery");
 
   const artworks = await fetchArtworks();
   const sliderComponent = createArtSlider(artworks);
@@ -344,6 +392,8 @@ async function renderGallery() {
 
 function renderAbout() {
   clearView();
+
+  appContent.classList.remove("app-content--main", "app-content--gallery");
 
   const wrapper = document.createElement("section");
   wrapper.className = "about-view";
@@ -557,6 +607,9 @@ function renderAdmin() {
 
 async function renderState(state) {
   switch (state) {
+    case APP_STATES.MAIN:
+      renderMain();
+      break;
     case APP_STATES.GALLERY:
       await renderGallery();
       break;
@@ -620,7 +673,7 @@ function setupIntroScene() {
       intro.classList.remove("intro--active");
       intro.classList.add("intro--hidden");
       appShell.classList.add("app-shell--active");
-      AppState.setState(APP_STATES.GALLERY);
+      AppState.setState(APP_STATES.MAIN);
     }, 1400);
   }
 
