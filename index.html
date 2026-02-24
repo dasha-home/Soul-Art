@@ -22,12 +22,7 @@
           <img src="./00_start_clouds.png" alt="Туман" />
         </div>
 
-        <!-- Слой 2: UI-текст "Рисунки Даши" -->
-        <div class="intro__layer intro__layer--title" id="intro-title">
-          <h1>Рисунки Даши</h1>
-        </div>
-
-        <!-- Слой 3: персонаж Даша -->
+        <!-- Слой 2: персонаж Даша -->
         <div class="intro__layer intro__layer--hero" id="intro-hero">
           <img src="./02_dasha.png" alt="Даша художник" />
         </div>
@@ -36,7 +31,6 @@
         <button id="intro-start" class="intro__start-button" aria-label="Добро пожаловать">
           Добро пожаловать
         </button>
-        <a href="#" id="intro-admin-link" class="intro__admin-link">Для Даши: загрузчик фото (админка)</a>
       </section>
 
       <!-- Динамический контейнер для состояний (Gallery, About, future...) -->
@@ -47,41 +41,15 @@
             <button class="top-nav__link" data-state="GALLERY">Галерея</button>
             <a class="top-nav__link" href="stories.html">Рассказы</a>
             <button class="top-nav__link" data-state="ABOUT">О Даше</button>
-            <button class="top-nav__link top-nav__link--admin" data-state="ADMIN" title="Комната для загрузки новых работ">Для Даши</button>
           </nav>
-          <div class="top-nav__controls">
-            <label class="brightness-control" for="brightness-mountain-slider">
-              <span class="brightness-control__label">Гора</span>
-              <input
-                id="brightness-mountain-slider"
-                class="brightness-control__range"
-                type="range"
-                min="40"
-                max="200"
-                value="120"
-                aria-label="Яркость горы"
-              />
-            </label>
-            <label class="brightness-control" for="brightness-text-slider">
-              <span class="brightness-control__label">Текст</span>
-              <input
-                id="brightness-text-slider"
-                class="brightness-control__range"
-                type="range"
-                min="40"
-                max="200"
-                value="120"
-                aria-label="Яркость текста"
-              />
-            </label>
-          </div>
         </header>
 
         <main id="app-content" aria-live="polite"></main>
 
         <footer class="site-footer">
-          <a href="https://dasha-home.github.io/Soul-Art/admin.html" class="site-footer__admin-link" id="footer-admin-link" title="Комната загрузки фото">Для Даши</a>
         </footer>
+
+        <div id="atmosphere-widget" class="atmosphere-widget" aria-hidden="true"></div>
       </section>
     </main>
 

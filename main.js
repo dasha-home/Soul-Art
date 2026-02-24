@@ -81,22 +81,19 @@ function createArtSlider(artworks) {
   const root = document.createElement("section");
   root.className = "gallery-view";
 
-  const metaColumn = document.createElement("div");
-  metaColumn.innerHTML = `
-    <div class="gallery-view__meta-title">галерея</div>
+  const header = document.createElement("header");
+  header.className = "gallery-view__header";
+  header.innerHTML = `
     <h2 class="gallery-view__heading">
       Рисунки <span class="gallery-view__accent">Даши</span>
     </h2>
     <p class="gallery-view__lead">
-      Живая коллекция иллюстраций. Нажмите на фото — откроется в полном размере.
-    </p>
-    <p class="gallery-view__hint">
-      Стрелки или свайп — листать. Клик по изображению — полноэкранный просмотр.
+      Живая коллекция иллюстраций. Нажмите на фото — откроется в полном размере. Стрелки или свайп — листать.
     </p>
   `;
 
-  const sliderColumn = document.createElement("div");
-  sliderColumn.className = "gallery-view__slider";
+  const sliderWrap = document.createElement("div");
+  sliderWrap.className = "gallery-view__slider-wrap";
 
   const slider = document.createElement("div");
   slider.className = "art-slider";
@@ -108,12 +105,19 @@ function createArtSlider(artworks) {
         этот блок автоматически превратится в интерактивную галерею.
       </div>
     `;
-    sliderColumn.appendChild(slider);
-    root.append(metaColumn, sliderColumn);
+    sliderWrap.appendChild(slider);
+    root.append(header, sliderWrap);
     return { root, destroy() {} };
   }
 
   let index = 0;
+  let expanded = false;
+
+  const expandBtn = document.createElement("button");
+  expandBtn.type = "button";
+  expandBtn.className = "art-slider__expand";
+  expandBtn.setAttribute("aria-label", "Развернуть слайдер");
+  expandBtn.innerHTML = `<span class="art-slider__expand-icon" aria-hidden="true">⊞</span>`;
 
   const frame = document.createElement("div");
   frame.className = "art-slider__frame";
@@ -133,51 +137,54 @@ function createArtSlider(artworks) {
   frame.setAttribute("tabindex", "0");
   frame.setAttribute("aria-label", "Открыть в полном размере");
 
-  const metaBar = document.createElement("div");
-  metaBar.className = "art-slider__meta";
+  const captionBlock = document.createElement("div");
+  captionBlock.className = "gallery-view__caption";
   const titleSpan = document.createElement("div");
-  titleSpan.className = "art-slider__title";
+  titleSpan.className = "gallery-view__caption-title";
   const subtitleSpan = document.createElement("div");
-  subtitleSpan.className = "art-slider__subtitle";
+  subtitleSpan.className = "gallery-view__caption-subtitle";
   const indexSpan = document.createElement("div");
-  indexSpan.className = "art-slider__index";
-  metaBar.appendChild(
-    (() => {
-      const wrapper = document.createElement("div");
-      wrapper.appendChild(titleSpan);
-      wrapper.appendChild(subtitleSpan);
-      return wrapper;
-    })()
-  );
-  metaBar.appendChild(indexSpan);
+  indexSpan.className = "gallery-view__caption-index";
+  captionBlock.appendChild(titleSpan);
+  captionBlock.appendChild(subtitleSpan);
+  captionBlock.appendChild(indexSpan);
 
   const controls = document.createElement("div");
   controls.className = "art-slider__controls";
 
   const prevBtn = document.createElement("button");
   prevBtn.type = "button";
-  prevBtn.className = "art-slider__btn";
+  prevBtn.className = "art-slider__btn art-slider__btn--nav";
   prevBtn.innerHTML = `<span class="art-slider__btn-icon">←</span>`;
   prevBtn.setAttribute("aria-label", "Предыдущий рисунок");
 
   const nextBtn = document.createElement("button");
   nextBtn.type = "button";
-  nextBtn.className = "art-slider__btn";
+  nextBtn.className = "art-slider__btn art-slider__btn--nav";
   nextBtn.innerHTML = `<span class="art-slider__btn-icon">→</span>`;
   nextBtn.setAttribute("aria-label", "Следующий рисунок");
 
   controls.append(prevBtn, nextBtn);
 
-  slider.append(frame, metaBar, controls);
-  sliderColumn.appendChild(slider);
-  root.append(metaColumn, sliderColumn);
+  slider.append(frame, controls);
+  sliderWrap.appendChild(slider);
+  sliderWrap.appendChild(expandBtn);
+  root.append(header, sliderWrap, captionBlock);
 
   function renderMeta() {
     const art = artworks[index];
     titleSpan.textContent = art.title;
-    subtitleSpan.textContent = art.subtitle;
+    subtitleSpan.textContent = art.subtitle || "";
     indexSpan.textContent = `${index + 1} / ${artworks.length}`;
   }
+
+  expandBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    expanded = !expanded;
+    sliderWrap.classList.toggle("gallery-view__slider-wrap--expanded", expanded);
+    expandBtn.setAttribute("aria-label", expanded ? "Свернуть слайдер" : "Развернуть слайдер");
+    expandBtn.querySelector(".art-slider__expand-icon").textContent = expanded ? "⊟" : "⊞";
+  });
 
   function goTo(delta) {
     const prevIndex = index;
@@ -583,11 +590,10 @@ function setupIntroScene() {
   const intro = document.getElementById("intro-layer");
   const hero = document.getElementById("intro-hero");
   const clouds = document.getElementById("intro-clouds");
-  const title = document.getElementById("intro-title");
   const startButton = document.getElementById("intro-start");
   const appShell = document.getElementById("app-shell");
 
-  if (!intro || !hero || !clouds || !title || !startButton || !appShell) return;
+  if (!intro || !hero || !clouds || !startButton || !appShell) return;
 
   function playWhooshSound() {
     try {
@@ -625,32 +631,19 @@ function setupIntroScene() {
     clouds.classList.add("intro__layer--clouds-off");
     hero.classList.add("intro__layer--hero-off");
 
-    title.style.transition = "opacity 0.6s ease-out, transform 0.6s ease-out";
-    title.style.opacity = "0";
-    title.style.transform = "translateY(-6px)";
-
     setTimeout(() => {
       intro.classList.remove("intro--active");
       intro.classList.add("intro--hidden");
       appShell.classList.add("app-shell--active");
-      AppState.setState(location.hash === "#admin" ? APP_STATES.ADMIN : APP_STATES.GALLERY);
+      AppState.setState(APP_STATES.GALLERY);
     }, 1400);
-  }
-
-  const adminLink = document.getElementById("intro-admin-link");
-  if (adminLink) {
-    adminLink.addEventListener("click", (e) => {
-      e.preventDefault();
-      location.hash = "admin";
-      startSequence();
-    }, { once: true });
   }
 
   startButton.addEventListener("click", startSequence, { once: true });
   intro.addEventListener(
     "click",
     (event) => {
-      if (event.target === startButton || event.target === adminLink) return;
+      if (event.target === startButton) return;
       startSequence();
     },
     { once: true }
@@ -684,17 +677,14 @@ function setupTopNav() {
   AppState.subscribe((state) => {
     if (state === APP_STATES.INTRO) return;
     updateActiveButton(state);
-    if (state === APP_STATES.ADMIN) {
-      location.hash = "admin";
-    } else {
-      if (location.hash === "#admin") location.hash = "";
-    }
+    if (location.hash === "#admin") location.hash = "";
     renderState(state);
   });
 
   window.addEventListener("hashchange", () => {
     if (location.hash === "#admin" && AppState.current !== APP_STATES.INTRO) {
-      AppState.setState(APP_STATES.ADMIN);
+      location.hash = "";
+      AppState.setState(APP_STATES.GALLERY);
     }
   });
 }
@@ -771,9 +761,53 @@ function setupTextBrightnessControl() {
   applyValue();
 }
 
-function setupBrightnessControl() {
+function setupAtmosphereWidget() {
+  const container = document.getElementById("atmosphere-widget");
+  if (!container) return;
+
+  container.innerHTML = `
+    <button type="button" class="atmosphere-widget__trigger" id="atmosphere-trigger" aria-label="Настройки атмосферы" aria-expanded="false">
+      <span class="atmosphere-widget__sun" aria-hidden="true">☀</span>
+    </button>
+    <div class="atmosphere-widget__panel" id="atmosphere-panel" role="dialog" aria-label="Настройки яркости" hidden>
+      <div class="atmosphere-widget__panel-inner">
+        <span class="atmosphere-widget__panel-title">Атмосфера</span>
+        <label class="brightness-control" for="brightness-mountain-slider">
+          <span class="brightness-control__label">Фон</span>
+          <input id="brightness-mountain-slider" class="brightness-control__range" type="range" min="40" max="200" value="120" aria-label="Яркость фона" />
+        </label>
+        <label class="brightness-control" for="brightness-text-slider">
+          <span class="brightness-control__label">Текст</span>
+          <input id="brightness-text-slider" class="brightness-control__range" type="range" min="40" max="200" value="120" aria-label="Прозрачность текста" />
+        </label>
+      </div>
+    </div>
+  `;
+
+  const trigger = document.getElementById("atmosphere-trigger");
+  const panel = document.getElementById("atmosphere-panel");
+
+  if (trigger && panel) {
+    trigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const willBeOpen = panel.hidden;
+      panel.hidden = !willBeOpen;
+      trigger.setAttribute("aria-expanded", String(willBeOpen));
+    });
+    document.addEventListener("click", (e) => {
+      if (!panel.hidden && container && !container.contains(e.target)) {
+        panel.hidden = true;
+        trigger.setAttribute("aria-expanded", "false");
+      }
+    });
+  }
+
   setupMountainBrightnessControl();
   setupTextBrightnessControl();
+}
+
+function setupBrightnessControl() {
+  setupAtmosphereWidget();
 }
 
 // ---------- ИНИЦИАЛИЗАЦИЯ ----------
