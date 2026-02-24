@@ -846,6 +846,10 @@ function setupBrightnessControl() {
 // ---------- ИНИЦИАЛИЗАЦИЯ ----------
 
 window.addEventListener("DOMContentLoaded", () => {
+  setupIntroScene();
+  setupTopNav();
+  setupBrightnessControl();
+
   const intro = document.getElementById("intro-layer");
   const appShell = document.getElementById("app-shell");
   const hash = location.hash;
@@ -856,9 +860,5 @@ window.addEventListener("DOMContentLoaded", () => {
     appShell.classList.add("app-shell--active");
     AppState.setState(hash === "#gallery" ? APP_STATES.GALLERY : APP_STATES.ABOUT);
   }
-
-  setupIntroScene();
-  setupTopNav();
-  setupBrightnessControl();
 });
 
