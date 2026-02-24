@@ -81,17 +81,6 @@ function createArtSlider(artworks) {
   const root = document.createElement("section");
   root.className = "gallery-view";
 
-  const header = document.createElement("header");
-  header.className = "gallery-view__header";
-  header.innerHTML = `
-    <h2 class="gallery-view__heading">
-      Рисунки <span class="gallery-view__accent">Даши</span>
-    </h2>
-    <p class="gallery-view__lead">
-      Живая коллекция иллюстраций. Нажмите на фото — откроется в полном размере. Стрелки или свайп — листать.
-    </p>
-  `;
-
   const sliderWrap = document.createElement("div");
   sliderWrap.className = "gallery-view__slider-wrap";
 
@@ -106,7 +95,7 @@ function createArtSlider(artworks) {
       </div>
     `;
     sliderWrap.appendChild(slider);
-    root.append(header, sliderWrap);
+    root.append(sliderWrap);
     return { root, destroy() {} };
   }
 
@@ -139,12 +128,16 @@ function createArtSlider(artworks) {
 
   const captionBlock = document.createElement("div");
   captionBlock.className = "gallery-view__caption";
+  const headingEl = document.createElement("h2");
+  headingEl.className = "gallery-view__heading";
+  headingEl.innerHTML = 'Рисунки <span class="gallery-view__accent">Даши</span>';
   const titleSpan = document.createElement("div");
   titleSpan.className = "gallery-view__caption-title";
   const subtitleSpan = document.createElement("div");
   subtitleSpan.className = "gallery-view__caption-subtitle";
   const indexSpan = document.createElement("div");
   indexSpan.className = "gallery-view__caption-index";
+  captionBlock.appendChild(headingEl);
   captionBlock.appendChild(titleSpan);
   captionBlock.appendChild(subtitleSpan);
   captionBlock.appendChild(indexSpan);
@@ -169,7 +162,7 @@ function createArtSlider(artworks) {
   slider.append(frame, controls);
   sliderWrap.appendChild(slider);
   sliderWrap.appendChild(expandBtn);
-  root.append(header, sliderWrap, captionBlock);
+  root.append(sliderWrap, captionBlock);
 
   function renderMeta() {
     const art = artworks[index];
@@ -356,20 +349,12 @@ function renderAbout() {
   wrapper.className = "about-view";
 
   wrapper.innerHTML = `
-    <div class="about-view__eyebrow">о художнике</div>
-    <h2 class="about-view__title">Даша и её мир рисунков</h2>
+    <h2 class="about-view__title">Даша и её мир</h2>
     <p class="about-view__text">
-      Здесь появится биография Даши, выбранный стиль, истории о том,
-      как создаются рисунки и чем вдохновляется художник.
+      Искусство рождается там, где сердце встречается с тишиной. Для Даши каждый рисунок — это не просто линии, а поиск гармонии, красоты и чистого света. В её работах оживают мечты, природа и те самые искренние чувства, которые сложно передать словами.
     </p>
     <p class="about-view__text">
-      Страница спроектирована как отдельная "комната" портала.
-      В будущем можно добавлять новые блоки (видео, раскадровки, дневник)
-      без изменения базовой архитектуры.
-    </p>
-    <p class="about-view__note">
-      Текст сейчас служит заглушкой — его можно заменить любым контентом,
-      при этом навигация и система состояний останутся прежними.
+      Этот сайт — маленькое окно в её творческую вселенную. Мы приглашаем вас просто смотреть, чувствовать и находить свою собственную радость в этих образах.
     </p>
   `;
 
@@ -666,14 +651,6 @@ function setupTopNav() {
     });
   }
 
-  navButtons.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const state = btn.getAttribute("data-state");
-      if (!state) return;
-      AppState.setState(state);
-    });
-  });
-
   AppState.subscribe((state) => {
     if (state === APP_STATES.INTRO) return;
     updateActiveButton(state);
@@ -685,6 +662,12 @@ function setupTopNav() {
     if (location.hash === "#admin" && AppState.current !== APP_STATES.INTRO) {
       location.hash = "";
       AppState.setState(APP_STATES.GALLERY);
+    }
+    if (location.hash === "#gallery" && AppState.current !== APP_STATES.INTRO) {
+      AppState.setState(APP_STATES.GALLERY);
+    }
+    if (location.hash === "#about" && AppState.current !== APP_STATES.INTRO) {
+      AppState.setState(APP_STATES.ABOUT);
     }
   });
 }
@@ -813,6 +796,17 @@ function setupBrightnessControl() {
 // ---------- ИНИЦИАЛИЗАЦИЯ ----------
 
 window.addEventListener("DOMContentLoaded", () => {
+  const intro = document.getElementById("intro-layer");
+  const appShell = document.getElementById("app-shell");
+  const hash = location.hash;
+
+  if ((hash === "#gallery" || hash === "#about") && intro && appShell) {
+    intro.classList.remove("intro--active");
+    intro.classList.add("intro--hidden");
+    appShell.classList.add("app-shell--active");
+    AppState.setState(hash === "#gallery" ? APP_STATES.GALLERY : APP_STATES.ABOUT);
+  }
+
   setupIntroScene();
   setupTopNav();
   setupBrightnessControl();
