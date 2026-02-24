@@ -175,6 +175,8 @@ function createArtSlider(artworks) {
   expandBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     expanded = !expanded;
+    dragOffsetX = 0;
+    sliderWrap.style.transform = "";
     sliderWrap.classList.toggle("gallery-view__slider-wrap--expanded", expanded);
     expandBtn.setAttribute("aria-label", expanded ? "Свернуть слайдер" : "Развернуть слайдер");
     expandBtn.querySelector(".art-slider__expand-icon").textContent = expanded ? "⊟" : "⊞";
@@ -373,14 +375,14 @@ function clearView() {
 
 function renderMain() {
   clearView();
-  appContent.classList.remove("app-content--gallery");
+  appContent.classList.remove("app-content--gallery", "app-content--about");
   appContent.classList.add("app-content--main");
 }
 
 async function renderGallery() {
   clearView();
 
-  appContent.classList.remove("app-content--main");
+  appContent.classList.remove("app-content--main", "app-content--about");
   appContent.classList.add("app-content--gallery");
 
   const artworks = await fetchArtworks();
@@ -394,6 +396,7 @@ function renderAbout() {
   clearView();
 
   appContent.classList.remove("app-content--main", "app-content--gallery");
+  appContent.classList.add("app-content--about");
 
   const wrapper = document.createElement("section");
   wrapper.className = "about-view";
@@ -685,10 +688,53 @@ function setupIntroScene() {
   );
 }
 
+// ---------- МАГИЯ САКУРЫ (лепестки при клике по меню) ----------
+
+function createSakuraPetals(originEl) {
+  const container = document.getElementById("sakura-container");
+  if (!container) return;
+
+  const rect = originEl.getBoundingClientRect();
+  const count = 14;
+  const petalSize = 10;
+
+  for (let i = 0; i < count; i++) {
+    const petal = document.createElement("div");
+    petal.className = "sakura-petal";
+    const x = rect.left + Math.random() * rect.width;
+    const y = rect.top + Math.random() * rect.height;
+    const drift = (Math.random() - 0.5) * 120;
+    const duration = 2.2 + Math.random() * 1.4;
+    const delay = Math.random() * 0.3;
+    petal.style.setProperty("--sakura-x", x + "px");
+    petal.style.setProperty("--sakura-y", y + "px");
+    petal.style.setProperty("--sakura-drift", drift + "px");
+    petal.style.setProperty("--sakura-duration", duration + "s");
+    petal.style.setProperty("--sakura-delay", delay + "s");
+    petal.style.setProperty("--sakura-size", (petalSize + Math.random() * 6) + "px");
+    container.appendChild(petal);
+    petal.addEventListener("animationend", () => petal.remove());
+  }
+
+  document.body.classList.add("sakura-sway");
+  setTimeout(() => document.body.classList.remove("sakura-sway"), 600);
+}
+
+function setupSakuraOnNav() {
+  const links = document.querySelectorAll(".top-nav__link");
+  links.forEach((link) => {
+    link.addEventListener("click", (e) => {
+      createSakuraPetals(link);
+    });
+  });
+}
+
 // ---------- НАВИГАЦИЯ (кнопки в шапке) ----------
 
 function setupTopNav() {
   const navButtons = document.querySelectorAll(".top-nav__link");
+
+  setupSakuraOnNav();
 
   function updateActiveButton(state) {
     navButtons.forEach((btn) => {
