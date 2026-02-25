@@ -458,6 +458,7 @@ body,
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  text-decoration: none;
   -webkit-text-stroke: 1px rgba(0, 0, 0, 0.85);
   text-stroke: 1px rgba(0, 0, 0, 0.85);
   paint-order: stroke fill;
