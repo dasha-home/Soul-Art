@@ -326,6 +326,7 @@ function createArtSlider(artworks) {
   }
 
   function onFrameClick() {
+    createSakuraPetals(frame);
     openFullscreen();
   }
 
@@ -663,18 +664,24 @@ function setupIntroScene() {
   function startSequence() {
     startButton.disabled = true;
 
+    createSakuraPetals(startButton);
+    hero.classList.add("sakura-branch-sway");
+    setTimeout(() => hero.classList.remove("sakura-branch-sway"), 1200);
+
     playWhooshSound();
 
-    // Даша и туман синхронно уходят влево — как будто она сдвигает завесу.
-    clouds.classList.add("intro__layer--clouds-off");
-    hero.classList.add("intro__layer--hero-off");
+    // Даша и туман синхронно уходят влево — как будто она сдвигает завесу (с задержкой, чтобы успело сыграть качание веток).
+    setTimeout(() => {
+      clouds.classList.add("intro__layer--clouds-off");
+      hero.classList.add("intro__layer--hero-off");
+    }, 200);
 
     setTimeout(() => {
       intro.classList.remove("intro--active");
       intro.classList.add("intro--hidden");
       appShell.classList.add("app-shell--active");
       AppState.setState(APP_STATES.MAIN);
-    }, 1400);
+    }, 1600);
   }
 
   startButton.addEventListener("click", startSequence, { once: true });

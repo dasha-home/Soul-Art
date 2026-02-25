@@ -1344,13 +1344,25 @@ body,
 }
 
 body.sakura-sway {
-  animation: sakura-sway 0.5s ease-in-out;
+  animation: sakura-sway 0.8s ease-in-out;
 }
 
 @keyframes sakura-sway {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(1px); }
-  50% { transform: translateX(-1px); }
-  75% { transform: translateX(0.5px); }
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  20% { transform: translateX(3px) rotate(0.3deg); }
+  40% { transform: translateX(-2px) rotate(-0.2deg); }
+  60% { transform: translateX(2px) rotate(0.2deg); }
+  80% { transform: translateX(-1px) rotate(-0.1deg); }
+}
+
+.intro__layer--hero.sakura-branch-sway {
+  animation: branch-sway 1.2s ease-in-out;
+}
+
+@keyframes branch-sway {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  25% { transform: translateX(4px) rotate(0.8deg); }
+  50% { transform: translateX(-3px) rotate(-0.6deg); }
+  75% { transform: translateX(2px) rotate(0.3deg); }
 }
 
