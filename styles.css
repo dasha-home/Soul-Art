@@ -412,6 +412,8 @@ body,
   .brightness-control__range {
     height: 2px;
     min-height: 44px;
+    background: transparent;
+    border: none;
   }
 
   .brightness-control__range::-webkit-slider-thumb {
@@ -426,6 +428,8 @@ body,
 
   .brightness-control__range::-moz-range-track {
     height: 2px;
+    background: transparent;
+    border: none;
   }
 }
 
@@ -1274,7 +1278,7 @@ body,
   .atmosphere-widget .brightness-control__range {
     height: 2px;
     border: none;
-    background: rgba(255, 255, 255, 0.25);
+    background: transparent;
   }
 
   .atmosphere-widget .brightness-control__range::-webkit-slider-thumb {
@@ -1285,6 +1289,11 @@ body,
   .atmosphere-widget .brightness-control__range::-moz-range-thumb {
     width: 20px;
     height: 20px;
+  }
+
+  .atmosphere-widget .brightness-control__range::-moz-range-track {
+    background: transparent;
+    border: none;
   }
 }
 
