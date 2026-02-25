@@ -581,8 +581,11 @@ body,
 }
 
 .gallery-view__slider-wrap--expanded {
-  max-width: min(95vw, calc(100vw - 1rem));
+  width: 95%;
+  max-width: 95%;
   transform: none !important;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .gallery-view__caption {
