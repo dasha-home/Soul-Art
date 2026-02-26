@@ -197,12 +197,13 @@
     return s.toLowerCase().split("").map(function(c) { return RU_TO_LAT[c] !== undefined ? RU_TO_LAT[c] : c; }).join("");
   }
 
+  /** Уникальное имя файла (добавляем время), чтобы не перезаписывать и не нужен sha при загрузке. */
   function toWebpFilename(fileName) {
     var nameOnly = (fileName || "").replace(/\.[^.]+$/, "");
     var transliterated = transliterate(nameOnly);
-    var base = transliterated.replace(/[^a-zA-Z0-9_-]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "").slice(0, 40);
-    if (!base || /^_+$/.test(base)) base = "img_" + Date.now();
-    return base + ".webp";
+    var base = transliterated.replace(/[^a-zA-Z0-9_-]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "").slice(0, 30);
+    if (!base || /^_+$/.test(base)) base = "img";
+    return base + "_" + Date.now() + ".webp";
   }
 
   async function getFileSha(path) {
@@ -255,30 +256,42 @@
       setMsg("gallery-msg", "Разрешены только JPG, JPEG, PNG, WebP. Выберите изображение.", false);
       return;
     }
+    if (GITHUB_TOKEN === "ВАШ КЛЮЧ СЮДА" || !GITHUB_TOKEN.trim()) {
+      setMsg("gallery-msg", "Ошибка: вставьте токен в константу GITHUB_TOKEN в начале файла.", false);
+      return;
+    }
     const title = (titleInput.value || "").trim() || file.name;
+    setMsg("gallery-msg", "Подключение к GitHub…", true);
+    try {
+      var galleryData = await api("data/gallery.json", "GET");
+    } catch (e) {
+      setMsg("gallery-msg", "Ошибка: не удалось прочитать галерею с GitHub. Проверьте токен и сеть.", false);
+      return;
+    }
+    var items = [];
+    if (galleryData && galleryData.content) {
+      try {
+        var raw = atob(galleryData.content.replace(/\n/g, ""));
+        items = (JSON.parse(decodeURIComponent(escape(raw))).artworks || []).slice();
+      } catch (_) {}
+    }
     setMsg("gallery-msg", "Сжатие и конвертация в WebP…", true);
     try {
-      if (GITHUB_TOKEN === "ВАШ КЛЮЧ СЮДА" || !GITHUB_TOKEN.trim()) throw new Error("Вставьте токен в константу GITHUB_TOKEN в начале файла.");
       const webpBlob = await compressImageToWebP(file, 500, 700);
       const base64 = await blobToBase64(webpBlob);
       const filename = toWebpFilename(file.name);
       const imgPath = "img/" + filename;
-      setMsg("gallery-msg", "Загрузка на GitHub…", true);
-      var existingSha = null;
-      try { existingSha = await getFileSha(imgPath); } catch (_) {}
-      var putBody = {
+      setMsg("gallery-msg", "Загрузка изображения…", true);
+      await api(imgPath, "PUT", {
         message: "Добавить фото в галерею (WebP): " + filename,
         content: base64,
         branch: BRANCH
-      };
-      if (existingSha) putBody.sha = existingSha;
-      await api(imgPath, "PUT", putBody);
-      const items = await loadGallery();
+      });
       const id = "g" + Date.now();
       items.push({ id, title, subtitle: "", imageUrl: "./" + imgPath });
-      const data = await api("data/gallery.json", "GET").catch(() => null);
-      await putJson("data/gallery.json", { artworks: items }, "Добавить в галерею: " + title, data ? data.sha : undefined);
-      setMsg("gallery-msg", "Готово. WebP загружен в галерею.", true);
+      setMsg("gallery-msg", "Обновление списка галереи…", true);
+      await putJson("data/gallery.json", { artworks: items }, "Добавить в галерею: " + title, galleryData.sha);
+      setMsg("gallery-msg", "Готово. Файл загружен в галерею.", true);
       fileInput.value = "";
       titleInput.value = "";
       renderGalleryList();
