@@ -112,26 +112,30 @@ body,
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  pointer-events: none; /* Пока интро активно, блокируем клики */
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1s ease-out;
 }
 
 #app-shell.app-shell--active {
   pointer-events: auto;
+  opacity: 1;
 }
 
-/* ---------- INTRO LAYERS ---------- */
+/* ---------- СТАРТОВАЯ СТРАНИЦА (start.png, кнопки Заставка / Сайт) ---------- */
 
 .intro {
   position: fixed;
   inset: 0;
   overflow: hidden;
-  background: transparent;
   z-index: 20;
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.8s ease-out;
+  transition: opacity 1s ease-out;
 }
 
 .intro--active {
@@ -142,128 +146,98 @@ body,
 .intro--hidden {
   opacity: 0;
   pointer-events: none;
+  transition: opacity 0.9s ease-out;
 }
 
-.intro__layer {
+.intro__bg {
   position: absolute;
   inset: 0;
+  background: url("./start.png") center / cover no-repeat;
+  z-index: 0;
+}
+
+.intro__buttons {
+  position: relative;
+  z-index: 2;
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
+  gap: clamp(1rem, 4vw, 1.75rem);
   justify-content: center;
-  will-change: transform, opacity;
+  align-items: center;
+  padding: max(2vh, env(safe-area-inset-bottom));
+  transition: opacity 0.5s ease-out;
 }
 
-.intro__layer--back img {
-  width: 110%;
-  height: 110%;
-  object-fit: cover;
-  opacity: 0; /* Фон берётся с уровня body, этот слой не вмешивается */
+.intro__buttons.intro__buttons--hidden {
+  opacity: 0;
+  pointer-events: none;
 }
 
-.intro__layer--clouds {
-  transition: transform 1.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  will-change: transform;
-}
-
-.intro__layer--clouds img {
-  width: 120%;
-  height: auto;
-  transform: translateX(0);
-  filter: brightness(var(--clouds-brightness));
-  opacity: 0.92;
-}
-
-.intro__layer--clouds.intro__layer--clouds-off {
-  transform: translateX(-120vw);
-}
-
-.intro__layer--hero {
-  align-items: flex-end;
-  justify-content: flex-end;
-  padding: 0 max(4vw, env(safe-area-inset-right)) max(2vh, env(safe-area-inset-bottom)) 0;
-  background: transparent;
-  transition: transform 1.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  will-change: transform;
-}
-
-.intro__layer--hero.intro__layer--hero-off {
-  transform: translateX(-120vw);
-}
-
-.intro__layer--hero img {
-  height: min(72vh, 72dvh, 680px);
-  max-width: min(85vw, 520px);
-  width: auto;
-  object-fit: contain;
-  object-position: bottom right;
-  transform: translateX(18%) translateY(4%);
-  transition: transform var(--main-speed) cubic-bezier(0.19, 1, 0.22, 1);
-  /* Очень мягкие, размытые края — плавно сливается с пейзажем */
-  -webkit-mask-image: radial-gradient(ellipse 90% 80% at 50% 50%, black 50%, transparent 95%);
-  mask-image: radial-gradient(ellipse 90% 80% at 50% 50%, black 50%, transparent 95%);
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-size: 180% 180%;
-  mask-size: 180% 180%;
-  -webkit-mask-position: center;
-  mask-position: center;
-  background: transparent;
-}
-
-.intro__layer--hero.intro__layer--hero-enter img {
-  transform: translateX(0) translateY(4%);
-}
-
-.intro__layer--hero.intro__layer--hero-pull img {
-  transform: translateX(-6%) translateY(4%);
-}
-
-.intro__start-button {
-  position: absolute;
-  inset-inline: 50%;
-  bottom: max(10vh, env(safe-area-inset-bottom));
-  transform: translateX(-50%);
-  padding: clamp(0.75rem, 2.5vw, 0.9rem) clamp(1.5rem, 5vw, 2.6rem);
-  min-height: 44px;
+.intro__btn {
+  padding: clamp(0.8rem, 2.5vw, 1rem) clamp(1.75rem, 5vw, 2.5rem);
+  min-height: 48px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  background: linear-gradient(120deg, rgba(10, 12, 28, 0.96), rgba(40, 16, 56, 0.9));
-  color: var(--text-color);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(10, 12, 28, 0.75);
+  color: #fff;
   text-transform: uppercase;
-  letter-spacing: 0.16em;
-  font-size: clamp(0.8rem, 1.8vw, 0.95rem);
+  letter-spacing: 0.14em;
+  font-size: clamp(0.82rem, 1.8vw, 1rem);
+  font-weight: 500;
   cursor: pointer;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6);
-  will-change: transform, box-shadow, background;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
   transition:
-    transform 0.22s ease-out,
-    box-shadow 0.22s ease-out,
+    transform 0.25s ease-out,
+    box-shadow 0.25s ease-out,
     background 0.3s ease-out,
-    color 0.35s ease-out;
+    border-color 0.25s ease-out;
 }
 
-.intro__start-button:hover {
-  transform: translateX(-50%) translateY(-2px);
-  box-shadow: 0 22px 45px rgba(0, 0, 0, 0.7);
-  background: linear-gradient(120deg, rgba(30, 18, 80, 0.96), rgba(255, 107, 156, 0.65));
+.intro__btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+  background: rgba(30, 20, 50, 0.85);
+  border-color: rgba(255, 255, 255, 0.35);
 }
 
-.intro__start-button:active {
-  transform: translateX(-50%) translateY(1px) scale(0.99);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8);
+.intro__btn:active {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.6);
 }
 
-@keyframes introTitleFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.intro__btn--primary {
+  background: linear-gradient(135deg, rgba(255, 107, 156, 0.5), rgba(120, 60, 140, 0.6));
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.intro__btn--primary:hover {
+  background: linear-gradient(135deg, rgba(255, 107, 156, 0.65), rgba(140, 70, 160, 0.7));
+}
+
+.intro__video-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.6s ease-out;
+}
+
+.intro__video-wrap.intro__video-wrap--active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.intro__video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 /* ---------- TOP NAV & APP CONTENT ---------- */
@@ -1384,14 +1358,4 @@ body.sakura-sway {
   80% { transform: translateX(-1px) rotate(-0.1deg); }
 }
 
-.intro__layer--hero.sakura-branch-sway {
-  animation: branch-sway 1.2s ease-in-out;
-}
-
-@keyframes branch-sway {
-  0%, 100% { transform: translateX(0) rotate(0deg); }
-  25% { transform: translateX(4px) rotate(0.8deg); }
-  50% { transform: translateX(-3px) rotate(-0.6deg); }
-  75% { transform: translateX(2px) rotate(0.3deg); }
-}
 

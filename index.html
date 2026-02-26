@@ -10,27 +10,24 @@
   <body>
     <!-- Основной SPA-контейнер -->
     <main id="app-root">
-      <!-- Интро-слой живет отдельно от #app-content, чтобы не мешать роутингу состояний -->
+      <!-- Стартовая страница: фон start.png, кнопки Заставка / Сайт -->
       <section id="intro-layer" class="intro intro--active">
-        <!-- Слой 0: постоянный фон Фудзи -->
-        <div class="intro__layer intro__layer--back">
-          <img src="./01_fuji.png" alt="Гора Фудзи" />
+        <div class="intro__bg" aria-hidden="true"></div>
+
+        <div id="intro-buttons" class="intro__buttons">
+          <button id="intro-btn-zastavka" class="intro__btn" type="button" aria-label="Смотреть заставку">
+            Заставка
+          </button>
+          <button id="intro-btn-site" class="intro__btn intro__btn--primary" type="button" aria-label="Перейти на сайт">
+            Сайт
+          </button>
         </div>
 
-        <!-- Слой 1: туман, который уходит влево -->
-        <div class="intro__layer intro__layer--clouds" id="intro-clouds">
-          <img src="./00_start_clouds.png" alt="Туман" />
+        <div id="intro-video-wrap" class="intro__video-wrap" aria-hidden="true">
+          <video id="intro-video" class="intro__video" src="./video.mp4" preload="auto" playsinline muted>
+            Ваш браузер не поддерживает воспроизведение видео.
+          </video>
         </div>
-
-        <!-- Слой 2: персонаж Даша -->
-        <div class="intro__layer intro__layer--hero" id="intro-hero">
-          <img src="./02_dasha.png" alt="Даша художник" />
-        </div>
-
-        <!-- Клик-оверлей для запуска сценария -->
-        <button id="intro-start" class="intro__start-button" aria-label="Добро пожаловать">
-          Добро пожаловать
-        </button>
       </section>
 
       <!-- Динамический контейнер для состояний (Gallery, About, future...) -->

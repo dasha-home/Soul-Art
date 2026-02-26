@@ -623,76 +623,52 @@ async function renderState(state) {
   }
 }
 
-// ---------- ИНТРО-СЦЕНА: ДАША ТЯНЕТ ТУМАН ----------
+// ---------- СТАРТОВАЯ СТРАНИЦА: start.png, кнопки Заставка / Сайт ----------
 
 function setupIntroScene() {
   const intro = document.getElementById("intro-layer");
-  const hero = document.getElementById("intro-hero");
-  const clouds = document.getElementById("intro-clouds");
-  const startButton = document.getElementById("intro-start");
+  const buttonsWrap = document.getElementById("intro-buttons");
+  const btnZastavka = document.getElementById("intro-btn-zastavka");
+  const btnSite = document.getElementById("intro-btn-site");
+  const videoWrap = document.getElementById("intro-video-wrap");
+  const video = document.getElementById("intro-video");
   const appShell = document.getElementById("app-shell");
 
-  if (!intro || !hero || !clouds || !startButton || !appShell) return;
+  if (!intro || !buttonsWrap || !btnZastavka || !btnSite || !videoWrap || !video || !appShell) return;
 
-  function playWhooshSound() {
-    try {
-      const C = window.AudioContext || window.webkitAudioContext;
-      if (!C) return;
-      const ctx = new C();
-      const buf = ctx.createBuffer(1, ctx.sampleRate * 0.9, ctx.sampleRate);
-      const ch = buf.getChannelData(0);
-      for (let i = 0; i < buf.length; i++) {
-        ch[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.15));
-      }
-      const src = ctx.createBufferSource();
-      src.buffer = buf;
-      const filter = ctx.createBiquadFilter();
-      filter.type = "lowpass";
-      filter.frequency.value = 800;
-      const gain = ctx.createGain();
-      gain.gain.setValueAtTime(0, ctx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.12, ctx.currentTime + 0.05);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.85);
-      src.connect(filter);
-      filter.connect(gain);
-      gain.connect(ctx.destination);
-      src.start(0);
-      src.stop(0.9);
-    } catch (_) {}
+  function goToMain() {
+    intro.classList.remove("intro--active");
+    intro.classList.add("intro--hidden");
+    appShell.classList.add("app-shell--active");
+    AppState.setState(APP_STATES.MAIN);
   }
 
-  function startSequence() {
-    startButton.disabled = true;
+  function onZastavkaClick() {
+    buttonsWrap.classList.add("intro__buttons--hidden");
+    videoWrap.classList.add("intro__video-wrap--active");
 
-    createSakuraPetals(startButton);
-    hero.classList.add("sakura-branch-sway");
-    setTimeout(() => hero.classList.remove("sakura-branch-sway"), 1200);
+    const onEnded = () => {
+      video.removeEventListener("ended", onEnded);
+      videoWrap.classList.remove("intro__video-wrap--active");
+      goToMain();
+    };
+    video.addEventListener("ended", onEnded, { once: true });
 
-    playWhooshSound();
-
-    // Даша и туман синхронно уходят влево — как будто она сдвигает завесу (с задержкой, чтобы успело сыграть качание веток).
-    setTimeout(() => {
-      clouds.classList.add("intro__layer--clouds-off");
-      hero.classList.add("intro__layer--hero-off");
-    }, 200);
-
-    setTimeout(() => {
-      intro.classList.remove("intro--active");
-      intro.classList.add("intro--hidden");
-      appShell.classList.add("app-shell--active");
-      AppState.setState(APP_STATES.MAIN);
-    }, 1600);
+    const playPromise = video.play();
+    if (playPromise && typeof playPromise.catch === "function") {
+      playPromise.catch(() => {
+        videoWrap.classList.remove("intro__video-wrap--active");
+        buttonsWrap.classList.remove("intro__buttons--hidden");
+      });
+    }
   }
 
-  startButton.addEventListener("click", startSequence, { once: true });
-  intro.addEventListener(
-    "click",
-    (event) => {
-      if (event.target === startButton) return;
-      startSequence();
-    },
-    { once: true }
-  );
+  function onSiteClick() {
+    goToMain();
+  }
+
+  btnZastavka.addEventListener("click", onZastavkaClick, { once: true });
+  btnSite.addEventListener("click", onSiteClick, { once: true });
 }
 
 // ---------- МАГИЯ САКУРЫ (лепестки при клике по меню) ----------
