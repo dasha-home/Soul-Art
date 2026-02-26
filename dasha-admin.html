@@ -23,6 +23,7 @@
     ul { list-style: none; padding: 0; margin: 0.5rem 0 0; }
     li { display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.08); gap: 0.5rem; }
     li span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .hint { font-size: 0.8rem; color: #999; margin-top: 0.25rem; }
   </style>
 </head>
 <body>
@@ -30,7 +31,8 @@
 
   <section>
     <h2>Галерея</h2>
-    <label>Фото <input type="file" id="gallery-file" accept="image/*" /></label>
+    <p class="hint">Только изображения: JPG, JPEG, PNG, WebP. Файл автоматически сжимается до 500–700 КБ и конвертируется в WebP.</p>
+    <label>Фото <input type="file" id="gallery-file" accept=".jpg,.jpeg,.png,.webp" /></label>
     <label>Название <input type="text" id="gallery-title" placeholder="Название работы" /></label>
     <button type="button" id="gallery-upload">Загрузить в галерею</button>
     <p id="gallery-msg" class="msg" aria-live="polite"></p>
@@ -41,7 +43,7 @@
   <section>
     <h2>Рассказ</h2>
     <label>Заголовок <input type="text" id="story-title" placeholder="Заголовок рассказа" /></label>
-    <label>Обложка <input type="file" id="story-cover" accept="image/*" /></label>
+    <label>Обложка <input type="file" id="story-cover" accept=".jpg,.jpeg,.png,.webp" /></label>
     <label>Текст <textarea id="story-content" placeholder="Текст рассказа..."></textarea></label>
     <button type="button" id="story-save">Сохранить рассказ</button>
     <p id="story-msg" class="msg" aria-live="polite"></p>
@@ -50,12 +52,12 @@
   </section>
 
   <script>
-(function () {
-  // Вставьте сюда свой токен (в репозиторий не коммитить файл с реальным токеном).
-  const GITHUB_TOKEN = "PASTE_YOUR_TOKEN";
+
+  const GITHUB_TOKEN = "ВАШ КЛЮЧ СЮДА";
   const OWNER = "dasha-home";
   const REPO = "Soul-Art";
   const BRANCH = "main";
+  const ALLOWED_IMAGE_EXT = /\.(jpe?g|png|webp)$/i;
 
   const API = "https://api.github.com/repos/" + OWNER + "/" + REPO + "/contents/";
 
@@ -63,6 +65,99 @@
     const el = document.getElementById(id);
     el.textContent = text;
     el.className = "msg " + (ok ? "ok" : "err");
+  }
+
+  function isAllowedImageFile(file) {
+    if (!file || !file.name) return false;
+    return ALLOWED_IMAGE_EXT.test(file.name);
+  }
+
+  function compressImageToWebP(file, targetMinKB, targetMaxKB) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = function () {
+        URL.revokeObjectURL(url);
+        const maxDim = 2400;
+        let w = img.naturalWidth;
+        let h = img.naturalHeight;
+        if (w > maxDim || h > maxDim) {
+          if (w > h) {
+            h = Math.round((h * maxDim) / w);
+            w = maxDim;
+          } else {
+            w = Math.round((w * maxDim) / h);
+            h = maxDim;
+          }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, w, h);
+
+        function toBlobAsync(q) {
+          return new Promise((res) => {
+            canvas.toBlob(function (blob) {
+              res(blob ? { blob, sizeKb: blob.size / 1024 } : null);
+            }, "image/webp", q);
+          });
+        }
+
+        function tryScale(scale) {
+          const w2 = Math.max(1, Math.round(w * scale));
+          const h2 = Math.max(1, Math.round(h * scale));
+          const c2 = document.createElement("canvas");
+          c2.width = w2;
+          c2.height = h2;
+          c2.getContext("2d").drawImage(img, 0, 0, w2, h2);
+          return new Promise((res) => {
+            c2.toBlob(function (blob) {
+              res(blob ? { blob, sizeKb: blob.size / 1024 } : null);
+            }, "image/webp", 0.82);
+          });
+        }
+
+        (function attempt(quality) {
+          toBlobAsync(quality).then(function (r) {
+            if (!r) {
+              reject(new Error("Браузер не поддерживает WebP"));
+              return;
+            }
+            if (r.sizeKb >= targetMinKB && r.sizeKb <= targetMaxKB) {
+              resolve(r.blob);
+              return;
+            }
+            if (r.sizeKb > targetMaxKB && quality > 0.45) {
+              attempt(Math.max(0.45, quality - 0.15));
+              return;
+            }
+            if (r.sizeKb > targetMaxKB && quality <= 0.5) {
+              tryScale(0.8).then(function (r2) {
+                if (r2 && r2.sizeKb <= targetMaxKB) resolve(r2.blob);
+                else resolve(r.blob);
+              });
+              return;
+            }
+            resolve(r.blob);
+          });
+        })(0.88);
+      };
+      img.onerror = function () {
+        URL.revokeObjectURL(url);
+        reject(new Error("Не удалось загрузить изображение"));
+      };
+      img.src = url;
+    });
+  }
+
+  function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result.replace(/^data:[^;]+;base64,/, ""));
+      r.onerror = reject;
+      r.readAsDataURL(blob);
+    });
   }
 
   async function api(path, method, body) {
@@ -112,7 +207,6 @@
     return api(path, "DELETE", { message, sha: data.sha, branch: BRANCH });
   }
 
-  // ——— Галерея ———
   async function loadGallery() {
     try {
       const data = await getJson("data/gallery.json");
@@ -126,17 +220,25 @@
     const fileInput = document.getElementById("gallery-file");
     const titleInput = document.getElementById("gallery-title");
     const file = fileInput.files[0];
-    if (!file) { setMsg("gallery-msg", "Выберите файл", false); return; }
+    if (!file) {
+      setMsg("gallery-msg", "Выберите файл", false);
+      return;
+    }
+    if (!isAllowedImageFile(file)) {
+      setMsg("gallery-msg", "Разрешены только JPG, JPEG, PNG, WebP. Выберите изображение.", false);
+      return;
+    }
     const title = (titleInput.value || "").trim() || file.name;
-    setMsg("gallery-msg", "Загрузка…", true);
+    setMsg("gallery-msg", "Сжатие и конвертация в WebP…", true);
     try {
-      if (GITHUB_TOKEN === "PASTE_YOUR_TOKEN") throw new Error("Вставьте токен в константу GITHUB_TOKEN");
-      const base64 = await fileToBase64(file);
-      const ext = (file.name.match(/\.[^.]+$/) || [".jpg"])[0].toLowerCase();
-      const filename = safeName(file.name) + ext;
+      if (GITHUB_TOKEN === "ВАШ КЛЮЧ СЮДА" || !GITHUB_TOKEN.trim()) throw new Error("Вставьте токен в константу GITHUB_TOKEN в начале файла.");
+      const webpBlob = await compressImageToWebP(file, 500, 700);
+      const base64 = await blobToBase64(webpBlob);
+      const filename = safeName(file.name) + ".webp";
       const imgPath = "img/" + filename;
+      setMsg("gallery-msg", "Загрузка на GitHub…", true);
       await api(imgPath, "PUT", {
-        message: "Добавить фото в галерею: " + filename,
+        message: "Добавить фото в галерею (WebP): " + filename,
         content: base64,
         branch: BRANCH
       });
@@ -145,7 +247,7 @@
       items.push({ id, title, subtitle: "", imageUrl: "./" + imgPath });
       const data = await api("data/gallery.json", "GET").catch(() => null);
       await putJson("data/gallery.json", { artworks: items }, "Добавить в галерею: " + title, data ? data.sha : undefined);
-      setMsg("gallery-msg", "Готово.", true);
+      setMsg("gallery-msg", "Готово. WebP загружен в галерею.", true);
       fileInput.value = "";
       titleInput.value = "";
       renderGalleryList();
@@ -167,7 +269,7 @@
         const path = btn.getAttribute("data-path");
         const id = btn.getAttribute("data-id");
         try {
-          if (GITHUB_TOKEN === "PASTE_YOUR_TOKEN") throw new Error("Вставьте токен");
+          if (GITHUB_TOKEN === "ВАШ КЛЮЧ СЮДА" || !GITHUB_TOKEN.trim()) throw new Error("Вставьте токен");
           if (path) await deleteFile(path, "Удалить из галереи");
           const items = (await loadGallery()).filter(x => x.id !== id);
           const data = await api("data/gallery.json", "GET");
@@ -181,7 +283,6 @@
     });
   }
 
-  // ——— Рассказы ———
   async function loadStories() {
     try {
       const data = await getJson("data/stories.json");
@@ -197,18 +298,25 @@
     const coverInput = document.getElementById("story-cover");
     const title = (titleInput.value || "").trim();
     const content = (contentInput.value || "").trim();
-    if (!title) { setMsg("story-msg", "Введите заголовок", false); return; }
+    if (!title) {
+      setMsg("story-msg", "Введите заголовок", false);
+      return;
+    }
+    const coverFile = coverInput.files[0];
+    if (coverFile && !isAllowedImageFile(coverFile)) {
+      setMsg("story-msg", "Обложка: только JPG, JPEG, PNG, WebP", false);
+      return;
+    }
     setMsg("story-msg", "Сохранение…", true);
     try {
-      if (GITHUB_TOKEN === "PASTE_YOUR_TOKEN") throw new Error("Вставьте токен в GITHUB_TOKEN");
+      if (GITHUB_TOKEN === "ВАШ КЛЮЧ СЮДА" || !GITHUB_TOKEN.trim()) throw new Error("Вставьте токен в GITHUB_TOKEN");
       let coverUrl = "";
-      const coverFile = coverInput.files[0];
       if (coverFile) {
-        const base64 = await fileToBase64(coverFile);
-        const ext = (coverFile.name.match(/\.[^.]+$/) || [".jpg"])[0].toLowerCase();
-        const filename = "story-" + safeName(coverFile.name) + ext;
+        const webpBlob = await compressImageToWebP(coverFile, 400, 600);
+        const base64 = await blobToBase64(webpBlob);
+        const filename = "story-" + safeName(coverFile.name) + ".webp";
         const path = "img/" + filename;
-        await api(path, "PUT", { message: "Обложка рассказа", content: base64, branch: BRANCH });
+        await api(path, "PUT", { message: "Обложка рассказа (WebP)", content: base64, branch: BRANCH });
         coverUrl = "./" + path;
       }
       const stories = await loadStories();
@@ -235,7 +343,7 @@
         if (!confirm("Удалить этот рассказ?")) return;
         const id = btn.getAttribute("data-id");
         try {
-          if (GITHUB_TOKEN === "PASTE_YOUR_TOKEN") throw new Error("Вставьте токен");
+          if (GITHUB_TOKEN === "ВАШ КЛЮЧ СЮДА" || !GITHUB_TOKEN.trim()) throw new Error("Вставьте токен");
           const stories = await loadStories();
           const one = stories.find(x => x.id === id);
           if (one && one.coverUrl) {
@@ -262,7 +370,6 @@
 
   renderGalleryList();
   renderStoriesList();
-})();
   </script>
 </body>
 </html>
