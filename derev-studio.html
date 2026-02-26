@@ -60,34 +60,35 @@
       }
 
       .derev-page__back {
-        display: inline-block;
-        padding: clamp(0.85rem, 2.5vw, 1rem) clamp(1.75rem, 5vw, 2.5rem);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: clamp(0.75rem, 2.5vw, 1rem) clamp(1.5rem, 5vw, 2.5rem);
         min-height: 48px;
         min-width: 44px;
         font-family: inherit;
         font-size: clamp(0.9rem, 1.8vw, 1.05rem);
-        color: #1a1510;
-        background: linear-gradient(165deg, #d4af37 0%, #b8860b 40%, #8b6914 100%);
-        border: 2px solid rgba(218, 165, 32, 0.85);
+        font-weight: 600;
+        color: #2c2825;
+        background: #d4cfc4;
+        border: 1px solid rgba(0, 0, 0, 0.12);
         border-radius: 8px;
         text-decoration: none;
-        font-weight: 600;
-        text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 4px 16px rgba(0, 0, 0, 0.25);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
         cursor: pointer;
-        transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+        transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
         -webkit-tap-highlight-color: transparent;
       }
 
       .derev-page__back:hover {
-        transform: translateY(-2px);
-        filter: brightness(1.06);
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 6px 20px rgba(0, 0, 0, 0.28);
+        background: #c9c4b8;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       }
 
       .derev-page__back:active {
         transform: translateY(0);
-        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
       }
     </style>
   </head>
@@ -106,40 +107,35 @@
     </main>
     <script>
       (function () {
-        function playClickSound() {
+        function playPapyrusClick(variant) {
           try {
             var C = window.AudioContext || window.webkitAudioContext;
             if (!C) return;
             var ctx = new C();
-            var buf = ctx.createBuffer(1, ctx.sampleRate * 0.06, ctx.sampleRate);
+            var duration = 0.055;
+            var buf = ctx.createBuffer(1, ctx.sampleRate * duration, ctx.sampleRate);
             var ch = buf.getChannelData(0);
-            for (var i = 0; i < buf.length; i++) {
-              ch[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.012));
-            }
+            var decay = 0.012 + variant * 0.003;
+            var freq = 600 + variant * 120;
+            for (var i = 0; i < buf.length; i++) ch[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * decay));
             var src = ctx.createBufferSource();
             src.buffer = buf;
             var filter = ctx.createBiquadFilter();
             filter.type = "highpass";
-            filter.frequency.value = 600;
+            filter.frequency.value = freq;
             var gain = ctx.createGain();
             gain.gain.setValueAtTime(0.12, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
-            src.connect(filter);
-            filter.connect(gain);
-            gain.connect(ctx.destination);
-            src.start(0);
-            src.stop(0.06);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.045);
+            src.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+            src.start(0); src.stop(duration);
           } catch (_) {}
         }
-
         var btn = document.getElementById("derev-back-btn");
         if (btn) {
           btn.addEventListener("click", function (e) {
             e.preventDefault();
-            playClickSound();
-            setTimeout(function () {
-              window.location.href = btn.getAttribute("href");
-            }, 120);
+            playPapyrusClick(6);
+            setTimeout(function () { window.location.href = btn.getAttribute("href"); }, 120);
           });
         }
       })();

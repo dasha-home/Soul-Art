@@ -570,28 +570,35 @@ async function renderState(state) {
 // ---------- СТАРТОВАЯ СТРАНИЦА: start.png, кнопки Заставка / Сайт ----------
 
 function playClickSound() {
+  playPapyrusClick(0);
+}
+
+function playPapyrusClick(variant) {
   try {
     const C = window.AudioContext || window.webkitAudioContext;
     if (!C) return;
     const ctx = new C();
-    const buf = ctx.createBuffer(1, ctx.sampleRate * 0.06, ctx.sampleRate);
+    const duration = 0.055;
+    const buf = ctx.createBuffer(1, ctx.sampleRate * duration, ctx.sampleRate);
     const ch = buf.getChannelData(0);
+    const decay = 0.012 + variant * 0.003;
+    const freq = 600 + variant * 120;
     for (let i = 0; i < buf.length; i++) {
-      ch[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.012));
+      ch[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * decay));
     }
     const src = ctx.createBufferSource();
     src.buffer = buf;
     const filter = ctx.createBiquadFilter();
     filter.type = "highpass";
-    filter.frequency.value = 600;
+    filter.frequency.value = freq;
     const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0.15, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+    gain.gain.setValueAtTime(0.12, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.045);
     src.connect(filter);
     filter.connect(gain);
     gain.connect(ctx.destination);
     src.start(0);
-    src.stop(0.06);
+    src.stop(duration);
   } catch (_) {}
 }
 
@@ -691,6 +698,25 @@ function setupTopNav() {
   const navButtons = document.querySelectorAll(".top-nav__link");
 
   setupSakuraOnNav();
+
+  navButtons.forEach((link) => {
+    link.addEventListener("click", (e) => {
+      const href = link.getAttribute("href") || "";
+      const sound = link.getAttribute("data-sound") || "gallery";
+      const soundIndex = sound === "gallery" ? 0 : sound === "stories" ? 1 : 2;
+      playPapyrusClick(soundIndex);
+      if (href.indexOf("stories.html") !== -1) {
+        e.preventDefault();
+        setTimeout(() => { window.location.href = href; }, 120);
+        return;
+      }
+      const hash = href.split("#")[1];
+      if (hash) {
+        e.preventDefault();
+        setTimeout(() => { window.location.hash = hash; }, 80);
+      }
+    });
+  });
 
   function updateActiveButton(state) {
     navButtons.forEach((btn) => {
@@ -868,7 +894,7 @@ window.addEventListener("DOMContentLoaded", () => {
   if (studioLink) {
     studioLink.addEventListener("click", (e) => {
       e.preventDefault();
-      playClickSound();
+      playPapyrusClick(3);
       setTimeout(() => { window.location.href = studioLink.getAttribute("href"); }, 120);
     });
   }

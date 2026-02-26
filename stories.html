@@ -18,8 +18,34 @@
       min-height: 100vh;
       min-height: 100dvh;
     }
-    a.back { display: inline-block; margin-bottom: 1.5rem; font-family: system-ui, sans-serif; font-size: 0.9rem; color: #6b6b8a; text-decoration: none; }
-    a.back:hover { text-decoration: underline; }
+    .stories-nav { display: flex; flex-wrap: wrap; gap: clamp(1rem, 4vw, 1.5rem); justify-content: center; margin: 2.5rem 0 2rem; padding: 0 1rem; }
+    .stories-nav__btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: clamp(0.65rem, 2vw, 0.85rem) clamp(1.25rem, 4vw, 1.75rem);
+      min-height: 48px; min-width: 44px;
+      border-radius: 8px; border: 1px solid rgba(0,0,0,0.12);
+      background: #d4cfc4; color: #2c2825;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(0.9rem, 1.8vw, 1.05rem); font-weight: 600;
+      letter-spacing: 0.04em; text-decoration: none;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .stories-nav__btn:hover { background: #c9c4b8; transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    a.back {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: clamp(0.5rem, 1.2vw, 0.65rem) clamp(1rem, 2vw, 1.25rem);
+      min-height: 48px; min-width: 44px; margin-bottom: 1.5rem;
+      border-radius: 8px; border: 1px solid rgba(0,0,0,0.12);
+      background: #d4cfc4; color: #2c2825;
+      font-family: system-ui, sans-serif; font-size: clamp(0.9rem, 1.2vw, 1rem);
+      font-weight: 500; text-decoration: none;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      transition: background 0.2s ease, transform 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    a.back:hover { background: #c9c4b8; transform: translateY(-1px); }
     article { max-width: 720px; margin: 0 auto 3rem; }
     article:last-child { margin-bottom: 2rem; }
     .story-cover { width: 100%; max-height: 60vh; object-fit: cover; border-radius: 12px; margin-bottom: 1.5rem; display: block; }
@@ -32,10 +58,14 @@
   </style>
 </head>
 <body>
-  <a class="back" href="index.html">← На главную</a>
+  <a class="back" href="index.html" id="stories-back-top">← На главную</a>
   <div id="root">
     <p class="loading">Загрузка рассказов…</p>
   </div>
+  <nav class="stories-nav" aria-label="Навигация">
+    <a class="stories-nav__btn" href="index.html#gallery" id="stories-btn-main">На главную</a>
+    <a class="stories-nav__btn" href="index.html" id="stories-btn-start">На стартовую</a>
+  </nav>
   <script>
 (function () {
   const root = document.getElementById("root");
@@ -90,6 +120,35 @@
     }
     return out.join("");
   }
+  function playPapyrusClick(variant) {
+    try {
+      var C = window.AudioContext || window.webkitAudioContext;
+      if (!C) return;
+      var ctx = new C();
+      var duration = 0.055;
+      var buf = ctx.createBuffer(1, ctx.sampleRate * duration, ctx.sampleRate);
+      var ch = buf.getChannelData(0);
+      var decay = 0.012 + variant * 0.003;
+      var freq = 600 + variant * 120;
+      for (var i = 0; i < buf.length; i++) ch[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * decay));
+      var src = ctx.createBufferSource();
+      src.buffer = buf;
+      var filter = ctx.createBiquadFilter();
+      filter.type = "highpass";
+      filter.frequency.value = freq;
+      var gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.12, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.045);
+      src.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+      src.start(0); src.stop(duration);
+    } catch (_) {}
+  }
+  var btnMain = document.getElementById("stories-btn-main");
+  var btnStart = document.getElementById("stories-btn-start");
+  var backTop = document.getElementById("stories-back-top");
+  if (btnMain) btnMain.addEventListener("click", function(e) { e.preventDefault(); playPapyrusClick(4); setTimeout(function() { window.location.href = btnMain.getAttribute("href"); }, 120); });
+  if (btnStart) btnStart.addEventListener("click", function(e) { e.preventDefault(); playPapyrusClick(5); setTimeout(function() { window.location.href = btnStart.getAttribute("href"); }, 120); });
+  if (backTop) backTop.addEventListener("click", function(e) { e.preventDefault(); playPapyrusClick(4); setTimeout(function() { window.location.href = backTop.getAttribute("href"); }, 120); });
 })();
   </script>
 </body>

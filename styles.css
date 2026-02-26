@@ -73,22 +73,7 @@ body:not(.fuji-visible) .top-nav__brand {
   text-shadow: none;
 }
 
-body:not(.fuji-visible) .top-nav__link {
-  color: #3d3833;
-}
 
-body:not(.fuji-visible) .top-nav__link:hover,
-body:not(.fuji-visible) .top-nav__link--active {
-  color: #1a1510;
-}
-
-body:not(.fuji-visible) .site-footer__studio-link {
-  color: #5c564d;
-}
-
-body:not(.fuji-visible) .site-footer__studio-link:hover {
-  color: #1a1510;
-}
 
 body:not(.fuji-visible) .about-view__title,
 body:not(.fuji-visible) .about-view__text {
@@ -256,56 +241,43 @@ body,
   pointer-events: none;
 }
 
-/* Золотые кнопки в тон раме */
+/* Единый стиль «матовый папирус» для всех кнопок сайта */
 .intro__btn {
   padding: clamp(0.75rem, 2.5vw, 1rem) clamp(1.5rem, 5vw, 2.5rem);
   min-height: 48px;
-  min-width: 44px; /* удобная зона нажатия на тач-устройствах */
+  min-width: 44px;
   border-radius: 8px;
-  border: 2px solid rgba(218, 165, 32, 0.85);
-  background: linear-gradient(165deg, #d4af37 0%, #b8860b 35%, #8b6914 70%, #6b5310 100%);
-  color: #1a1510;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: #d4cfc4;
+  color: #2c2825;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   font-size: clamp(0.8rem, 2vw, 0.95rem);
   font-weight: 600;
   cursor: pointer;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.35),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.2),
-    0 4px 16px rgba(0, 0, 0, 0.4);
-  transition:
-    transform 0.22s ease-out,
-    box-shadow 0.22s ease-out,
-    filter 0.22s ease-out;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .intro__btn:hover {
-  transform: translateY(-2px);
-  filter: brightness(1.08);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.45),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.15),
-    0 8px 24px rgba(0, 0, 0, 0.35);
+  background: #c9c4b8;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .intro__btn:active {
   transform: translateY(0);
-  box-shadow:
-    inset 0 2px 4px rgba(0, 0, 0, 0.25),
-    0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
 .intro__btn--primary {
-  border-color: rgba(255, 215, 0, 0.9);
-  background: linear-gradient(165deg, #ffd700 0%, #daa520 40%, #b8860b 75%, #8b6914 100%);
-  color: #1a1510;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+  background: #cfc9bc;
+  border-color: rgba(0, 0, 0, 0.14);
 }
 
 .intro__btn--primary:hover {
-  filter: brightness(1.12);
+  background: #c4beb0;
 }
 
 .intro__video-wrap {
@@ -363,9 +335,23 @@ body,
   text-decoration: none;
 }
 
+body:not(.fuji-visible) .top-nav {
+  border-bottom-color: rgba(0, 0, 0, 0.08);
+}
+
+body:not(.fuji-visible) .top-nav__brand {
+  color: #2c2825;
+  -webkit-text-stroke: none;
+  text-stroke: none;
+  text-shadow: none;
+}
+
 .top-nav__links {
   display: flex;
-  gap: 0.5rem;
+  flex-wrap: wrap;
+  gap: clamp(0.5rem, 1.5vw, 0.75rem);
+  justify-content: center;
+  align-items: center;
 }
 
 .top-nav__controls {
@@ -509,59 +495,41 @@ body,
 
 .top-nav__link {
   pointer-events: auto;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  padding: clamp(0.3rem, 0.65vw, 0.4rem) clamp(0.65rem, 1.6vw, 0.9rem);
-  min-height: 44px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  padding: clamp(0.5rem, 1.2vw, 0.65rem) clamp(0.9rem, 2vw, 1.2rem);
+  min-height: 48px;
+  min-width: 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  color: #fff;
+  background: #d4cfc4;
+  color: #2c2825;
   cursor: pointer;
   font-size: clamp(0.82rem, 1.2vw, 0.95rem);
-  font-weight: 700;
-  letter-spacing: 0.1em;
+  font-weight: 600;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   text-decoration: none;
-  -webkit-text-stroke: 1px rgba(0, 0, 0, 0.85);
-  text-stroke: 1px rgba(0, 0, 0, 0.85);
-  paint-order: stroke fill;
-  text-shadow: 0 0 20px rgba(0, 0, 0, 0.4), 0 0 28px rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.6);
-  box-shadow: none;
-  transition:
-    color 0.2s ease-out,
-    border-color 0.2s ease-out,
-    background 0.2s ease-out,
-    box-shadow 0.25s ease-out;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .top-nav__link:hover {
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.7);
-  background: rgba(255, 255, 255, 0.18);
+  background: #c9c4b8;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .top-nav__link:active,
 .top-nav__link--active {
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.85);
-  background: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 0 24px rgba(255, 255, 255, 0.5), 0 0 48px rgba(255, 255, 255, 0.25);
-}
-
-.top-nav__link:hover,
-.top-nav__link--active {
-  text-shadow: 0 0 24px rgba(255, 255, 255, 0.35), 0 0 36px rgba(255, 255, 255, 0.2), 0 0 20px rgba(0, 0, 0, 0.4);
+  background: #c4beb0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
 .top-nav__link--active {
-  border-color: rgba(255, 255, 255, 0.85);
-  background: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 0 24px rgba(255, 255, 255, 0.5), 0 0 48px rgba(255, 255, 255, 0.25);
-  text-shadow: 0 0 24px rgba(255, 255, 255, 0.4), 0 0 40px rgba(255, 255, 255, 0.25), 0 0 20px rgba(0, 0, 0, 0.4);
+  border-color: rgba(0, 0, 0, 0.18);
 }
 
 #app-content {
@@ -611,16 +579,29 @@ body,
 }
 
 .site-footer__studio-link {
-  font-size: clamp(0.75rem, 1vw, 0.82rem);
-  color: var(--muted-color);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(0.5rem, 1.2vw, 0.65rem) clamp(1rem, 2.5vw, 1.5rem);
+  min-height: 48px;
+  min-width: 44px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: #d4cfc4;
+  font-size: clamp(0.8rem, 1.2vw, 0.9rem);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: #2c2825;
   text-decoration: none;
-  opacity: 0.85;
-  transition: opacity 0.2s ease, color 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .site-footer__studio-link:hover {
-  opacity: 1;
-  color: var(--accent-color);
+  background: #c9c4b8;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* ---------- GALLERY / SLIDER ---------- */
