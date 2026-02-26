@@ -29,9 +29,13 @@
 <body>
   <h1>Пульт управления Soul-Art</h1>
 
+  <p style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(255,158,187,0.08); border-radius: 10px; border-left: 4px solid #ff9ebb; font-size: 0.95rem; line-height: 1.5;">
+    <strong>Даша, всё хорошо.</strong> Ты просто выбираешь фото, при желании пишешь название и нажимаешь «Загрузить в галерею». Если появилась ошибка — не переживай: попробуй загрузить другой файл или изменить название (например, добавить цифру или буквы). Всё сохраняется само.
+  </p>
+
   <section>
     <h2>Галерея</h2>
-    <p class="hint">Только изображения: JPG, JPEG, PNG, WebP. Файл автоматически сжимается до 500–700 КБ и конвертируется в WebP.</p>
+    <p class="hint">Только изображения: JPG, JPEG, PNG, WebP. Файл автоматически сжимается и конвертируется в WebP.</p>
     <label>Фото <input type="file" id="gallery-file" accept=".jpg,.jpeg,.png,.webp" /></label>
     <label>Название <input type="text" id="gallery-title" placeholder="Название работы" /></label>
     <button type="button" id="gallery-upload">Загрузить в галерею</button>
