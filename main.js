@@ -101,13 +101,6 @@ function createArtSlider(artworks) {
   }
 
   let index = 0;
-  let expanded = false;
-
-  const expandBtn = document.createElement("button");
-  expandBtn.type = "button";
-  expandBtn.className = "art-slider__expand";
-  expandBtn.setAttribute("aria-label", "Развернуть слайдер");
-  expandBtn.innerHTML = `<span class="art-slider__expand-icon" aria-hidden="true">⊞</span>`;
 
   const frame = document.createElement("div");
   frame.className = "art-slider__frame";
@@ -162,7 +155,6 @@ function createArtSlider(artworks) {
 
   slider.append(frame, controls);
   sliderWrap.appendChild(slider);
-  sliderWrap.appendChild(expandBtn);
   root.append(sliderWrap, captionBlock);
 
   function renderMeta() {
@@ -171,48 +163,6 @@ function createArtSlider(artworks) {
     subtitleSpan.textContent = art.subtitle || "";
     indexSpan.textContent = `${index + 1} / ${artworks.length}`;
   }
-
-  expandBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    expanded = !expanded;
-    dragOffsetX = 0;
-    sliderWrap.style.removeProperty("transform");
-    sliderWrap.classList.toggle("gallery-view__slider-wrap--expanded", expanded);
-    expandBtn.setAttribute("aria-label", expanded ? "Свернуть слайдер" : "Развернуть слайдер");
-    expandBtn.querySelector(".art-slider__expand-icon").textContent = expanded ? "⊟" : "⊞";
-  });
-
-  let dragOffsetX = 0;
-  let isDragging = false;
-  let startClientX = 0;
-  let startTranslateX = 0;
-
-  function onDragStart(e) {
-    if (e.target.closest(".art-slider__btn, .art-slider__expand") || e.target.closest(".art-slider__frame")) return;
-    isDragging = true;
-    startClientX = e.type.indexOf("touch") >= 0 ? e.touches[0].clientX : e.clientX;
-    startTranslateX = dragOffsetX;
-    sliderWrap.classList.add("gallery-view__slider-wrap--dragging");
-  }
-  function onDragMove(e) {
-    if (!isDragging) return;
-    const clientX = e.type.indexOf("touch") >= 0 ? e.touches[0].clientX : e.clientX;
-    const dx = clientX - startClientX;
-    const max = Math.max(0, (window.innerWidth - sliderWrap.offsetWidth) / 2);
-    dragOffsetX = Math.max(-max, Math.min(max, startTranslateX + dx));
-    sliderWrap.style.transform = "translateX(" + dragOffsetX + "px)";
-  }
-  function onDragEnd() {
-    isDragging = false;
-    sliderWrap.classList.remove("gallery-view__slider-wrap--dragging");
-  }
-
-  sliderWrap.addEventListener("mousedown", onDragStart);
-  sliderWrap.addEventListener("touchstart", onDragStart, { passive: true });
-  document.addEventListener("mousemove", onDragMove);
-  document.addEventListener("touchmove", onDragMove, { passive: true });
-  document.addEventListener("mouseup", onDragEnd);
-  document.addEventListener("touchend", onDragEnd);
 
   function goTo(delta) {
     const prevIndex = index;
@@ -230,7 +180,6 @@ function createArtSlider(artworks) {
   let lightboxEl = null;
 
   function openFullscreen() {
-    const art = artworks[index];
     if (!lightboxEl) {
       lightboxEl = document.createElement("div");
       lightboxEl.className = "lightbox";
@@ -248,7 +197,6 @@ function createArtSlider(artworks) {
             <div class="lightbox__subtitle"></div>
             <div class="lightbox__counter"></div>
           </div>
-          <button type="button" class="lightbox__zoom-btn" aria-label="Увеличить или уменьшить"></button>
         </div>
         <button type="button" class="lightbox__prev" aria-label="Предыдущее"></button>
         <button type="button" class="lightbox__next" aria-label="Следующее"></button>
@@ -258,27 +206,22 @@ function createArtSlider(artworks) {
       const prevBtnLb = lightboxEl.querySelector(".lightbox__prev");
       const nextBtnLb = lightboxEl.querySelector(".lightbox__next");
       const zoomWrap = lightboxEl.querySelector(".lightbox__zoom-wrap");
-      const zoomBtn = lightboxEl.querySelector(".lightbox__zoom-btn");
       const img = lightboxEl.querySelector(".lightbox__img");
       let scale = 1;
       let pinchStartScale = 1;
       let pinchStartDist = 0;
+      let touchStartX = 0;
       const setZoom = (s) => {
         scale = Math.max(0.5, Math.min(4, s));
         zoomWrap.style.transform = "scale(" + scale + ")";
-        zoomBtn.textContent = scale > 1 ? "−" : "+";
-        zoomBtn.setAttribute("aria-label", scale > 1 ? "Уменьшить" : "Увеличить");
       };
       const resetZoom = () => { setZoom(1); };
-      zoomBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        setZoom(scale > 1 ? 1 : 2);
-      });
       img.addEventListener("click", (e) => {
         e.stopPropagation();
         setZoom(scale > 1 ? 1 : 2);
       });
       img.addEventListener("touchstart", (e) => {
+        if (e.touches.length === 1) touchStartX = e.touches[0].clientX;
         if (e.touches.length === 2) {
           pinchStartScale = scale;
           pinchStartDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
@@ -291,6 +234,13 @@ function createArtSlider(artworks) {
         }
       }, { passive: true });
       img.addEventListener("touchend", () => { pinchStartDist = 0; }, { passive: true });
+      zoomWrap.addEventListener("touchstart", (e) => { if (e.touches.length === 1) touchStartX = e.touches[0].clientX; }, { passive: true });
+      zoomWrap.addEventListener("touchend", (e) => {
+        if (e.changedTouches.length === 1 && pinchStartDist === 0) {
+          const dx = e.changedTouches[0].clientX - touchStartX;
+          if (Math.abs(dx) > 50) goTo(dx > 0 ? -1 : 1);
+        }
+      }, { passive: true });
       const updateLightbox = () => {
         const a = artworks[index];
         img.src = a.imageUrl;
@@ -348,12 +298,6 @@ function createArtSlider(artworks) {
       if (lightboxEl && lightboxEl.classList.contains("lightbox--open")) {
         lightboxEl._close();
       }
-      sliderWrap.removeEventListener("mousedown", onDragStart);
-      sliderWrap.removeEventListener("touchstart", onDragStart);
-      document.removeEventListener("mousemove", onDragMove);
-      document.removeEventListener("touchmove", onDragMove);
-      document.removeEventListener("mouseup", onDragEnd);
-      document.removeEventListener("touchend", onDragEnd);
       prevBtn.replaceWith(prevBtn.cloneNode(true));
       nextBtn.replaceWith(nextBtn.cloneNode(true));
       frame.removeEventListener("click", onFrameClick);
