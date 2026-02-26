@@ -47,13 +47,14 @@ function imageFallbackUrls(url) {
   return [base + ".webp", base + ".png", base + ".jpg", base + ".jpeg"].filter(function (u) { return u !== url; });
 }
 
-/** Относительные пути к картинкам всегда грузим с GitHub Pages, иначе с file:// и с телефона новых файлов нет. */
+/** Относительные пути к картинкам всегда грузим с GitHub Pages. Сегменты пути кодируем, чтобы буквы не ломали ссылку. */
 function resolveGalleryImageUrl(url) {
   if (!url || typeof url !== "string") return url;
   var s = url.trim();
   if (s.indexOf("http://") === 0 || s.indexOf("https://") === 0) return s;
   var path = s.replace(/^\.\/?/, "").replace(/^\//, "");
-  return GALLERY_IMAGES_BASE + "/" + path;
+  var encoded = path.split("/").map(function (seg) { return encodeURIComponent(seg); }).join("/");
+  return GALLERY_IMAGES_BASE + "/" + encoded;
 }
 
 /**
