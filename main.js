@@ -762,6 +762,7 @@ function setupTopNav() {
   AppState.subscribe((state) => {
     if (state === APP_STATES.INTRO) return;
     updateActiveButton(state);
+    document.body.classList.toggle("fuji-visible", state === APP_STATES.MAIN);
     if (location.hash === "#admin") location.hash = "";
     renderState(state);
   });
