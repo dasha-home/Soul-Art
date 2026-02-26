@@ -31,6 +31,8 @@ const AppState = {
 
 const GALLERY_JSON = "https://raw.githubusercontent.com/dasha-home/Soul-Art/main/data/gallery.json";
 const ARTWORKS_JSON = "https://raw.githubusercontent.com/dasha-home/Soul-Art/main/data/artworks.json";
+/** Базовый URL картинок галереи — один и тот же репозиторий, чтобы работало с file://, планшета и телефона. */
+const GALLERY_IMAGES_BASE = "https://dasha-home.github.io/Soul-Art";
 
 /** Первый URL для показа (приоритет WebP). */
 function imageUrlForDisplay(url) {
@@ -43,6 +45,15 @@ function imageFallbackUrls(url) {
   if (!url || typeof url !== "string") return [];
   const base = url.replace(/\.(jpe?g|png|webp)$/i, "");
   return [base + ".webp", base + ".png", base + ".jpg", base + ".jpeg"].filter(function (u) { return u !== url; });
+}
+
+/** Относительные пути к картинкам всегда грузим с GitHub Pages, иначе с file:// и с телефона новых файлов нет. */
+function resolveGalleryImageUrl(url) {
+  if (!url || typeof url !== "string") return url;
+  var s = url.trim();
+  if (s.indexOf("http://") === 0 || s.indexOf("https://") === 0) return s;
+  var path = s.replace(/^\.\/?/, "").replace(/^\//, "");
+  return GALLERY_IMAGES_BASE + "/" + path;
 }
 
 /**
@@ -123,9 +134,11 @@ function createArtSlider(artworks) {
     img.className = "art-slider__img" + (i === 0 ? " art-slider__img--active" : "");
     const displayUrl = imageUrlForDisplay(art.imageUrl);
     const originalUrl = art.imageUrl;
-    const urlsToTry = [displayUrl];
-    if (originalUrl && urlsToTry.indexOf(originalUrl) === -1) urlsToTry.push(originalUrl);
-    imageFallbackUrls(art.imageUrl).forEach(function (u) { if (urlsToTry.indexOf(u) === -1) urlsToTry.push(u); });
+    let rawUrls = [displayUrl];
+    if (originalUrl && rawUrls.indexOf(originalUrl) === -1) rawUrls.push(originalUrl);
+    imageFallbackUrls(art.imageUrl).forEach(function (u) { if (rawUrls.indexOf(u) === -1) rawUrls.push(u); });
+    let urlsToTry = rawUrls.map(resolveGalleryImageUrl);
+    urlsToTry = urlsToTry.filter(function (u, idx) { return urlsToTry.indexOf(u) === idx; });
     img._galleryTryIndex = 0;
     img.src = urlsToTry[0];
     img.alt = art.title;
@@ -267,9 +280,11 @@ function createArtSlider(artworks) {
       const updateLightbox = () => {
         const a = artworks[index];
         const displayUrl = imageUrlForDisplay(a.imageUrl);
-        const urlsToTry = [displayUrl];
-        if (a.imageUrl && urlsToTry.indexOf(a.imageUrl) === -1) urlsToTry.push(a.imageUrl);
-        imageFallbackUrls(a.imageUrl).forEach(function (u) { if (urlsToTry.indexOf(u) === -1) urlsToTry.push(u); });
+        let rawUrls = [displayUrl];
+        if (a.imageUrl && rawUrls.indexOf(a.imageUrl) === -1) rawUrls.push(a.imageUrl);
+        imageFallbackUrls(a.imageUrl).forEach(function (u) { if (rawUrls.indexOf(u) === -1) rawUrls.push(u); });
+        let urlsToTry = rawUrls.map(resolveGalleryImageUrl);
+        urlsToTry = urlsToTry.filter(function (u, idx) { return urlsToTry.indexOf(u) === idx; });
         img._lightboxTryIndex = 0;
         img.src = urlsToTry[0];
         img.alt = a.title;
