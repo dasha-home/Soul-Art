@@ -190,6 +190,16 @@
     return name.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 40) || "img";
   }
 
+  function toWebpFilename(fileName) {
+    var base = (fileName || "").replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 40) || "img";
+    return base + ".webp";
+  }
+
+  async function getFileSha(path) {
+    var data = await api(path, "GET");
+    return data.sha || null;
+  }
+
   async function getJson(path) {
     const data = await api(path, "GET");
     const raw = atob(data.content.replace(/\n/g, ""));
@@ -234,14 +244,18 @@
       if (GITHUB_TOKEN === "ВАШ КЛЮЧ СЮДА" || !GITHUB_TOKEN.trim()) throw new Error("Вставьте токен в константу GITHUB_TOKEN в начале файла.");
       const webpBlob = await compressImageToWebP(file, 500, 700);
       const base64 = await blobToBase64(webpBlob);
-      const filename = safeName(file.name) + ".webp";
+      const filename = toWebpFilename(file.name);
       const imgPath = "img/" + filename;
       setMsg("gallery-msg", "Загрузка на GitHub…", true);
-      await api(imgPath, "PUT", {
+      var existingSha = null;
+      try { existingSha = await getFileSha(imgPath); } catch (_) {}
+      var putBody = {
         message: "Добавить фото в галерею (WebP): " + filename,
         content: base64,
         branch: BRANCH
-      });
+      };
+      if (existingSha) putBody.sha = existingSha;
+      await api(imgPath, "PUT", putBody);
       const items = await loadGallery();
       const id = "g" + Date.now();
       items.push({ id, title, subtitle: "", imageUrl: "./" + imgPath });
@@ -314,9 +328,14 @@
       if (coverFile) {
         const webpBlob = await compressImageToWebP(coverFile, 400, 600);
         const base64 = await blobToBase64(webpBlob);
-        const filename = "story-" + safeName(coverFile.name) + ".webp";
-        const path = "img/" + filename;
-        await api(path, "PUT", { message: "Обложка рассказа (WebP)", content: base64, branch: BRANCH });
+        const baseCover = (coverFile.name || "").replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 32) || "cover";
+        const filenameWebp = "story-" + baseCover + ".webp";
+        const path = "img/" + filenameWebp;
+        var existingSha = null;
+        try { existingSha = await getFileSha(path); } catch (_) {}
+        var putBody = { message: "Обложка рассказа (WebP)", content: base64, branch: BRANCH };
+        if (existingSha) putBody.sha = existingSha;
+        await api(path, "PUT", putBody);
         coverUrl = "./" + path;
       }
       const stories = await loadStories();
