@@ -32,6 +32,12 @@ const AppState = {
 const GALLERY_JSON = "https://raw.githubusercontent.com/dasha-home/Soul-Art/main/data/gallery.json";
 const ARTWORKS_JSON = "https://raw.githubusercontent.com/dasha-home/Soul-Art/main/data/artworks.json";
 
+/** Для галереи: если в данных указан jpg/png, подставляем .webp (админка сохраняет в WebP). */
+function imageUrlForDisplay(url) {
+  if (!url || typeof url !== "string") return url;
+  return url.replace(/\.(jpe?g|png)$/i, ".webp");
+}
+
 /**
  * Загружает список работ: сначала data/gallery.json (админка), затем data/artworks.json.
  */
@@ -108,7 +114,7 @@ function createArtSlider(artworks) {
   const images = artworks.map((art, i) => {
     const img = document.createElement("img");
     img.className = "art-slider__img" + (i === 0 ? " art-slider__img--active" : "");
-    img.src = art.imageUrl;
+    img.src = imageUrlForDisplay(art.imageUrl);
     img.alt = art.title;
     img.setAttribute("data-index", String(i));
     frame.appendChild(img);
@@ -243,7 +249,7 @@ function createArtSlider(artworks) {
       }, { passive: true });
       const updateLightbox = () => {
         const a = artworks[index];
-        img.src = a.imageUrl;
+        img.src = imageUrlForDisplay(a.imageUrl);
         img.alt = a.title;
         lightboxEl.querySelector(".lightbox__title").textContent = a.title;
         lightboxEl.querySelector(".lightbox__subtitle").textContent = a.subtitle;

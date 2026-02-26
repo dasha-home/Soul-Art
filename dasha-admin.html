@@ -190,8 +190,15 @@
     return name.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 40) || "img";
   }
 
+  var RU_TO_LAT = { "а":"a","б":"b","в":"v","г":"g","д":"d","е":"e","ё":"e","ж":"zh","з":"z","и":"i","й":"j","к":"k","л":"l","м":"m","н":"n","о":"o","п":"p","р":"r","с":"s","т":"t","у":"u","ф":"f","х":"h","ц":"ts","ч":"ch","ш":"sh","щ":"sch","ъ":"","ы":"y","ь":"","э":"e","ю":"yu","я":"ya" };
+  function transliterate(str) {
+    return (str || "").toLowerCase().split("").map(function(c) { return RU_TO_LAT[c] !== undefined ? RU_TO_LAT[c] : c; }).join("");
+  }
+
   function toWebpFilename(fileName) {
-    var base = (fileName || "").replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 40) || "img";
+    var nameOnly = (fileName || "").replace(/\.[^.]+$/, "");
+    var transliterated = transliterate(nameOnly);
+    var base = transliterated.replace(/[^a-zA-Z0-9_-]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "").slice(0, 40) || "img";
     return base + ".webp";
   }
 
