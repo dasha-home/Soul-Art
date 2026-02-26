@@ -627,6 +627,7 @@ async function renderState(state) {
 
 function setupIntroScene() {
   const intro = document.getElementById("intro-layer");
+  const contentEl = document.getElementById("intro-content");
   const buttonsWrap = document.getElementById("intro-buttons");
   const btnZastavka = document.getElementById("intro-btn-zastavka");
   const btnSite = document.getElementById("intro-btn-site");
@@ -634,7 +635,7 @@ function setupIntroScene() {
   const video = document.getElementById("intro-video");
   const appShell = document.getElementById("app-shell");
 
-  if (!intro || !buttonsWrap || !btnZastavka || !btnSite || !videoWrap || !video || !appShell) return;
+  if (!intro || !contentEl || !buttonsWrap || !btnZastavka || !btnSite || !videoWrap || !video || !appShell) return;
 
   function goToMain() {
     intro.classList.remove("intro--active");
@@ -644,7 +645,7 @@ function setupIntroScene() {
   }
 
   function onZastavkaClick() {
-    buttonsWrap.classList.add("intro__buttons--hidden");
+    contentEl.classList.add("intro__content--hidden");
     videoWrap.classList.add("intro__video-wrap--active");
 
     const onEnded = () => {
@@ -658,7 +659,7 @@ function setupIntroScene() {
     if (playPromise && typeof playPromise.catch === "function") {
       playPromise.catch(() => {
         videoWrap.classList.remove("intro__video-wrap--active");
-        buttonsWrap.classList.remove("intro__buttons--hidden");
+        contentEl.classList.remove("intro__content--hidden");
       });
     }
   }

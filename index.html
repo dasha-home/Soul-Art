@@ -10,21 +10,24 @@
   <body>
     <!-- Основной SPA-контейнер -->
     <main id="app-root">
-      <!-- Стартовая страница: фон start.png, кнопки Заставка / Сайт -->
+      <!-- Стартовая страница: рама start.png, надпись, кнопки Заставка / Сайт -->
       <section id="intro-layer" class="intro intro--active">
         <div class="intro__bg" aria-hidden="true"></div>
 
-        <div id="intro-buttons" class="intro__buttons">
-          <button id="intro-btn-zastavka" class="intro__btn" type="button" aria-label="Смотреть заставку">
-            Заставка
-          </button>
-          <button id="intro-btn-site" class="intro__btn intro__btn--primary" type="button" aria-label="Перейти на сайт">
-            Сайт
-          </button>
+        <div id="intro-content" class="intro__content">
+          <h1 class="intro__title">Рисунки Даши</h1>
+          <div id="intro-buttons" class="intro__buttons">
+            <button id="intro-btn-zastavka" class="intro__btn" type="button" aria-label="Смотреть заставку">
+              Заставка
+            </button>
+            <button id="intro-btn-site" class="intro__btn intro__btn--primary" type="button" aria-label="Перейти на сайт">
+              Сайт
+            </button>
+          </div>
         </div>
 
         <div id="intro-video-wrap" class="intro__video-wrap" aria-hidden="true">
-          <video id="intro-video" class="intro__video" src="./video.mp4" preload="auto" playsinline muted>
+          <video id="intro-video" class="intro__video" src="./video.mp4" preload="auto" playsinline>
             Ваш браузер не поддерживает воспроизведение видео.
           </video>
         </div>
