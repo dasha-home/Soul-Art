@@ -625,6 +625,32 @@ async function renderState(state) {
 
 // ---------- СТАРТОВАЯ СТРАНИЦА: start.png, кнопки Заставка / Сайт ----------
 
+function playClickSound() {
+  try {
+    const C = window.AudioContext || window.webkitAudioContext;
+    if (!C) return;
+    const ctx = new C();
+    const buf = ctx.createBuffer(1, ctx.sampleRate * 0.06, ctx.sampleRate);
+    const ch = buf.getChannelData(0);
+    for (let i = 0; i < buf.length; i++) {
+      ch[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.012));
+    }
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const filter = ctx.createBiquadFilter();
+    filter.type = "highpass";
+    filter.frequency.value = 600;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+    src.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    src.start(0);
+    src.stop(0.06);
+  } catch (_) {}
+}
+
 function setupIntroScene() {
   const intro = document.getElementById("intro-layer");
   const contentEl = document.getElementById("intro-content");
@@ -645,6 +671,7 @@ function setupIntroScene() {
   }
 
   function onZastavkaClick() {
+    playClickSound();
     contentEl.classList.add("intro__content--hidden");
     videoWrap.classList.add("intro__video-wrap--active");
 
@@ -665,6 +692,7 @@ function setupIntroScene() {
   }
 
   function onSiteClick() {
+    playClickSound();
     goToMain();
   }
 

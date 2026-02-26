@@ -149,11 +149,18 @@ body,
   transition: opacity 0.9s ease-out;
 }
 
-/* Рама start.png всегда целиком на любом экране: contain + тёплый фон */
+/* Рама start.png поверх текстурного фона; пустые зоны — светлая бумага/папирус */
 .intro__bg {
   position: absolute;
   inset: 0;
-  background: #1c1814 url("./start.png") center / contain no-repeat;
+  background-color: #e6dfd4;
+  background-image:
+    url("./start.png"),
+    radial-gradient(ellipse 120% 120% at 50% 50%, rgba(255, 252, 245, 0.35), transparent 55%),
+    linear-gradient(180deg, transparent 0%, transparent 18px, rgba(0, 0, 0, 0.018) 18px, rgba(0, 0, 0, 0.018) 20px);
+  background-size: contain, 100% 100%, 1px 20px;
+  background-position: center, 0 0, 0 0;
+  background-repeat: no-repeat, no-repeat, repeat;
   z-index: 0;
 }
 
@@ -291,6 +298,7 @@ body,
   text-stroke: 1px rgba(0, 0, 0, 0.85);
   paint-order: stroke fill;
   text-shadow: 0 0 20px rgba(0, 0, 0, 0.6), 0 0 32px rgba(255, 255, 255, 0.25), 0 1px 2px rgba(0, 0, 0, 0.8);
+  text-decoration: none;
 }
 
 .top-nav__links {
