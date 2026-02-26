@@ -114,8 +114,13 @@ function createArtSlider(artworks) {
   const images = artworks.map((art, i) => {
     const img = document.createElement("img");
     img.className = "art-slider__img" + (i === 0 ? " art-slider__img--active" : "");
-    img.src = imageUrlForDisplay(art.imageUrl);
+    const displayUrl = imageUrlForDisplay(art.imageUrl);
+    const originalUrl = art.imageUrl;
+    img.src = displayUrl;
     img.alt = art.title;
+    img.onerror = function () {
+      if (originalUrl && img.src !== originalUrl) { img.src = originalUrl; }
+    };
     img.setAttribute("data-index", String(i));
     frame.appendChild(img);
     return img;
@@ -249,8 +254,12 @@ function createArtSlider(artworks) {
       }, { passive: true });
       const updateLightbox = () => {
         const a = artworks[index];
-        img.src = imageUrlForDisplay(a.imageUrl);
+        const displayUrl = imageUrlForDisplay(a.imageUrl);
+        img.src = displayUrl;
         img.alt = a.title;
+        img.onerror = function () {
+          if (a.imageUrl && img.src !== a.imageUrl) img.src = a.imageUrl;
+        };
         lightboxEl.querySelector(".lightbox__title").textContent = a.title;
         lightboxEl.querySelector(".lightbox__subtitle").textContent = a.subtitle;
         lightboxEl.querySelector(".lightbox__counter").textContent = `${index + 1} / ${artworks.length}`;

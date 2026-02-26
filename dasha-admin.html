@@ -229,6 +229,13 @@
       const data = await getJson("data/gallery.json");
       return Array.isArray(data.artworks) ? data.artworks : [];
     } catch (_) {
+      try {
+        const r = await fetch("./data/gallery.json", { cache: "no-store" });
+        if (r.ok) {
+          const data = await r.json();
+          return Array.isArray(data.artworks) ? data.artworks : [];
+        }
+      } catch (_) {}
       return [];
     }
   }
@@ -291,7 +298,9 @@
         const id = btn.getAttribute("data-id");
         try {
           if (GITHUB_TOKEN === "ВАШ КЛЮЧ СЮДА" || !GITHUB_TOKEN.trim()) throw new Error("Вставьте токен");
-          if (path) await deleteFile(path, "Удалить из галереи");
+          if (path) {
+            try { await deleteFile(path, "Удалить из галереи"); } catch (_) { /* файл мог отсутствовать (404) */ }
+          }
           const items = (await loadGallery()).filter(x => x.id !== id);
           const data = await api("data/gallery.json", "GET");
           await putJson("data/gallery.json", { artworks: items }, "Удалить из галереи", data.sha);
