@@ -918,5 +918,14 @@ window.addEventListener("DOMContentLoaded", () => {
     appShell.classList.add("app-shell--active");
     AppState.setState(hash === "#gallery" ? APP_STATES.GALLERY : APP_STATES.ABOUT);
   }
+
+  const studioLink = document.getElementById("footer-studio-link");
+  if (studioLink) {
+    studioLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      playClickSound();
+      setTimeout(() => { window.location.href = studioLink.getAttribute("href"); }, 120);
+    });
+  }
 });
 

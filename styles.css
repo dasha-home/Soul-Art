@@ -548,6 +548,19 @@ body,
   color: var(--accent-color);
 }
 
+.site-footer__studio-link {
+  font-size: clamp(0.75rem, 1vw, 0.82rem);
+  color: var(--muted-color);
+  text-decoration: none;
+  opacity: 0.85;
+  transition: opacity 0.2s ease, color 0.2s ease;
+}
+
+.site-footer__studio-link:hover {
+  opacity: 1;
+  color: var(--accent-color);
+}
+
 /* ---------- GALLERY / SLIDER ---------- */
 
 .gallery-view {

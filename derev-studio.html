@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Derev Studio — О создании пространства</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        min-height: 100dvh;
+        padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        font-family: Georgia, "Times New Roman", serif;
+        color: #2c2825;
+        background-color: #e6dfd4;
+        background-image:
+          radial-gradient(ellipse 120% 120% at 50% 50%, rgba(255, 252, 245, 0.4), transparent 55%),
+          linear-gradient(180deg, transparent 0%, transparent 18px, rgba(0, 0, 0, 0.02) 18px, rgba(0, 0, 0, 0.02) 20px);
+        background-size: 100% 100%, 1px 20px;
+        background-position: 0 0, 0 0;
+        background-repeat: no-repeat, repeat;
+        background-attachment: fixed;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        animation: derev-page-fade-in 0.6s ease-out forwards;
+      }
+
+      @keyframes derev-page-fade-in {
+        to { opacity: 1; }
+      }
+
+      .derev-page {
+        width: 100%;
+        max-width: min(42rem, 92vw);
+        padding: clamp(1.5rem, 5vw, 3rem) clamp(1.25rem, 4vw, 2.5rem);
+        text-align: center;
+      }
+
+      .derev-page__text {
+        font-size: clamp(1rem, 2.2vw + 0.5rem, 1.35rem);
+        line-height: 1.65;
+        margin: 0 0 1.25em;
+      }
+
+      .derev-page__text:last-of-type {
+        margin-bottom: 1.5em;
+      }
+
+      .derev-page__sign {
+        font-size: clamp(0.95rem, 1.8vw + 0.4rem, 1.15rem);
+        font-style: italic;
+        margin: 0 0 2rem;
+        color: #3d3833;
+      }
+
+      .derev-page__back {
+        display: inline-block;
+        padding: clamp(0.85rem, 2.5vw, 1rem) clamp(1.75rem, 5vw, 2.5rem);
+        min-height: 48px;
+        min-width: 44px;
+        font-family: inherit;
+        font-size: clamp(0.9rem, 1.8vw, 1.05rem);
+        color: #1a1510;
+        background: linear-gradient(165deg, #d4af37 0%, #b8860b 40%, #8b6914 100%);
+        border: 2px solid rgba(218, 165, 32, 0.85);
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 4px 16px rgba(0, 0, 0, 0.25);
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .derev-page__back:hover {
+        transform: translateY(-2px);
+        filter: brightness(1.06);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 6px 20px rgba(0, 0, 0, 0.28);
+      }
+
+      .derev-page__back:active {
+        transform: translateY(0);
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.2);
+      }
+    </style>
+  </head>
+  <body>
+    <main class="derev-page">
+      <p class="derev-page__text">
+        Создание этого пространства для работ художника Даши стало для меня особенным временем. Общение с ней — это огромный подарок. Её талант, доброта и искренность достойны восхищения и самого лучшего воплощения.
+      </p>
+      <p class="derev-page__text">
+        Я был счастлив строить этот цифровой дом, стараясь сделать его таким же искренним и глубоким, как и сами картины. Надеюсь, что каждый гость почувствует здесь ту гармонию, которую мы искали.
+      </p>
+      <p class="derev-page__sign">
+        С благодарностью и уважением,<br />Александр Деревяшкин
+      </p>
+      <a href="index.html" class="derev-page__back" id="derev-back-btn">Вернуться к картинам</a>
+    </main>
+    <script>
+      (function () {
+        function playClickSound() {
+          try {
+            var C = window.AudioContext || window.webkitAudioContext;
+            if (!C) return;
+            var ctx = new C();
+            var buf = ctx.createBuffer(1, ctx.sampleRate * 0.06, ctx.sampleRate);
+            var ch = buf.getChannelData(0);
+            for (var i = 0; i < buf.length; i++) {
+              ch[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.012));
+            }
+            var src = ctx.createBufferSource();
+            src.buffer = buf;
+            var filter = ctx.createBiquadFilter();
+            filter.type = "highpass";
+            filter.frequency.value = 600;
+            var gain = ctx.createGain();
+            gain.gain.setValueAtTime(0.12, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+            src.connect(filter);
+            filter.connect(gain);
+            gain.connect(ctx.destination);
+            src.start(0);
+            src.stop(0.06);
+          } catch (_) {}
+        }
+
+        var btn = document.getElementById("derev-back-btn");
+        if (btn) {
+          btn.addEventListener("click", function (e) {
+            e.preventDefault();
+            playClickSound();
+            setTimeout(function () {
+              window.location.href = btn.getAttribute("href");
+            }, 120);
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>
