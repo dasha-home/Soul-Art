@@ -30,8 +30,8 @@
   inset: 0;
   background-image: url('samurai.jpg');
   background-size: cover;
-  background-position: 32% center;
-  filter: brightness(0.78) saturate(1.1) contrast(1.06);
+  background-position: 38% center;
+  filter: brightness(0.82) saturate(1.15) contrast(1.04);
   transition: filter 0.5s ease;
 }
 

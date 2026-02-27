@@ -260,7 +260,7 @@
 
   /* ═══════ ГОЛОС (Text-to-Speech) ═══════ */
 
-  var voiceEnabled = localStorage.getItem("guardian_voice") !== "off";
+  var voiceEnabled = localStorage.getItem("guardian_voice") === "on";
   var voiceToggleBtn = document.getElementById("guardian-voice-toggle");
 
   function updateVoiceUI() {
