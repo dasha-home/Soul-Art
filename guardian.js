@@ -297,9 +297,9 @@
       /* Только хорошие голоса — лучше молчать чем говорить плохим */
       var pick = voices.find(function (v) { return /yuri/i.test(v.name); })
               || voices.find(function (v) { return /pavel|dmitri|aleksandr/i.test(v.name); })
-              || voices.find(function (v) { return /google русский|google russian/i.test(v.name); })
+              || voices.find(function (v) { return v.lang === "ru-RU"; })
+              || voices.find(function (v) { return v.lang.startsWith("ru"); })
               || null;
-      /* Если хорошего голоса нет — не говорим совсем */
       if (!pick) return;
       utt.voice = pick;
       window.speechSynthesis.speak(utt);
