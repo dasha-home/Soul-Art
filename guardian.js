@@ -294,12 +294,14 @@
     utt.pitch = 0.72;
     var trySpeak = function () {
       var voices = window.speechSynthesis.getVoices();
-      /* Пробуем найти мужской русский голос по имени */
-      var pick = voices.find(function (v) { return /yuri|pavel|dmitri|male/i.test(v.name) && v.lang.startsWith("ru"); })
-              || voices.find(function (v) { return v.lang === "ru-RU"; })
-              || voices.find(function (v) { return v.lang.startsWith("ru"); })
+      /* Только хорошие голоса — лучше молчать чем говорить плохим */
+      var pick = voices.find(function (v) { return /yuri/i.test(v.name); })
+              || voices.find(function (v) { return /pavel|dmitri|aleksandr/i.test(v.name); })
+              || voices.find(function (v) { return /google русский|google russian/i.test(v.name); })
               || null;
-      if (pick) utt.voice = pick;
+      /* Если хорошего голоса нет — не говорим совсем */
+      if (!pick) return;
+      utt.voice = pick;
       window.speechSynthesis.speak(utt);
     };
     if (window.speechSynthesis.getVoices().length) {
