@@ -398,6 +398,8 @@ function renderAbout() {
 
 function getStoredToken() {
   try {
+    /* Сначала проверяем token.js (для локальной папки Даши) */
+    if (window.DASHA_ADMIN_TOKEN) return window.DASHA_ADMIN_TOKEN;
     return sessionStorage.getItem(ADMIN_TOKEN_KEY) || "";
   } catch (_) {
     return "";
