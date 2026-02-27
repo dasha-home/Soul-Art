@@ -370,16 +370,58 @@
 
   var IMG_RE = /^(нарисуй мне|нарисуй|покажи картину|покажи мне картину|изобрази|создай картину|нарисуй картину)\s*/i;
 
-  function buildImageUrls(englishPrompt) {
+  /* ── AI Horde: бесплатная генерация без регистрации ── */
+  function generateViaHorde(prompt, onSuccess, onFail) {
+    var HORDE = "https://stablehorde.net/api/v2";
+    var headers = { "Content-Type": "application/json", "apikey": "0000000000", "Client-Agent": "GuardianChat:1:anonymous" };
+
+    fetch(HORDE + "/generate/async", {
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify({
+        prompt: prompt,
+        params: { n: 1, width: 512, height: 512, steps: 20, karras: true },
+        r2: false
+      })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(job) {
+      if (!job.id) { onFail(); return; }
+      var maxWait = 30, waited = 0;
+      function poll() {
+        if (waited++ > maxWait) { onFail(); return; }
+        fetch(HORDE + "/generate/status/" + job.id, { headers: headers })
+        .then(function(r) { return r.json(); })
+        .then(function(s) {
+          if (s.done && s.generations && s.generations.length) {
+            var g = s.generations[0];
+            onSuccess(g.img.startsWith("http") ? g.img : "data:image/webp;base64," + g.img);
+          } else {
+            setTimeout(poll, 3000);
+          }
+        })
+        .catch(function() { setTimeout(poll, 3000); });
+      }
+      setTimeout(poll, 4000);
+    })
+    .catch(onFail);
+  }
+
+  /* ── Pollinations как запасной (когда оживёт) ── */
+  function generateViaPollinations(prompt, img, caption, subject) {
     var seed = Math.floor(Math.random() * 99999);
-    var enc = encodeURIComponent(englishPrompt + ", beautiful art, detailed, soft light");
-    var enc2 = encodeURIComponent(englishPrompt);
-    return [
-      "https://image.pollinations.ai/prompt/" + enc  + "?width=768&height=512&seed=" + seed + "&model=flux",
-      "https://image.pollinations.ai/prompt/" + enc2 + "?width=768&height=512&seed=" + seed + "&model=turbo",
-      "https://image.pollinations.ai/prompt/" + enc2 + "?width=512&height=512&seed=" + seed,
-      "https://image.pollinations.ai/prompt/" + enc2 + "?width=512&height=512"
+    var urls = [
+      "https://image.pollinations.ai/prompt/" + encodeURIComponent(prompt + ", beautiful art, detailed") + "?width=768&height=512&seed=" + seed,
+      "https://image.pollinations.ai/prompt/" + encodeURIComponent(prompt) + "?width=512&height=512&seed=" + seed
     ];
+    var attempt = 0;
+    function tryNext() {
+      if (attempt >= urls.length) { caption.textContent = "Сервис рисования временно недоступен. Попробуй позже."; return; }
+      img.src = urls[attempt++];
+    }
+    img.onload  = function () { caption.textContent = "✦ " + subject; scrollToBottom(); };
+    img.onerror = function () { setTimeout(tryNext, 1500); };
+    tryNext();
   }
 
   function maybeShowImage(userText) {
@@ -401,7 +443,7 @@
 
     var caption = document.createElement("p");
     caption.className = "guardian-msg__image-caption";
-    caption.textContent = "Перевожу и рисую… ⏳";
+    caption.textContent = "Перевожу… ⏳";
 
     var img = document.createElement("img");
     img.className = "guardian-msg__image";
@@ -414,50 +456,31 @@
     messagesEl.appendChild(imgMsg);
     scrollToBottom();
 
-    /* Сначала просим ИИ перевести описание на английский */
+    /* Переводим на английский, потом рисуем */
     callAIWithPrompt(
-      "Translate the Russian image description to English keywords for image search. " +
-      "Return ONLY 3-5 English keywords separated by spaces, no punctuation, no explanations. " +
-      "Example: 'sunset lake forest birds' or 'woman beach summer'. Keep it short.",
+      "Translate the Russian image description to a short English image generation prompt. " +
+      "Return ONLY the English prompt, 3-8 words, no explanations, no quotes.",
       subject, null,
       function(englishPrompt) {
-        var urls = buildImageUrls(englishPrompt.trim());
-        var attempt = 0;
-
-        function tryNext() {
-          if (attempt >= urls.length) {
-            caption.textContent = "Сервис рисования временно недоступен. Попробуй позже.";
-            console.warn("[Guardian] Все попытки генерации картинки исчерпаны");
-            return;
-          }
-          var url = urls[attempt++];
-          console.log("[Guardian] Пробую картинку #" + attempt + ":", url);
-          caption.textContent = "Рисую… ⏳" + (attempt > 1 ? " (попытка " + attempt + ")" : "");
-          img.src = url;
-        }
-
-        img.onload  = function () {
-          console.log("[Guardian] Картинка загружена:", img.src);
-          caption.textContent = "✦ " + subject;
-          scrollToBottom();
-        };
-        img.onerror = function () {
-          console.warn("[Guardian] Ошибка загрузки:", img.src);
-          setTimeout(tryNext, 1500);
-        };
-
-        tryNext();
+        englishPrompt = englishPrompt.trim().replace(/^["']|["']$/g, "");
+        caption.textContent = "Рисую: \"" + englishPrompt + "\"… ⏳ (может занять 30 сек)";
+        generateViaHorde(
+          englishPrompt + ", masterpiece, beautiful, detailed, soft lighting",
+          function(src) {
+            img.onload = function() { caption.textContent = "✦ " + subject; scrollToBottom(); };
+            img.onerror = function() { generateViaPollinations(englishPrompt, img, caption, subject); };
+            img.src = src;
+          },
+          function() { generateViaPollinations(englishPrompt, img, caption, subject); }
+        );
       },
       function() {
-        /* Если перевод не удался — пробуем отправить как есть */
-        var urls = buildImageUrls(subject);
-        var attempt = 0;
-        function tryNext() {
-          if (attempt >= urls.length) { caption.textContent = "Не удалось нарисовать."; return; }
-          img.src = urls[attempt++];
-        }
-        img.onload  = function () { caption.textContent = "✦ " + subject; scrollToBottom(); };
-        img.onerror = function () { setTimeout(tryNext, 1000); };
+        /* Перевод не удался — пробуем как есть */
+        generateViaHorde(subject, function(src) {
+          img.onload = function() { caption.textContent = "✦ " + subject; scrollToBottom(); };
+          img.onerror = function() { generateViaPollinations(subject, img, caption, subject); };
+          img.src = src;
+        }, function() { generateViaPollinations(subject, img, caption, subject); });
         tryNext();
       }
     );
