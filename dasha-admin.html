@@ -35,8 +35,8 @@
 
   <section>
     <h2>Галерея</h2>
-    <p class="hint">Только изображения: JPG, JPEG, PNG, WebP. Файл автоматически сжимается и конвертируется в WebP.</p>
-    <label>Фото <input type="file" id="gallery-file" accept=".jpg,.jpeg,.png,.webp" /></label>
+    <p class="hint">Только изображения: JPG, JPEG, PNG. Файлы загружаются в исходном формате. Название автоматически приводится к латинице (транслит).</p>
+    <label>Фото <input type="file" id="gallery-file" accept=".jpg,.jpeg,.png" /></label>
     <label>Название <input type="text" id="gallery-title" placeholder="Название работы" /></label>
     <button type="button" id="gallery-upload">Загрузить в галерею</button>
     <p id="gallery-msg" class="msg" aria-live="polite"></p>
@@ -47,7 +47,7 @@
   <section>
     <h2>Рассказ</h2>
     <label>Заголовок <input type="text" id="story-title" placeholder="Заголовок рассказа" /></label>
-    <label>Обложка <input type="file" id="story-cover" accept=".jpg,.jpeg,.png,.webp" /></label>
+    <label>Обложка <input type="file" id="story-cover" accept=".jpg,.jpeg,.png" /></label>
     <label>Текст <textarea id="story-content" placeholder="Текст рассказа..."></textarea></label>
     <button type="button" id="story-save">Сохранить рассказ</button>
     <p id="story-msg" class="msg" aria-live="polite"></p>
@@ -56,12 +56,12 @@
   </section>
 
   <script>
-
-  const GITHUB_TOKEN = "ВАШ КЛЮЧ СЮДА";
+  // Вставь свой ключ GitHub между кавычками (одной строкой):
+  const GITHUB_TOKEN = "";
   const OWNER = "dasha-home";
   const REPO = "Soul-Art";
   const BRANCH = "main";
-  const ALLOWED_IMAGE_EXT = /\.(jpe?g|png|webp)$/i;
+  const ALLOWED_IMAGE_EXT = /\.(jpe?g|png)$/i;
 
   const API = "https://api.github.com/repos/" + OWNER + "/" + REPO + "/contents/";
 
@@ -74,85 +74,6 @@
   function isAllowedImageFile(file) {
     if (!file || !file.name) return false;
     return ALLOWED_IMAGE_EXT.test(file.name);
-  }
-
-  function compressImageToWebP(file, targetMinKB, targetMaxKB) {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      const url = URL.createObjectURL(file);
-      img.onload = function () {
-        URL.revokeObjectURL(url);
-        const maxDim = 2400;
-        let w = img.naturalWidth;
-        let h = img.naturalHeight;
-        if (w > maxDim || h > maxDim) {
-          if (w > h) {
-            h = Math.round((h * maxDim) / w);
-            w = maxDim;
-          } else {
-            w = Math.round((w * maxDim) / h);
-            h = maxDim;
-          }
-        }
-        const canvas = document.createElement("canvas");
-        canvas.width = w;
-        canvas.height = h;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, w, h);
-
-        function toBlobAsync(q) {
-          return new Promise((res) => {
-            canvas.toBlob(function (blob) {
-              res(blob ? { blob, sizeKb: blob.size / 1024 } : null);
-            }, "image/webp", q);
-          });
-        }
-
-        function tryScale(scale) {
-          const w2 = Math.max(1, Math.round(w * scale));
-          const h2 = Math.max(1, Math.round(h * scale));
-          const c2 = document.createElement("canvas");
-          c2.width = w2;
-          c2.height = h2;
-          c2.getContext("2d").drawImage(img, 0, 0, w2, h2);
-          return new Promise((res) => {
-            c2.toBlob(function (blob) {
-              res(blob ? { blob, sizeKb: blob.size / 1024 } : null);
-            }, "image/webp", 0.82);
-          });
-        }
-
-        (function attempt(quality) {
-          toBlobAsync(quality).then(function (r) {
-            if (!r) {
-              reject(new Error("Браузер не поддерживает WebP"));
-              return;
-            }
-            if (r.sizeKb >= targetMinKB && r.sizeKb <= targetMaxKB) {
-              resolve(r.blob);
-              return;
-            }
-            if (r.sizeKb > targetMaxKB && quality > 0.45) {
-              attempt(Math.max(0.45, quality - 0.15));
-              return;
-            }
-            if (r.sizeKb > targetMaxKB && quality <= 0.5) {
-              tryScale(0.8).then(function (r2) {
-                if (r2 && r2.sizeKb <= targetMaxKB) resolve(r2.blob);
-                else resolve(r.blob);
-              });
-              return;
-            }
-            resolve(r.blob);
-          });
-        })(0.88);
-      };
-      img.onerror = function () {
-        URL.revokeObjectURL(url);
-        reject(new Error("Не удалось загрузить изображение"));
-      };
-      img.src = url;
-    });
   }
 
   function blobToBase64(blob) {
@@ -181,19 +102,6 @@
     return res.status === 204 ? null : res.json();
   }
 
-  function fileToBase64(file) {
-    return new Promise((resolve, reject) => {
-      const r = new FileReader();
-      r.onload = () => resolve(r.result.replace(/^data:[^;]+;base64,/, ""));
-      r.onerror = reject;
-      r.readAsDataURL(file);
-    });
-  }
-
-  function safeName(name) {
-    return name.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 40) || "img";
-  }
-
   var RU_TO_LAT = { "а":"a","б":"b","в":"v","г":"g","д":"d","е":"e","ё":"e","ж":"zh","з":"z","и":"i","й":"j","к":"k","л":"l","м":"m","н":"n","о":"o","п":"p","р":"r","с":"s","т":"t","у":"u","ф":"f","х":"h","ц":"ts","ч":"ch","ш":"sh","щ":"sch","ъ":"","ы":"y","ь":"","э":"e","ю":"yu","я":"ya",
     "А":"a","Б":"b","В":"v","Г":"g","Д":"d","Е":"e","Ё":"e","Ж":"zh","З":"z","И":"i","Й":"j","К":"k","Л":"l","М":"m","Н":"n","О":"o","П":"p","Р":"r","С":"s","Т":"t","У":"u","Ф":"f","Х":"h","Ц":"ts","Ч":"ch","Ш":"sh","Щ":"sch","Ъ":"","Ы":"y","Ь":"","Э":"e","Ю":"yu","Я":"ya" };
   function transliterate(str) {
@@ -201,13 +109,15 @@
     return s.toLowerCase().split("").map(function(c) { return RU_TO_LAT[c] !== undefined ? RU_TO_LAT[c] : c; }).join("");
   }
 
-  /** Уникальное имя файла (добавляем время), чтобы не перезаписывать и не нужен sha при загрузке. */
-  function toWebpFilename(fileName) {
+  /** Имя файла: русские буквы → латиница, расширение только .png / .jpg / .jpeg. */
+  function safeFilename(fileName) {
     var nameOnly = (fileName || "").replace(/\.[^.]+$/, "");
+    var extMatch = (fileName || "").match(/\.(jpe?g|png)$/i);
+    var ext = extMatch ? extMatch[1].toLowerCase() : "jpg";
     var transliterated = transliterate(nameOnly);
-    var base = transliterated.replace(/[^a-zA-Z0-9_-]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "").slice(0, 30);
-    if (!base || /^_+$/.test(base)) base = "img";
-    return base + "_" + Date.now() + ".webp";
+    var base = transliterated.replace(/[^a-zA-Z0-9_-]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "").slice(0, 40);
+    if (!base || /^_+$/.test(base)) base = "img_" + Date.now();
+    return base + "." + ext;
   }
 
   async function getFileSha(path) {
@@ -257,11 +167,11 @@
       return;
     }
     if (!isAllowedImageFile(file)) {
-      setMsg("gallery-msg", "Разрешены только JPG, JPEG, PNG, WebP. Выберите изображение.", false);
+      setMsg("gallery-msg", "Разрешены только JPG, JPEG, PNG. Выберите изображение.", false);
       return;
     }
-    if (GITHUB_TOKEN === "ВАШ КЛЮЧ СЮДА" || !GITHUB_TOKEN.trim()) {
-      setMsg("gallery-msg", "Ошибка: вставьте токен в константу GITHUB_TOKEN в начале файла.", false);
+    if (!GITHUB_TOKEN || !GITHUB_TOKEN.trim()) {
+      setMsg("gallery-msg", "Вставьте токен в первую строку файла (GITHUB_TOKEN).", false);
       return;
     }
     const title = (titleInput.value || "").trim() || file.name;
@@ -279,18 +189,17 @@
         items = (JSON.parse(decodeURIComponent(escape(raw))).artworks || []).slice();
       } catch (_) {}
     }
-    setMsg("gallery-msg", "Сжатие и конвертация в WebP…", true);
+    setMsg("gallery-msg", "Загрузка файла…", true);
     try {
-      const webpBlob = await compressImageToWebP(file, 500, 700);
-      const base64 = await blobToBase64(webpBlob);
-      const filename = toWebpFilename(file.name);
+      const base64 = await blobToBase64(file);
+      const filename = safeFilename(file.name);
       const imgPath = "img/" + filename;
-      setMsg("gallery-msg", "Загрузка изображения…", true);
-      await api(imgPath, "PUT", {
-        message: "Добавить фото в галерею (WebP): " + filename,
-        content: base64,
-        branch: BRANCH
-      });
+      var existingSha = null;
+      try { existingSha = await getFileSha(imgPath); } catch (_) {}
+      setMsg("gallery-msg", "Загрузка изображения на GitHub…", true);
+      var putBody = { message: "Добавить фото в галерею: " + filename, content: base64, branch: BRANCH };
+      if (existingSha) putBody.sha = existingSha;
+      await api(imgPath, "PUT", putBody);
       const id = "g" + Date.now();
       items.push({ id, title, subtitle: "", imageUrl: "./" + imgPath });
       setMsg("gallery-msg", "Обновление списка галереи…", true);
@@ -317,7 +226,7 @@
         const path = btn.getAttribute("data-path");
         const id = btn.getAttribute("data-id");
         try {
-          if (GITHUB_TOKEN === "ВАШ КЛЮЧ СЮДА" || !GITHUB_TOKEN.trim()) throw new Error("Вставьте токен");
+          if (!GITHUB_TOKEN || !GITHUB_TOKEN.trim()) throw new Error("Вставьте токен в первую строку (GITHUB_TOKEN)");
           if (path) {
             try { await deleteFile(path, "Удалить из галереи"); } catch (_) { /* файл мог отсутствовать (404) */ }
           }
@@ -354,22 +263,20 @@
     }
     const coverFile = coverInput.files[0];
     if (coverFile && !isAllowedImageFile(coverFile)) {
-      setMsg("story-msg", "Обложка: только JPG, JPEG, PNG, WebP", false);
+      setMsg("story-msg", "Обложка: только JPG, JPEG, PNG", false);
       return;
     }
     setMsg("story-msg", "Сохранение…", true);
     try {
-      if (GITHUB_TOKEN === "ВАШ КЛЮЧ СЮДА" || !GITHUB_TOKEN.trim()) throw new Error("Вставьте токен в GITHUB_TOKEN");
+      if (!GITHUB_TOKEN || !GITHUB_TOKEN.trim()) throw new Error("Вставьте токен в первую строку (GITHUB_TOKEN)");
       let coverUrl = "";
       if (coverFile) {
-        const webpBlob = await compressImageToWebP(coverFile, 400, 600);
-        const base64 = await blobToBase64(webpBlob);
-        const baseCover = (coverFile.name || "").replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 32) || "cover";
-        const filenameWebp = "story-" + baseCover + ".webp";
-        const path = "img/" + filenameWebp;
+        const base64 = await blobToBase64(coverFile);
+        const safeName = safeFilename(coverFile.name);
+        const path = "img/story-" + safeName;
         var existingSha = null;
         try { existingSha = await getFileSha(path); } catch (_) {}
-        var putBody = { message: "Обложка рассказа (WebP)", content: base64, branch: BRANCH };
+        var putBody = { message: "Обложка рассказа: " + safeName, content: base64, branch: BRANCH };
         if (existingSha) putBody.sha = existingSha;
         await api(path, "PUT", putBody);
         coverUrl = "./" + path;
@@ -398,7 +305,7 @@
         if (!confirm("Удалить этот рассказ?")) return;
         const id = btn.getAttribute("data-id");
         try {
-          if (GITHUB_TOKEN === "ВАШ КЛЮЧ СЮДА" || !GITHUB_TOKEN.trim()) throw new Error("Вставьте токен");
+          if (!GITHUB_TOKEN || !GITHUB_TOKEN.trim()) throw new Error("Вставьте токен в первую строку (GITHUB_TOKEN)");
           const stories = await loadStories();
           const one = stories.find(x => x.id === id);
           if (one && one.coverUrl) {
