@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Комната Хранителя — Даша Художник</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="guardian.css" />
+</head>
+<body class="guardian-page">
+  <div id="globe-container" class="globe-fixed"></div>
+
+  <header class="guardian-header">
+    <a href="index.html" class="guardian-header__back" data-i18n="guardian_back">← На главную</a>
+    <a href="index.html" class="guardian-header__brand" data-i18n="brand">Даша Художник</a>
+    <nav class="guardian-header__nav">
+      <a href="stories.html" class="guardian-header__link" data-i18n="nav_stories">Рассказы</a>
+      <a href="index.html#about" class="guardian-header__link" data-i18n="nav_about">О Даше</a>
+    </nav>
+  </header>
+
+  <main class="guardian-room">
+    <div class="guardian-room__paper">
+      <div class="guardian-room__inner">
+        <h1 class="guardian-room__title" data-i18n="guardian_title">Обитель Хранителя</h1>
+        <p class="guardian-room__subtitle" data-i18n="guardian_subtitle">Уютный кабинет для поддержки, советов и разговора. Хранитель знает все рассказы сайта и готов помочь с творчеством, языками и душевным состоянием.</p>
+
+        <div class="guardian-mode" role="group" aria-label="Режим Хранителя">
+          <span class="guardian-mode__label" data-i18n="guardian_mode">Режим:</span>
+          <button type="button" class="guardian-mode__btn guardian-mode__btn--active" data-mode="assistant" data-i18n="guardian_mode_assistant">С Дашей</button>
+          <button type="button" class="guardian-mode__btn" data-mode="children" data-i18n="guardian_mode_children">Для детей</button>
+        </div>
+
+        <div class="guardian-chat" id="guardian-chat">
+          <div class="guardian-chat__messages" id="guardian-messages">
+            <div class="guardian-msg guardian-msg--bot" aria-live="polite">
+              <div class="guardian-msg__avatar" aria-hidden="true">✦</div>
+              <div class="guardian-msg__bubble">
+                <p class="guardian-msg__text" data-i18n="guardian_welcome">Здравствуй, Даша. Я — Хранитель. Я знаю все рассказы на этом сайте и готов поддержать тебя: поговорить о планах, рецептах, помочь объяснить сложное детям или адаптировать текст на любом из девяти языков. Просто напиши — я здесь.</p>
+              </div>
+            </div>
+          </div>
+          <div class="guardian-chat__input-wrap">
+            <textarea
+              id="guardian-input"
+              class="guardian-chat__input"
+              rows="2"
+              placeholder="Напиши Хранителю…"
+              data-i18n-placeholder="guardian_placeholder"
+              aria-label="Сообщение Хранителю"
+            ></textarea>
+            <button type="button" id="guardian-send" class="guardian-chat__send" aria-label="Отправить">
+              <span class="guardian-chat__send-icon">→</span>
+            </button>
+          </div>
+          <p class="guardian-chat__hint" data-i18n="guardian_hint">Хранитель помнит контекст разговора и содержание всех рассказов с сайта.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="atmosphere-widget" class="atmosphere-widget" aria-label="Настройки атмосферы"></div>
+
+  <script src="i18n.js" defer></script>
+  <script src="atmosphere.js" defer></script>
+  <script src="guardian.js" defer></script>
+  <script>
+    (function () {
+      function initGuardianPage() {
+        if (!window.I18n) return;
+        var container = document.getElementById("globe-container");
+        if (container) window.I18n.init(container);
+        else window.I18n.applyToPage();
+        setTimeout(function () { if (window.I18n) window.I18n.applyToPage(); }, 0);
+      }
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initGuardianPage);
+      } else {
+        initGuardianPage();
+      }
+    })();
+  </script>
+</body>
+</html>
