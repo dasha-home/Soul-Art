@@ -478,6 +478,86 @@ function renderAdmin() {
     });
   }
 
+  /* ── Галерея с превью и удалением ── */
+  const galleryWrapper = document.createElement("div");
+  galleryWrapper.className = "admin-gallery";
+  galleryWrapper.id = "admin-gallery-section";
+
+  async function loadPhotoList() {
+    const gridEl = galleryWrapper.querySelector("#admin-gallery-grid");
+    if (!gridEl) return;
+    gridEl.innerHTML = `<p class="admin-gallery__loading">Загружаю список…</p>`;
+    try {
+      const t = getStoredToken();
+      const res = await githubApi("data/artworks.json", { method: "GET" }, t);
+      const content = JSON.parse(atob(res.content.replace(/\n/g, "")));
+      const artworks = (content.artworks || []).slice().reverse();
+      if (!artworks.length) {
+        gridEl.innerHTML = `<p class="admin-gallery__empty">Фотографий пока нет. Загрузите первую!</p>`;
+        return;
+      }
+      gridEl.innerHTML = "";
+      artworks.forEach((art) => {
+        const rawUrl = art.imageUrl || "";
+        const cdnUrl = rawUrl.startsWith("./data/images/")
+          ? "https://raw.githubusercontent.com/" + GITHUB_REPO.owner + "/" + GITHUB_REPO.repo + "/main/data/images/" + rawUrl.replace("./data/images/", "")
+          : rawUrl;
+
+        const card = document.createElement("div");
+        card.className = "admin-gallery__card";
+        card.innerHTML = `
+          <div class="admin-gallery__thumb-wrap">
+            <img class="admin-gallery__thumb" src="${cdnUrl}" alt="${art.title || ""}" loading="lazy" />
+          </div>
+          <div class="admin-gallery__info">
+            <span class="admin-gallery__name" title="${art.title || ""}">${art.title || "—"}</span>
+            ${art.subtitle ? `<span class="admin-gallery__sub">${art.subtitle}</span>` : ""}
+          </div>
+          <button type="button" class="admin-gallery__delete" data-id="${art.id}" title="Удалить">✕</button>
+        `;
+        card.querySelector(".admin-gallery__delete").addEventListener("click", async () => {
+          if (!confirm(`Удалить «${art.title || art.id}» из галереи?`)) return;
+          const btn = card.querySelector(".admin-gallery__delete");
+          btn.disabled = true;
+          btn.textContent = "…";
+          try {
+            const tk = getStoredToken();
+            /* Удаляем из artworks.json */
+            const jsonRes = await githubApi("data/artworks.json", { method: "GET" }, tk);
+            const jc = JSON.parse(atob(jsonRes.content.replace(/\n/g, "")));
+            jc.artworks = (jc.artworks || []).filter((a) => a.id !== art.id);
+            const newJson = btoa(unescape(encodeURIComponent(JSON.stringify(jc, null, 2))));
+            await githubApi("data/artworks.json", {
+              method: "PUT",
+              body: JSON.stringify({ message: "Удалить работу: " + art.id, content: newJson, sha: jsonRes.sha }),
+            }, tk);
+            /* Пытаемся удалить файл изображения */
+            try {
+              const imgFilename = rawUrl.replace("./data/images/", "");
+              const imgRes = await githubApi("data/images/" + imgFilename, { method: "GET" }, tk);
+              await githubApi("data/images/" + imgFilename, {
+                method: "DELETE",
+                body: JSON.stringify({ message: "Удалить изображение: " + imgFilename, sha: imgRes.sha }),
+              }, tk);
+            } catch (_) { /* файл мог уже не существовать — не критично */ }
+            card.remove();
+            if (!galleryWrapper.querySelector(".admin-gallery__card")) {
+              galleryWrapper.querySelector("#admin-gallery-grid").innerHTML =
+                `<p class="admin-gallery__empty">Фотографий пока нет.</p>`;
+            }
+          } catch (err) {
+            btn.disabled = false;
+            btn.textContent = "✕";
+            alert("Ошибка при удалении: " + (err.message || "неизвестная ошибка"));
+          }
+        });
+        gridEl.appendChild(card);
+      });
+    } catch (err) {
+      gridEl.innerHTML = `<p class="admin-gallery__empty">Не удалось загрузить список: ${err.message || "ошибка"}</p>`;
+    }
+  }
+
   function renderUploadForm() {
     wrapper.innerHTML = `
       <div class="admin-view__eyebrow">для Даши</div>
@@ -501,6 +581,13 @@ function renderAdmin() {
       <p id="admin-message" class="admin-view__message" aria-live="polite"></p>
       <button type="button" id="admin-forget-token" class="admin-view__link">Выйти (удалить токен из этой вкладки)</button>
     `;
+
+    /* Рендерим блок галереи */
+    galleryWrapper.innerHTML = `
+      <h3 class="admin-gallery__title">Мои работы в галерее</h3>
+      <div class="admin-gallery__grid" id="admin-gallery-grid"></div>
+    `;
+    loadPhotoList();
 
     const form = wrapper.querySelector("#admin-upload-form");
     const msgEl = wrapper.querySelector("#admin-message");
@@ -565,6 +652,7 @@ function renderAdmin() {
         msgEl.textContent = "Готово. Фото добавлено в галерею.";
         msgEl.className = "admin-view__message admin-view__message--success";
         form.reset();
+        loadPhotoList();
       } catch (err) {
         msgEl.textContent = "Ошибка: " + (err.message || "не удалось загрузить");
         msgEl.className = "admin-view__message admin-view__message--error";
@@ -585,6 +673,7 @@ function renderAdmin() {
   }
 
   appContent.appendChild(wrapper);
+  appContent.appendChild(galleryWrapper);
   currentViewCleanup = null;
 }
 
