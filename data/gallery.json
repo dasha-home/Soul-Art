@@ -53,6 +53,12 @@
       "title": "Игры на закате",
       "subtitle": "",
       "imageUrl": "./img/igry_na_zakate.jpeg"
+    },
+    {
+      "id": "g1772166302593",
+      "title": "ласточки",
+      "subtitle": "",
+      "imageUrl": "./img/lastochki.png"
     }
   ]
 }
