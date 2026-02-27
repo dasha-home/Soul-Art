@@ -501,6 +501,22 @@
   opacity: 0.65;
 }
 
+/* ── Пузырь Психолога (тёплый розово-лиловый) ── */
+.guardian-msg--psychologist .guardian-msg__avatar {
+  background: rgba(100, 28, 58, 0.55);
+  border-color: rgba(220, 100, 150, 0.38);
+  color: #f0a8c8;
+}
+.guardian-msg--psychologist .guardian-msg__bubble {
+  background: rgba(20, 6, 14, 0.88);
+  border: 1px solid rgba(200, 80, 130, 0.28);
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(230, 100, 150, 0.06);
+}
+.guardian-msg--psychologist .guardian-msg__text {
+  color: #f0d8e8;
+  line-height: 1.78;
+}
+
 /* ── Картинка в чате ── */
 .guardian-msg__image {
   width: 100%;
@@ -517,6 +533,34 @@
   color: rgba(210, 170, 90, 0.6);
   margin: 0 0 0.3rem;
   font-style: italic;
+}
+
+/* ── Кнопка Психолог ── */
+.guardian-mode__btn--psychologist {
+  background: rgba(100, 30, 70, 0.4);
+  border-color: rgba(220, 130, 170, 0.45);
+  color: #f0b8d0;
+}
+.guardian-mode__btn--psychologist:hover,
+.guardian-mode__btn--psychologist.guardian-mode__btn--active {
+  background: rgba(140, 45, 90, 0.65);
+  border-color: rgba(240, 150, 190, 0.72);
+  color: #ffe0ee;
+  box-shadow: 0 0 14px rgba(220, 80, 130, 0.2);
+}
+
+/* ── Кнопка Трио ── */
+.guardian-mode__btn--trio {
+  background: linear-gradient(135deg, rgba(138,88,18,0.3) 0%, rgba(18,55,110,0.3) 50%, rgba(100,30,70,0.3) 100%);
+  border-color: rgba(200,160,220,0.45);
+  color: #d8c0f0;
+}
+.guardian-mode__btn--trio:hover,
+.guardian-mode__btn--trio.guardian-mode__btn--active {
+  background: linear-gradient(135deg, rgba(158,108,28,0.5) 0%, rgba(28,72,148,0.5) 50%, rgba(130,45,90,0.5) 100%);
+  border-color: rgba(220,180,240,0.72);
+  color: #f0e0ff;
+  box-shadow: 0 0 16px rgba(180,120,220,0.2);
 }
 
 /* ── Кнопка Дуэт ── */
