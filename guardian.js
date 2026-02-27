@@ -1,18 +1,15 @@
 /**
  * Комната Хранителя — мудрый самурай у костра
- * Gemini 2.0 Flash | 4 режима: разговор, языки, рисование, душа
+ * Pollinations.ai | 4 режима: разговор, языки, рисование, душа
  *
- * Ключ Gemini НЕ хранится здесь — только в переменной окружения
- * Cloudflare Worker (GEMINI_KEY).
- * Настройка: Cloudflare Dashboard → Workers → guardian-proxy → Settings → Variables
+ * Никаких API-ключей — Pollinations.ai бесплатный и работает без регистрации.
+ * Запросы идут напрямую из браузера, никакой прокси не нужен.
  */
 (function () {
   "use strict";
 
   /* ── Настройки подключения ── */
-  var API_PATH  = "/v1beta/models/gemini-2.0-flash:generateContent";
-  /* Cloudflare Worker — прокси. Ключ хранится только там, в env.GEMINI_KEY */
-  var PROXY_URL = "https://guardian-proxy.qerevv.workers.dev";
+  var AI_URL = "https://text.pollinations.ai/openai";
 
   /* ═══════ ЛИЧНОСТЬ ХРАНИТЕЛЯ ═══════ */
 
@@ -157,71 +154,51 @@
     setTimeout(function () { if (p.parentNode) p.remove(); }, 9000);
   }
 
-  /* ═══════ GEMINI API ═══════ */
+  /* ═══════ POLLINATIONS API (без ключей) ═══════ */
 
-  function buildContents(userText) {
-    var contents = [];
+  function buildMessages(userText) {
+    var messages = [
+      { role: "system", content: PROMPTS[getMode()] || PROMPTS.assistant }
+    ];
     for (var i = 0; i < history.length; i++) {
-      contents.push({
-        role: history[i].role === "model" ? "model" : "user",
-        parts: [{ text: history[i].text }],
+      messages.push({
+        role: history[i].role === "model" ? "assistant" : "user",
+        content: history[i].text,
       });
     }
-    contents.push({ role: "user", parts: [{ text: userText }] });
-    return contents;
+    messages.push({ role: "user", content: userText });
+    return messages;
   }
 
-  /* Разбираем ответ Gemini */
-  function parseGeminiData(data, onSuccess, onError) {
-    if (data.error) {
-      var m = data.error.message || "Ошибка API";
-      var c = data.error.code;
-      if (c === 400) m = "Запрос не принят (400). Попробуйте переформулировать.";
-      if (c === 403) m = "Ключ API недействителен (403). Нужно создать новый ключ на aistudio.google.com и прописать его в Cloudflare Worker → Settings → Variables → GEMINI_KEY.";
-      if (c === 429) m = "Слишком много запросов (429). Подождите минуту.";
-      if (c === 503) m = "Сервис временно недоступен. Попробуйте позже.";
-      onError(m);
-      return;
-    }
-    var text = "";
-    try { text = data.candidates[0].content.parts[0].text || ""; }
-    catch (e) { onError("Хранитель не смог ответить. Попробуйте ещё раз."); return; }
-    if (!text.trim()) { onError("Хранитель молчит. Попробуйте спросить иначе."); return; }
-    onSuccess(text);
-  }
+  function callAI(userText, onSuccess, onError) {
+    var body = JSON.stringify({
+      model: "openai-large",
+      messages: buildMessages(userText),
+      temperature: 0.8,
+      max_tokens: 1024,
+    });
 
-  /* Один HTTP-запрос к нужному URL */
-  function doFetch(url, headers, bodyStr, onSuccess, onError) {
-    fetch(url, { method: "POST", headers: headers, body: bodyStr })
-      .then(function (res) { return res.json(); })
-      .then(function (data) { parseGeminiData(data, onSuccess, onError); })
-      .catch(function (err) {
-        onError("__NETWORK__:" + (err && err.message ? err.message : "fetch error"));
-      });
-  }
-
-  function callGemini(userText, onSuccess, onError) {
-    var bodyObj = {
-      systemInstruction: { parts: [{ text: PROMPTS[getMode()] || PROMPTS.assistant }] },
-      contents: buildContents(userText),
-      generationConfig: { temperature: 0.8, maxOutputTokens: 1024, topP: 0.95 },
-    };
-    var bodyStr = JSON.stringify(bodyObj);
-
-    /* Все запросы идут через Cloudflare Worker — ключ хранится только там */
-    doFetch(
-      PROXY_URL + API_PATH,
-      { "Content-Type": "application/json" },
-      bodyStr,
-      onSuccess,
-      function (err) {
-        if (err.indexOf("__NETWORK__") === 0) {
-          onError("Нет связи с Хранителем. Попробуйте обновить страницу.");
-        } else {
-          onError(err);
+    fetch(AI_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: body,
+    })
+      .then(function (res) {
+        if (!res.ok) {
+          if (res.status === 429) throw new Error("Слишком много запросов. Подождите немного и попробуйте снова.");
+          throw new Error("Сервис временно недоступен (" + res.status + "). Попробуйте позже.");
         }
-      }
-    );
+        return res.json();
+      })
+      .then(function (data) {
+        var text = "";
+        try { text = data.choices[0].message.content || ""; } catch (e) {}
+        if (!text.trim()) { onError("Хранитель молчит. Попробуйте спросить иначе."); return; }
+        onSuccess(text);
+      })
+      .catch(function (err) {
+        onError(err && err.message ? err.message : "Нет связи с Хранителем. Проверьте подключение к интернету.");
+      });
   }
 
   /* ═══════ ОТПРАВКА ═══════ */
@@ -240,7 +217,7 @@
 
     showTyping();
 
-    callGemini(
+    callAI(
       text,
       function (reply) {
         hideTyping();
