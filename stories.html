@@ -58,18 +58,23 @@
   </style>
 </head>
 <body>
-  <a class="back" href="index.html" id="stories-back-top">← На главную</a>
+  <div id="globe-container" class="globe-fixed"></div>
+  <a class="back" href="index.html" id="stories-back-top" data-i18n="stories_back">← На главную</a>
   <div id="root">
-    <p class="loading">Загрузка рассказов…</p>
+    <p class="loading" data-i18n="stories_loading">Загрузка рассказов…</p>
   </div>
   <nav class="stories-nav" aria-label="Навигация">
-    <a class="stories-nav__btn" href="index.html#gallery" id="stories-btn-main">На главную</a>
-    <a class="stories-nav__btn" href="index.html" id="stories-btn-start">На стартовую</a>
+    <a class="stories-nav__btn" href="index.html#gallery" id="stories-btn-main" data-i18n="stories_nav_main">На главную</a>
+    <a class="stories-nav__btn" href="index.html" id="stories-btn-start" data-i18n="stories_nav_start">На стартовую</a>
   </nav>
   <div id="atmosphere-widget" class="atmosphere-widget" aria-label="Настройки атмосферы"></div>
   <script src="atmosphere.js" defer></script>
+  <script src="i18n.js" defer></script>
   <script>
 (function () {
+  document.addEventListener("DOMContentLoaded", function() {
+    if (window.I18n) window.I18n.init(document.getElementById("globe-container"));
+  });
   const root = document.getElementById("root");
   const url = "https://raw.githubusercontent.com/dasha-home/Soul-Art/main/data/stories.json";
   fetch(url + "?t=" + Date.now(), { cache: "no-store" })
@@ -78,7 +83,8 @@
       const data = JSON.parse(text);
       const stories = Array.isArray(data.stories) ? data.stories : [];
       if (stories.length === 0) {
-        root.innerHTML = "<p class=\"loading\">Пока нет рассказов.</p>";
+        root.innerHTML = "<p class=\"loading\" data-i18n=\"stories_no\">" + (window.I18n ? window.I18n.t("stories_no") : "Пока нет рассказов.") + "</p>";
+        if (window.I18n) window.I18n.applyToPage();
         return;
       }
       root.innerHTML = stories.map(s => {
@@ -86,19 +92,19 @@
         return "<article>" + cover + "<h1 class=\"story-title\">" + escapeHtml(s.title || "") + "</h1><div class=\"story-content\">" + linkify(s.content || "") + "</div></article>";
       }).join("");
     })
-    .catch(() => {
+        .catch(() => {
       fetch("./data/stories.json", { cache: "no-store" })
         .then(r => r.ok ? r.text() : Promise.reject())
         .then(text => {
           const data = JSON.parse(text);
           const stories = Array.isArray(data.stories) ? data.stories : [];
-          if (stories.length === 0) { root.innerHTML = "<p class=\"loading\">Пока нет рассказов.</p>"; return; }
+          if (stories.length === 0) { root.innerHTML = "<p class=\"loading\" data-i18n=\"stories_no\">" + (window.I18n ? window.I18n.t("stories_no") : "Пока нет рассказов.") + "</p>"; if (window.I18n) window.I18n.applyToPage(); return; }
           root.innerHTML = stories.map(s => {
             const cover = s.coverUrl ? "<img class=\"story-cover\" src=\"" + escapeAttr(s.coverUrl) + "\" alt=\"\" loading=\"lazy\" />" : "";
             return "<article>" + cover + "<h1 class=\"story-title\">" + escapeHtml(s.title || "") + "</h1><div class=\"story-content\">" + linkify(s.content || "") + "</div></article>";
           }).join("");
         })
-        .catch(() => { root.innerHTML = "<p class=\"error\">Не удалось загрузить рассказы.</p>"; });
+        .catch(() => { root.innerHTML = "<p class=\"error\" data-i18n=\"stories_error\">" + (window.I18n ? window.I18n.t("stories_error") : "Не удалось загрузить рассказы.") + "</p>"; if (window.I18n) window.I18n.applyToPage(); });
     });
 
   function escapeHtml(s) {

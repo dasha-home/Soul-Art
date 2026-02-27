@@ -98,6 +98,7 @@ async function fetchArtworks() {
  * Компонент не привязан к глобальному состоянию и может быть переиспользован.
  */
 function createArtSlider(artworks) {
+  const T = window.I18n && window.I18n.t ? window.I18n.t.bind(window.I18n) : function (k) { return k; };
   const root = document.createElement("section");
   root.className = "gallery-view";
 
@@ -109,10 +110,7 @@ function createArtSlider(artworks) {
 
   if (!artworks || artworks.length === 0) {
     slider.innerHTML = `
-      <div class="art-slider__empty">
-        Пока нет ни одной работы. Как только JSON с рисунками появится в GitHub,
-        этот блок автоматически превратится в интерактивную галерею.
-      </div>
+      <div class="art-slider__empty" data-i18n="gallery_empty">` + (T("gallery_empty")) + `</div>
     `;
     sliderWrap.appendChild(slider);
     root.append(sliderWrap);
@@ -147,13 +145,14 @@ function createArtSlider(artworks) {
   frame.classList.add("art-slider__frame--clickable");
   frame.setAttribute("role", "button");
   frame.setAttribute("tabindex", "0");
-  frame.setAttribute("aria-label", "Открыть в полном размере");
+  frame.setAttribute("aria-label", T("lightbox_aria"));
 
   const captionBlock = document.createElement("div");
   captionBlock.className = "gallery-view__caption";
   const headingEl = document.createElement("h2");
   headingEl.className = "gallery-view__heading";
-  headingEl.innerHTML = 'Рисунки <span class="gallery-view__accent">Даши</span>';
+  headingEl.setAttribute("data-i18n", "gallery_heading");
+  headingEl.textContent = T("gallery_heading");
   const titleSpan = document.createElement("div");
   titleSpan.className = "gallery-view__caption-title";
   const subtitleSpan = document.createElement("div");
@@ -172,13 +171,13 @@ function createArtSlider(artworks) {
   prevBtn.type = "button";
   prevBtn.className = "art-slider__btn art-slider__btn--nav";
   prevBtn.innerHTML = `<span class="art-slider__btn-icon">←</span>`;
-  prevBtn.setAttribute("aria-label", "Предыдущий рисунок");
+  prevBtn.setAttribute("aria-label", T("gallery_prev"));
 
   const nextBtn = document.createElement("button");
   nextBtn.type = "button";
   nextBtn.className = "art-slider__btn art-slider__btn--nav";
   nextBtn.innerHTML = `<span class="art-slider__btn-icon">→</span>`;
-  nextBtn.setAttribute("aria-label", "Следующий рисунок");
+  nextBtn.setAttribute("aria-label", T("gallery_next"));
 
   controls.append(prevBtn, nextBtn);
 
@@ -214,9 +213,10 @@ function createArtSlider(artworks) {
       lightboxEl.className = "lightbox";
       lightboxEl.setAttribute("role", "dialog");
       lightboxEl.setAttribute("aria-modal", "true");
-      lightboxEl.setAttribute("aria-label", "Просмотр в полном размере");
+      const Tlb = window.I18n && window.I18n.t ? window.I18n.t.bind(window.I18n) : function (k) { return k; };
+      lightboxEl.setAttribute("aria-label", Tlb("lightbox_aria"));
       lightboxEl.innerHTML = `
-        <button type="button" class="lightbox__close" aria-label="Закрыть"></button>
+        <button type="button" class="lightbox__close" aria-label="` + Tlb("lightbox_close") + `"></button>
         <div class="lightbox__content">
           <div class="lightbox__zoom-wrap">
             <img class="lightbox__img" src="" alt="" draggable="false" />
@@ -227,8 +227,8 @@ function createArtSlider(artworks) {
             <div class="lightbox__counter"></div>
           </div>
         </div>
-        <button type="button" class="lightbox__prev" aria-label="Предыдущее"></button>
-        <button type="button" class="lightbox__next" aria-label="Следующее"></button>
+        <button type="button" class="lightbox__prev" aria-label="` + Tlb("lightbox_prev") + `"></button>
+        <button type="button" class="lightbox__next" aria-label="` + Tlb("lightbox_next") + `"></button>
       `;
       document.body.appendChild(lightboxEl);
       const closeBtn = lightboxEl.querySelector(".lightbox__close");
@@ -385,11 +385,10 @@ function renderAbout() {
   const wrapper = document.createElement("section");
   wrapper.className = "about-view";
 
+  const T = window.I18n && window.I18n.t ? window.I18n.t.bind(window.I18n) : function (k) { return k; };
   wrapper.innerHTML = `
-    <h2 class="about-view__title">Даша и её мир</h2>
-    <p class="about-view__text">
-      Искусство рождается там, где сердце встречается с тишиной. Для Даши каждый рисунок — это не просто линии, а поиск гармонии, красоты и чистого света. В её работах оживают мечты, природа и те самые искренние чувства, которые сложно передать словами.
-    </p>
+    <h2 class="about-view__title" data-i18n="about_title">` + (T("about_title")) + `</h2>
+    <p class="about-view__text" data-i18n="about_text">` + (T("about_text")) + `</p>
   `;
 
   appContent.appendChild(wrapper);
@@ -949,40 +948,41 @@ function buildFujiMagicPanel() {
   fujiMagicState.musicVolume = prefs.music;
   fujiMagicState.currentTrack = prefs.track;
 
+  const T = window.I18n && window.I18n.t ? window.I18n.t.bind(window.I18n) : function (k) { return k; };
   wrap.innerHTML =
     '<div class="fuji-magic__ball-wrap fuji-magic__ball-wrap--left">' +
-    '<div class="fuji-ball fuji-ball--petals" id="fuji-ball-petals" role="button" tabindex="0" aria-label="Лепестки и ветер" aria-expanded="false">' +
+    '<div class="fuji-ball fuji-ball--petals" id="fuji-ball-petals" role="button" tabindex="0" aria-label="' + T("petals_aria") + '" aria-expanded="false">' +
     '<span class="fuji-ball__icon" aria-hidden="true">🌸</span>' +
-    '<span class="fuji-ball__label">Лепестки</span>' +
+    '<span class="fuji-ball__label">' + T("petals_label") + '</span>' +
     '<div class="fuji-ball__panel fuji-magic__panel" id="fuji-panel-petals">' +
-    '<div class="fuji-magic__row"><span class="fuji-magic__label">Лепестки</span>' +
+    '<div class="fuji-magic__row"><span class="fuji-magic__label">' + T("petals_label") + '</span>' +
     '<div class="fuji-magic__count">' +
-    '<button type="button" class="fuji-magic__btn" id="fuji-petals-minus" aria-label="Меньше">−</button>' +
+    '<button type="button" class="fuji-magic__btn" id="fuji-petals-minus" aria-label="' + T("less_petals") + '">−</button>' +
     '<span class="fuji-magic__num" id="fuji-petals-num">' + prefs.petals + "</span>" +
-    '<button type="button" class="fuji-magic__btn" id="fuji-petals-plus" aria-label="Больше">+</button>' +
+    '<button type="button" class="fuji-magic__btn" id="fuji-petals-plus" aria-label="' + T("more_petals") + '">+</button>' +
     "</div></div>" +
-    '<div class="fuji-magic__row"><span class="fuji-magic__label">Ветер</span>' +
+    '<div class="fuji-magic__row"><span class="fuji-magic__label">' + T("wind_label") + '</span>' +
     '<label class="fuji-magic__slider-wrap">' +
-    '<input type="range" class="fuji-magic__range" id="fuji-wind-slider" min="0" max="100" value="' + prefs.wind + '" aria-label="Громкость ветра" />' +
+    '<input type="range" class="fuji-magic__range" id="fuji-wind-slider" min="0" max="100" value="' + prefs.wind + '" aria-label="' + T("volume_wind_aria") + '" />' +
     "</label></div></div></div>" +
     '</div>' +
     '<div class="fuji-magic__ball-wrap fuji-magic__ball-wrap--right">' +
-    '<div class="fuji-ball fuji-ball--music" id="fuji-ball-music" role="button" tabindex="0" aria-label="Музыка" aria-expanded="false">' +
+    '<div class="fuji-ball fuji-ball--music" id="fuji-ball-music" role="button" tabindex="0" aria-label="' + T("music_aria") + '" aria-expanded="false">' +
     '<span class="fuji-ball__icon" aria-hidden="true">♪</span>' +
-    '<span class="fuji-ball__label">Музыка</span>' +
+    '<span class="fuji-ball__label">' + T("music_label") + '</span>' +
     '<div class="fuji-ball__panel fuji-magic__panel" id="fuji-panel-music">' +
-    '<div class="fuji-magic__row"><span class="fuji-magic__label">Трек</span>' +
+    '<div class="fuji-magic__row"><span class="fuji-magic__label">' + T("track") + '</span>' +
     '<div class="fuji-magic__tracks">' +
-    '<button type="button" class="fuji-magic__track-btn' + (prefs.track === 1 ? ' fuji-magic__track-btn--active' : '') + '" id="fuji-track-1" data-track="1">Трек 1</button>' +
-    '<button type="button" class="fuji-magic__track-btn' + (prefs.track === 2 ? ' fuji-magic__track-btn--active' : '') + '" id="fuji-track-2" data-track="2">Трек 2</button>' +
+    '<button type="button" class="fuji-magic__track-btn' + (prefs.track === 1 ? ' fuji-magic__track-btn--active' : '') + '" id="fuji-track-1" data-track="1">' + T("track_1") + '</button>' +
+    '<button type="button" class="fuji-magic__track-btn' + (prefs.track === 2 ? ' fuji-magic__track-btn--active' : '') + '" id="fuji-track-2" data-track="2">' + T("track_2") + '</button>' +
     "</div></div>" +
     '<div class="fuji-magic__row fuji-magic__row--toggle">' +
-    '<span class="fuji-magic__label">Звук</span>' +
-    '<button type="button" class="fuji-magic__onoff" id="fuji-music-onoff" aria-label="Включить или выключить музыку">Вкл</button>' +
+    '<span class="fuji-magic__label">' + T("sound") + '</span>' +
+    '<button type="button" class="fuji-magic__onoff" id="fuji-music-onoff" aria-label="' + T("turn_on_music") + '">' + T("on") + '</button>' +
     "</div>" +
-    '<div class="fuji-magic__row"><span class="fuji-magic__label">Громкость</span>' +
+    '<div class="fuji-magic__row"><span class="fuji-magic__label">' + T("volume") + '</span>' +
     '<label class="fuji-magic__slider-wrap">' +
-    '<input type="range" class="fuji-magic__range" id="fuji-music-slider" min="0" max="100" value="' + prefs.music + '" aria-label="Громкость музыки" />' +
+    '<input type="range" class="fuji-magic__range" id="fuji-music-slider" min="0" max="100" value="' + prefs.music + '" aria-label="' + T("volume_music_aria") + '" />' +
     "</label></div></div></div></div></div>";
 
   const ballPetals = document.getElementById("fuji-ball-petals");
@@ -1006,9 +1006,10 @@ function buildFujiMagicPanel() {
   function updateMusicOnOffLabel() {
     if (!musicOnOffBtn) return;
     const on = isMusicPlaying();
-    musicOnOffBtn.textContent = on ? "Выкл" : "Вкл";
+    const T = window.I18n && window.I18n.t ? window.I18n.t.bind(window.I18n) : function (k) { return k; };
+    musicOnOffBtn.textContent = on ? T("off") : T("on");
     musicOnOffBtn.classList.toggle("fuji-magic__onoff--on", on);
-    musicOnOffBtn.setAttribute("aria-label", on ? "Выключить музыку" : "Включить музыку");
+    musicOnOffBtn.setAttribute("aria-label", on ? T("turn_off_music") : T("turn_on_music"));
   }
 
   function togglePanel(ball, panel, isOpenKey, onClose) {
@@ -1186,6 +1187,11 @@ function setupTopNav() {
 // Атмосфера (Фон и Текст) подключается через atmosphere.js и сохраняется в localStorage.
 
 window.addEventListener("DOMContentLoaded", () => {
+  if (window.I18n) {
+    const globeContainer = document.getElementById("globe-container");
+    if (globeContainer) window.I18n.init(globeContainer);
+    window.addEventListener("soulart-language-change", () => { buildFujiMagicPanel(); });
+  }
   setupIntroScene();
   setupTopNav();
   setupFujiMagic();

@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
+    <div id="globe-container" class="globe-fixed"></div>
     <!-- Основной SPA-контейнер -->
     <main id="app-root">
       <!-- Стартовая страница: рама start.png, надпись, кнопки Заставка / Сайт -->
@@ -16,18 +17,18 @@
 
         <div id="intro-content" class="intro__content">
           <div id="intro-buttons" class="intro__buttons">
-            <button id="intro-btn-zastavka" class="intro__btn" type="button" aria-label="Смотреть заставку">
-              Заставка
+            <button id="intro-btn-zastavka" class="intro__btn" type="button" data-i18n="intro_aria_zastavka" data-i18n-attr="aria-label">
+              <span data-i18n="intro_btn_zastavka">Заставка</span>
             </button>
-            <button id="intro-btn-site" class="intro__btn intro__btn--primary" type="button" aria-label="Перейти на сайт">
-              Сайт
+            <button id="intro-btn-site" class="intro__btn intro__btn--primary" type="button" data-i18n="intro_aria_site" data-i18n-attr="aria-label">
+              <span data-i18n="intro_btn_site">Сайт</span>
             </button>
           </div>
         </div>
 
         <div id="intro-video-wrap" class="intro__video-wrap" aria-hidden="true">
           <video id="intro-video" class="intro__video" src="./video.mp4" preload="auto" playsinline>
-            Ваш браузер не поддерживает воспроизведение видео.
+            <span data-i18n="video_not_supported">Ваш браузер не поддерживает воспроизведение видео.</span>
           </video>
         </div>
       </section>
@@ -35,28 +36,29 @@
       <!-- Динамический контейнер для состояний (Gallery, About, future...) -->
       <section id="app-shell">
         <header class="top-nav">
-          <a href="index.html" class="top-nav__brand">Даша Художник</a>
+          <a href="index.html" class="top-nav__brand" data-i18n="brand">Даша Художник</a>
           <nav class="top-nav__links">
-            <a class="top-nav__link" href="index.html#gallery" rel="noopener" data-state="GALLERY" data-sound="gallery">Галерея</a>
-            <a class="top-nav__link" href="stories.html" rel="noopener" data-sound="stories">Рассказы</a>
-            <a class="top-nav__link" href="index.html#about" rel="noopener" data-state="ABOUT" data-sound="about">О Даше</a>
+            <a class="top-nav__link" href="index.html#gallery" rel="noopener" data-state="GALLERY" data-sound="gallery" data-i18n="nav_gallery">Галерея</a>
+            <a class="top-nav__link" href="stories.html" rel="noopener" data-sound="stories" data-i18n="nav_stories">Рассказы</a>
+            <a class="top-nav__link" href="index.html#about" rel="noopener" data-state="ABOUT" data-sound="about" data-i18n="nav_about">О Даше</a>
           </nav>
         </header>
 
         <main id="app-content" aria-live="polite"></main>
 
         <footer class="site-footer">
-          <a href="derev-studio.html" class="site-footer__studio-link" id="footer-studio-link">Derev Studio ©</a>
+          <a href="derev-studio.html" class="site-footer__studio-link" id="footer-studio-link" data-i18n="footer_studio">Derev Studio ©</a>
         </footer>
 
         <div id="sakura-container" class="sakura-container" aria-hidden="true"></div>
       </section>
 
-      <div id="fuji-magic-widget" class="fuji-magic-widget" aria-hidden="true" aria-label="Магия Fuji: лепестки, звуки"></div>
+      <div id="fuji-magic-widget" class="fuji-magic-widget" aria-hidden="true" data-i18n="fuji_magic_aria" data-i18n-attr="aria-label" aria-label="Магия Fuji: лепестки, звуки"></div>
       <div id="atmosphere-widget" class="atmosphere-widget" aria-label="Настройки атмосферы"></div>
     </main>
 
     <script src="./atmosphere.js" defer></script>
+    <script src="./i18n.js" defer></script>
     <script src="./main.js" defer></script>
   </body>
   </html>

@@ -93,21 +93,24 @@
     </style>
   </head>
   <body>
+    <div id="globe-container" class="globe-fixed"></div>
     <main class="derev-page">
-      <p class="derev-page__text">
+      <p class="derev-page__text" data-i18n="derev_p1">
         Создание этого пространства для работ художника Даши стало для меня особенным временем. Общение с ней — это огромный подарок. Её талант, доброта и искренность достойны восхищения и самого лучшего воплощения.
       </p>
-      <p class="derev-page__text">
+      <p class="derev-page__text" data-i18n="derev_p2">
         Я был счастлив строить этот цифровой дом, стараясь сделать его таким же искренним и глубоким, как и сами картины. Надеюсь, что каждый гость почувствует здесь ту гармонию, которую мы искали.
       </p>
-      <p class="derev-page__sign">
-        С благодарностью и уважением,<br />Александр Деревяшкин
-      </p>
-      <a href="index.html" class="derev-page__back" id="derev-back-btn">Вернуться к картинам</a>
+      <p class="derev-page__sign"><span data-i18n="derev_sign">С благодарностью и уважением,</span><br />Александр Деревяшкин</p>
+      <a href="index.html" class="derev-page__back" id="derev-back-btn" data-i18n="derev_back">Вернуться к картинам</a>
     </main>
     <div id="atmosphere-widget" class="atmosphere-widget" aria-label="Настройки атмосферы"></div>
     <script src="atmosphere.js" defer></script>
+    <script src="i18n.js" defer></script>
     <script>
+      document.addEventListener("DOMContentLoaded", function() {
+        if (window.I18n) window.I18n.init(document.getElementById("globe-container"));
+      });
       (function () {
         function playPapyrusClick(variant) {
           try {
