@@ -233,8 +233,13 @@
         bodyStr,
         onSuccess,
         function (proxyErr) {
-          /* При любой ошибке прокси — пробуем напрямую (резервный путь) */
-          tryDirect();
+          /* Резервный переход на прямой API только если прокси НЕ ДОСТУПЕН (сеть)
+             Если ошибка 429/403/400 — Gemini ответил, дублировать запрос нет смысла */
+          if (proxyErr.indexOf("__NETWORK__") === 0) {
+            tryDirect();
+          } else {
+            onError(proxyErr);
+          }
         }
       );
     } else {
