@@ -731,6 +731,260 @@ function setupSakuraOnNav() {
   });
 }
 
+// ---------- МАГИЯ FUJI: живые лепестки, шорох, музыка (по умолчанию всё выключено) ----------
+
+const FUJI_STORAGE = { petals: "soulart_fuji_petals", wind: "soulart_fuji_wind", music: "soulart_fuji_music" };
+// Положите в корень сайта файл music-fuji.mp3 (спокойная японская мелодия) или замените URL.
+const FUJI_MUSIC_URL = "./music-fuji.mp3";
+const PETAL_COUNT_MIN = 0;
+const PETAL_COUNT_MAX = 30;
+
+function getFujiPrefs() {
+  const p = parseInt(localStorage.getItem(FUJI_STORAGE.petals), 10);
+  const w = parseInt(localStorage.getItem(FUJI_STORAGE.wind), 10);
+  const m = parseInt(localStorage.getItem(FUJI_STORAGE.music), 10);
+  return {
+    petals: isNaN(p) || p < PETAL_COUNT_MIN ? 0 : Math.min(p, PETAL_COUNT_MAX),
+    wind: isNaN(w) || w < 0 ? 0 : Math.min(100, w),
+    music: isNaN(m) || m < 0 ? 0 : Math.min(100, m),
+  };
+}
+
+function setFujiPref(key, value) {
+  try {
+    localStorage.setItem(FUJI_STORAGE[key], String(value));
+  } catch (_) {}
+}
+
+let fujiMagicState = {
+  petalCount: 0,
+  windVolume: 0,
+  musicVolume: 0,
+  petalInterval: null,
+  windNode: null,
+  windGain: null,
+  audioContext: null,
+  musicEl: null,
+  panelVisible: false,
+};
+
+function spawnLivingPetal() {
+  const container = document.getElementById("sakura-container");
+  if (!container) return null;
+  const petal = document.createElement("div");
+  petal.className = "sakura-petal sakura-petal--living";
+  const x = Math.random() * (typeof window !== "undefined" ? window.innerWidth : 400);
+  const size = 6 + Math.random() * 14;
+  const opacity = 0.35 + Math.random() * 0.6;
+  const drift = (Math.random() - 0.5) * 140;
+  const duration = 2.5 + Math.random() * 2;
+  const delay = Math.random() * 0.2;
+  petal.style.setProperty("--sakura-x", x + "px");
+  petal.style.setProperty("--sakura-y", "-30px");
+  petal.style.setProperty("--sakura-drift", drift + "px");
+  petal.style.setProperty("--sakura-duration", duration + "s");
+  petal.style.setProperty("--sakura-delay", delay + "s");
+  petal.style.setProperty("--sakura-size", size + "px");
+  petal.style.setProperty("--sakura-opacity", String(opacity));
+  container.appendChild(petal);
+  petal.addEventListener("animationend", () => petal.remove());
+  return petal;
+}
+
+function startPetalLoop(count) {
+  stopPetalLoop();
+  if (count <= 0) return;
+  const container = document.getElementById("sakura-container");
+  if (!container) return;
+  let spawned = 0;
+  function tick() {
+    if (AppState.current !== APP_STATES.MAIN) return;
+    const current = container.querySelectorAll(".sakura-petal--living").length;
+    if (current < fujiMagicState.petalCount) {
+      spawnLivingPetal();
+    }
+  }
+  fujiMagicState.petalInterval = setInterval(tick, 500);
+  for (let i = 0; i < Math.min(count, 5); i++) spawnLivingPetal();
+}
+
+function stopPetalLoop() {
+  if (fujiMagicState.petalInterval) {
+    clearInterval(fujiMagicState.petalInterval);
+    fujiMagicState.petalInterval = null;
+  }
+}
+
+function getWindNode() {
+  if (!fujiMagicState.audioContext) {
+    try {
+      const C = window.AudioContext || window.webkitAudioContext;
+      if (!C) return null;
+      fujiMagicState.audioContext = new C();
+    } catch (_) {
+      return null;
+    }
+  }
+  if (fujiMagicState.windNode) return fujiMagicState.windGain;
+  try {
+    const ctx = fujiMagicState.audioContext;
+    const duration = 2;
+    const sampleRate = ctx.sampleRate;
+    const buf = ctx.createBuffer(1, sampleRate * duration, sampleRate);
+    const ch = buf.getChannelData(0);
+    let b = 0;
+    for (let i = 0; i < ch.length; i++) {
+      b = 0.98 * b + (Math.random() * 2 - 1) * 0.02;
+      ch[i] = b * 0.4;
+    }
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.loop = true;
+    const filter = ctx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.value = 800;
+    fujiMagicState.windGain = ctx.createGain();
+    fujiMagicState.windGain.gain.value = 0;
+    src.connect(filter);
+    filter.connect(fujiMagicState.windGain);
+    fujiMagicState.windGain.connect(ctx.destination);
+    src.start(0);
+    fujiMagicState.windNode = src;
+  } catch (_) {}
+  return fujiMagicState.windGain;
+}
+
+function setWindVolume(vol) {
+  fujiMagicState.windVolume = vol;
+  const g = getWindNode();
+  if (g) g.gain.setTargetAtTime((vol / 100) * 0.22, fujiMagicState.audioContext.currentTime, 0.05);
+}
+
+function stopWind() {
+  setWindVolume(0);
+}
+
+function getMusicEl() {
+  if (fujiMagicState.musicEl) return fujiMagicState.musicEl;
+  fujiMagicState.musicEl = new window.Audio();
+  fujiMagicState.musicEl.loop = true;
+  fujiMagicState.musicEl.volume = 0;
+  try {
+    fujiMagicState.musicEl.src = FUJI_MUSIC_URL;
+  } catch (_) {}
+  return fujiMagicState.musicEl;
+}
+
+function setMusicVolume(vol) {
+  fujiMagicState.musicVolume = vol;
+  const el = getMusicEl();
+  el.volume = Math.min(1, vol / 100);
+  if (vol > 0) {
+    const p = el.play();
+    if (p && typeof p.catch === "function") p.catch(() => {});
+  } else {
+    el.pause();
+  }
+}
+
+function stopMusic() {
+  setMusicVolume(0);
+  if (fujiMagicState.musicEl) fujiMagicState.musicEl.pause();
+}
+
+function buildFujiMagicPanel() {
+  const wrap = document.getElementById("fuji-magic-widget");
+  if (!wrap) return;
+  const prefs = getFujiPrefs();
+  fujiMagicState.petalCount = prefs.petals;
+  fujiMagicState.windVolume = prefs.wind;
+  fujiMagicState.musicVolume = prefs.music;
+
+  wrap.innerHTML =
+    '<div class="fuji-magic__panel">' +
+    '<div class="fuji-magic__row">' +
+    '<span class="fuji-magic__label">Лепестки</span>' +
+    '<div class="fuji-magic__count">' +
+    '<button type="button" class="fuji-magic__btn" id="fuji-petals-minus" aria-label="Меньше лепестков">−</button>' +
+    '<span class="fuji-magic__num" id="fuji-petals-num">' + prefs.petals + "</span>" +
+    '<button type="button" class="fuji-magic__btn" id="fuji-petals-plus" aria-label="Больше лепестков">+</button>' +
+    "</div></div>" +
+    '<div class="fuji-magic__row">' +
+    '<span class="fuji-magic__label" aria-hidden="true">🍃</span>' +
+    '<label class="fuji-magic__slider-wrap">' +
+    '<span class="fuji-magic__slider-label">Шорох</span>' +
+    '<input type="range" class="fuji-magic__range" id="fuji-wind-slider" min="0" max="100" value="' + prefs.wind + '" aria-label="Громкость шороха" />' +
+    "</label></div>" +
+    '<div class="fuji-magic__row">' +
+    '<span class="fuji-magic__label" aria-hidden="true">♪</span>' +
+    '<label class="fuji-magic__slider-wrap">' +
+    '<span class="fuji-magic__slider-label">Музыка</span>' +
+    '<input type="range" class="fuji-magic__range" id="fuji-music-slider" min="0" max="100" value="' + prefs.music + '" aria-label="Громкость музыки" />' +
+    "</label></div>" +
+    "</div>";
+
+  const minusBtn = document.getElementById("fuji-petals-minus");
+  const plusBtn = document.getElementById("fuji-petals-plus");
+  const numEl = document.getElementById("fuji-petals-num");
+  const windSlider = document.getElementById("fuji-wind-slider");
+  const musicSlider = document.getElementById("fuji-music-slider");
+
+  function updatePetalCount(delta) {
+    let n = fujiMagicState.petalCount + delta;
+    n = Math.max(PETAL_COUNT_MIN, Math.min(PETAL_COUNT_MAX, n));
+    fujiMagicState.petalCount = n;
+    setFujiPref("petals", n);
+    if (numEl) numEl.textContent = n;
+    if (AppState.current === APP_STATES.MAIN) {
+      startPetalLoop(n);
+    }
+  }
+
+  if (minusBtn) minusBtn.addEventListener("click", () => updatePetalCount(-1));
+  if (plusBtn) plusBtn.addEventListener("click", () => updatePetalCount(1));
+  if (numEl) numEl.textContent = fujiMagicState.petalCount;
+
+  if (windSlider) {
+    windSlider.addEventListener("input", () => {
+      const v = parseInt(windSlider.value, 10) || 0;
+      setFujiPref("wind", v);
+      setWindVolume(v);
+    });
+  }
+  if (musicSlider) {
+    musicSlider.addEventListener("input", () => {
+      const v = parseInt(musicSlider.value, 10) || 0;
+      setFujiPref("music", v);
+      setMusicVolume(v);
+    });
+  }
+}
+
+function setupFujiMagic() {
+  buildFujiMagicPanel();
+  AppState.subscribe((state) => {
+    const wrap = document.getElementById("fuji-magic-widget");
+    if (!wrap) return;
+    if (state === APP_STATES.MAIN) {
+      wrap.removeAttribute("aria-hidden");
+      wrap.classList.add("fuji-magic-widget--visible");
+      const prefs = getFujiPrefs();
+      fujiMagicState.petalCount = prefs.petals;
+      fujiMagicState.windVolume = prefs.wind;
+      fujiMagicState.musicVolume = prefs.music;
+      startPetalLoop(prefs.petals);
+      setWindVolume(prefs.wind);
+      setMusicVolume(prefs.music);
+    } else {
+      wrap.setAttribute("aria-hidden", "true");
+      wrap.classList.remove("fuji-magic-widget--visible");
+      stopPetalLoop();
+      stopWind();
+      stopMusic();
+    }
+  });
+}
+
 // ---------- НАВИГАЦИЯ (кнопки в шапке) ----------
 
 function setupTopNav() {
@@ -796,6 +1050,7 @@ function setupTopNav() {
 window.addEventListener("DOMContentLoaded", () => {
   setupIntroScene();
   setupTopNav();
+  setupFujiMagic();
 
   const intro = document.getElementById("intro-layer");
   const appShell = document.getElementById("app-shell");

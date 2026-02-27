@@ -1325,7 +1325,7 @@ body,
   height: calc(var(--sakura-size) * 1.4);
   background: radial-gradient(ellipse 60% 100% at 50% 50%, #ffb7c5, #e8a0b0);
   border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-  opacity: 0.9;
+  opacity: var(--sakura-opacity, 0.9);
   animation: sakura-fall var(--sakura-duration) var(--sakura-delay) ease-in forwards;
   transform-origin: center center;
   box-shadow: 0 0 6px rgba(255, 180, 200, 0.4);
@@ -1334,11 +1334,11 @@ body,
 @keyframes sakura-fall {
   0% {
     transform: translate(0, 0) rotate(0deg);
-    opacity: 0.9;
+    opacity: var(--sakura-opacity, 0.9);
   }
   100% {
     transform: translate(var(--sakura-drift), 100vh) rotate(360deg);
-    opacity: 0.2;
+    opacity: 0.15;
   }
 }
 
@@ -1352,6 +1352,133 @@ body.sakura-sway {
   40% { transform: translateX(-2px) rotate(-0.2deg); }
   60% { transform: translateX(2px) rotate(0.2deg); }
   80% { transform: translateX(-1px) rotate(-0.1deg); }
+}
+
+/* ---------- МАГИЯ FUJI (лепестки, шорох, музыка) ---------- */
+
+.fuji-magic-widget {
+  position: fixed;
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  left: max(1rem, env(safe-area-inset-left));
+  z-index: 45;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.fuji-magic-widget.fuji-magic-widget--visible {
+  pointer-events: auto;
+  opacity: 1;
+  visibility: visible;
+}
+
+.fuji-magic__panel {
+  padding: 0.6rem 0.75rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 160px;
+}
+
+.fuji-magic__row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.fuji-magic__label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--muted-color, #5c564d);
+  min-width: 2.5rem;
+  -webkit-font-smoothing: antialiased;
+}
+
+.fuji-magic__count {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.fuji-magic__btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  -webkit-font-smoothing: antialiased;
+}
+
+.fuji-magic__btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.fuji-magic__num {
+  min-width: 1.8em;
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.fuji-magic__slider-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.fuji-magic__slider-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  flex-shrink: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+.fuji-magic__range {
+  flex: 1;
+  min-width: 0;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+}
+
+.fuji-magic__range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  cursor: grab;
+}
+
+.fuji-magic__range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  cursor: grab;
 }
 
 
