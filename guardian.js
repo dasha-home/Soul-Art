@@ -8,10 +8,14 @@
 (function () {
   "use strict";
 
-  /* ── Цепочка AI-сервисов (без ключей, пробуем по порядку) ── */
+  /* ── Цепочка AI-сервисов (пробуем по порядку до первого успешного) ──
+     1. Cloudflare Worker → Groq Llama 3.3 70B  (надёжный, если GROQ_KEY задан)
+     2-5. Pollinations (бесплатный, без ключей, запасной)
+  */
   var AI_CHAIN = [
-    { url: "https://text.pollinations.ai/openai",            model: "openai-large" },
-    { url: "https://text.pollinations.ai/openai",            model: "openai"       },
+    { url: "https://guardian-proxy.qerevv.workers.dev/v1/chat/completions", model: "llama-3.3-70b-versatile" },
+    { url: "https://text.pollinations.ai/openai",             model: "openai-large" },
+    { url: "https://text.pollinations.ai/openai",             model: "openai"       },
     { url: "https://gen.pollinations.ai/v1/chat/completions", model: "openai-large" },
     { url: "https://gen.pollinations.ai/v1/chat/completions", model: "openai-fast"  },
   ];
