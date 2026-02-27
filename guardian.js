@@ -1,19 +1,17 @@
 /**
  * Комната Хранителя — мудрый самурай у костра
- * Gemini 1.5 Flash | 4 режима: разговор, языки, рисование, душа
+ * Gemini 2.0 Flash | 4 режима: разговор, языки, рисование, душа
  *
- * ПРОКСИ (Cloudflare Worker) — для обхода блокировок в России:
- * Установите PROXY_URL после деплоя Worker на Cloudflare.
- * Пока пусто — работает напрямую через Google.
+ * Ключ Gemini НЕ хранится здесь — только в переменной окружения
+ * Cloudflare Worker (GEMINI_KEY).
+ * Настройка: Cloudflare Dashboard → Workers → guardian-proxy → Settings → Variables
  */
 (function () {
   "use strict";
 
   /* ── Настройки подключения ── */
-  var API_KEY   = "AIzaSyCyRjWOzoH9o9OsknHh8sCxAf5hlfLSGiw";
   var API_PATH  = "/v1beta/models/gemini-2.0-flash:generateContent";
-  var API_URL   = "https://generativelanguage.googleapis.com" + API_PATH;
-  /* Cloudflare Worker — прокси для обхода блокировок в России */
+  /* Cloudflare Worker — прокси. Ключ хранится только там, в env.GEMINI_KEY */
   var PROXY_URL = "https://guardian-proxy.qerevv.workers.dev";
 
   /* ═══════ ЛИЧНОСТЬ ХРАНИТЕЛЯ ═══════ */
@@ -179,7 +177,7 @@
       var m = data.error.message || "Ошибка API";
       var c = data.error.code;
       if (c === 400) m = "Запрос не принят (400). Попробуйте переформулировать.";
-      if (c === 403) m = "Ключ API не действует (403). Проверьте настройки.";
+      if (c === 403) m = "Ключ API недействителен (403). Нужно создать новый ключ на aistudio.google.com и прописать его в Cloudflare Worker → Settings → Variables → GEMINI_KEY.";
       if (c === 429) m = "Слишком много запросов (429). Подождите минуту.";
       if (c === 503) m = "Сервис временно недоступен. Попробуйте позже.";
       onError(m);
@@ -210,41 +208,20 @@
     };
     var bodyStr = JSON.stringify(bodyObj);
 
-    function tryDirect() {
-      doFetch(
-        API_URL + "?key=" + encodeURIComponent(API_KEY),
-        { "Content-Type": "application/json" },
-        bodyStr,
-        onSuccess,
-        function (err) {
-          var m = err.indexOf("__NETWORK__") === 0
-            ? "Нет связи с Хранителем. Если вы в России — возможно, Google заблокирован. Скоро появится прокси."
-            : err;
-          onError(m);
+    /* Все запросы идут через Cloudflare Worker — ключ хранится только там */
+    doFetch(
+      PROXY_URL + API_PATH,
+      { "Content-Type": "application/json" },
+      bodyStr,
+      onSuccess,
+      function (err) {
+        if (err.indexOf("__NETWORK__") === 0) {
+          onError("Нет связи с Хранителем. Попробуйте обновить страницу.");
+        } else {
+          onError(err);
         }
-      );
-    }
-
-    if (PROXY_URL) {
-      /* Сначала пробуем прокси (Cloudflare Worker) — работает из России */
-      doFetch(
-        PROXY_URL + API_PATH,
-        { "Content-Type": "application/json" },
-        bodyStr,
-        onSuccess,
-        function (proxyErr) {
-          /* Резервный переход на прямой API только если прокси НЕ ДОСТУПЕН (сеть)
-             Если ошибка 429/403/400 — Gemini ответил, дублировать запрос нет смысла */
-          if (proxyErr.indexOf("__NETWORK__") === 0) {
-            tryDirect();
-          } else {
-            onError(proxyErr);
-          }
-        }
-      );
-    } else {
-      tryDirect();
-    }
+      }
+    );
   }
 
   /* ═══════ ОТПРАВКА ═══════ */
