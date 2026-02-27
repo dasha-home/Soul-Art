@@ -8,8 +8,13 @@
 (function () {
   "use strict";
 
-  /* ── Настройки подключения ── */
-  var AI_URL = "https://text.pollinations.ai/openai";
+  /* ── Цепочка AI-сервисов (без ключей, пробуем по порядку) ── */
+  var AI_CHAIN = [
+    { url: "https://text.pollinations.ai/openai",            model: "openai-large" },
+    { url: "https://text.pollinations.ai/openai",            model: "openai"       },
+    { url: "https://gen.pollinations.ai/v1/chat/completions", model: "openai-large" },
+    { url: "https://gen.pollinations.ai/v1/chat/completions", model: "openai-fast"  },
+  ];
 
   /* ═══════ ЛИЧНОСТЬ ХРАНИТЕЛЯ ═══════ */
 
@@ -207,30 +212,42 @@
     return messages;
   }
 
-  function callAIWithPrompt(systemPrompt, userText, partnerNote, onSuccess, onError) {
+  function tryEndpoint(idx, messages, onSuccess, onFail) {
+    if (idx >= AI_CHAIN.length) {
+      onFail("Все серверы временно недоступны. Подождите минуту и попробуйте снова.");
+      return;
+    }
+    var ep   = AI_CHAIN[idx];
     var body = JSON.stringify({
-      model: "openai-large",
-      messages: buildMessages(systemPrompt, userText, partnerNote),
+      model: ep.model,
+      messages: messages,
       temperature: 0.82,
       max_tokens: 800,
     });
-    fetch(AI_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: body })
+    fetch(ep.url, { method: "POST", headers: { "Content-Type": "application/json" }, body: body })
       .then(function (res) {
-        if (!res.ok) {
-          if (res.status === 429) throw new Error("Слишком много запросов. Подождите немного.");
-          throw new Error("Сервис временно недоступен (" + res.status + ").");
+        /* 429 — лимит, 401/403 — авторизация: пробуем следующий */
+        if (res.status === 429 || res.status === 401 || res.status === 403) {
+          tryEndpoint(idx + 1, messages, onSuccess, onFail);
+          return;
         }
+        if (!res.ok) { tryEndpoint(idx + 1, messages, onSuccess, onFail); return; }
         return res.json();
       })
       .then(function (data) {
+        if (!data) return;
         var text = "";
         try { text = data.choices[0].message.content || ""; } catch (e) {}
-        if (!text.trim()) { onError("Персонаж молчит. Попробуйте спросить иначе."); return; }
+        if (!text.trim()) { tryEndpoint(idx + 1, messages, onSuccess, onFail); return; }
         onSuccess(text);
       })
-      .catch(function (err) {
-        onError(err && err.message ? err.message : "Нет связи. Проверьте интернет.");
+      .catch(function () {
+        tryEndpoint(idx + 1, messages, onSuccess, onFail);
       });
+  }
+
+  function callAIWithPrompt(systemPrompt, userText, partnerNote, onSuccess, onError) {
+    tryEndpoint(0, buildMessages(systemPrompt, userText, partnerNote), onSuccess, onError);
   }
 
   function callAI(userText, onSuccess, onError) {
