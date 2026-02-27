@@ -1062,7 +1062,11 @@ function setupFujiMagic() {
       fujiMagicState.currentTrack = prefs.track;
       startPetalLoop(prefs.petals);
       setWindVolume(prefs.wind);
-      setMusicVolume(prefs.music);
+      // Музыка не включается автоматически — пользователь включает сам через кнопку «Музыка» и ползунок
+      if (fujiMagicState.musicEl) {
+        fujiMagicState.musicEl.volume = 0;
+        fujiMagicState.musicEl.pause();
+      }
     } else {
       wrap.setAttribute("aria-hidden", "true");
       wrap.classList.remove("fuji-magic-widget--visible");
