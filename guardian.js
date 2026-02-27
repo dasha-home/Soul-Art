@@ -372,13 +372,16 @@
 
   function buildImageUrls(englishPrompt) {
     var seed = Math.floor(Math.random() * 99999);
+    /* Берём первые 3 слова как ключевые для поиска фото */
+    var keywords = englishPrompt.trim().replace(/,/g, "").split(/\s+/).slice(0, 4).join(",");
     var full = englishPrompt + ", beautiful, detailed, soft light, high quality art";
     return [
-      /* Основной рабочий эндпоинт */
-      "https://pollinations.ai/p/" + encodeURIComponent(full) + "?width=768&height=512&seed=" + seed + "&nologo=true",
-      "https://pollinations.ai/p/" + encodeURIComponent(englishPrompt) + "?width=512&height=512&seed=" + seed,
-      /* Старый эндпоинт как запасной */
-      "https://image.pollinations.ai/prompt/" + encodeURIComponent(englishPrompt) + "?width=512&height=512&seed=" + seed
+      /* 1. Pollinations AI-генерация (когда работает) */
+      "https://image.pollinations.ai/prompt/" + encodeURIComponent(full) + "?width=768&height=512&nologo=true&seed=" + seed,
+      /* 2. loremflickr — реальные красивые фотографии по ключевым словам (всегда работает) */
+      "https://loremflickr.com/768/512/" + encodeURIComponent(keywords) + "?random=" + seed,
+      /* 3. Запасной loremflickr с меньшим размером */
+      "https://loremflickr.com/512/384/" + encodeURIComponent(keywords)
     ];
   }
 
@@ -416,10 +419,9 @@
 
     /* Сначала просим ИИ перевести описание на английский */
     callAIWithPrompt(
-      "You are a professional prompt translator for image generation AI. " +
-      "Translate the user's description from Russian to English. " +
-      "Return ONLY the English prompt — no explanations, no quotes, just the prompt text. " +
-      "Make it vivid and descriptive for an image AI (2-10 words).",
+      "Translate the Russian image description to English keywords for image search. " +
+      "Return ONLY 3-5 English keywords separated by spaces, no punctuation, no explanations. " +
+      "Example: 'sunset lake forest birds' or 'woman beach summer'. Keep it short.",
       subject, null,
       function(englishPrompt) {
         var urls = buildImageUrls(englishPrompt.trim());
