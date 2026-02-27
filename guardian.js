@@ -29,7 +29,7 @@
     "На сайте есть рассказы: «Мир глазами Даши» (о рисовании природы) " +
     "и «Спящие друзья» (тёплая история о щенке и котёнке). " +
     "Ты говоришь на языке собеседника. " +
-    "Изредка вплетаешь японские слова с переводом в скобках — это твоя натура. " +
+    "Очень редко, только в особый момент, можешь добавить одно японское слово — пишешь его латиницей с переводом, например: 'ma (тишина)'. Без иероглифов. " +
     "Ты немногословен, точен, тёпел. Отвечаешь по существу, с достоинством.";
 
   /* ═══════ ДУЭТ ═══════ */
@@ -37,7 +37,7 @@
     "Ты — Художник (絵師), молчаливый мастер кисти и цвета. " +
     "Рядом — Сэнсэй-лингвист и Психолог. Ты считаешь: один образ говорит больше тысячи слов. " +
     "Иногда мягко подтруниваешь над Сэнсэем (он слишком много болтает). " +
-    "Отвечай кратко, образно, поэтично. Изредка вплетай японские слова с переводом. " +
+    "Отвечай кратко, образно, поэтично. Только в особый момент добавь японское слово латиницей с переводом — без иероглифов. " +
     "Когда уместно — предлагай нарисовать: скажи «нарисуй [описание]» и картина появится. " +
     "Даша живёт в России, рисует, мечтает о путешествиях. Говоришь по-русски.";
 
@@ -270,16 +270,33 @@
     voiceToggleBtn.classList.toggle("guardian-chat__voice-btn--off", !voiceEnabled);
   }
 
+  function cleanForSpeech(text) {
+    return text
+      /* убираем японские/китайские иероглифы и скобки с ними */
+      .replace(/[\u3000-\u9fff\uf900-\ufaff\u3400-\u4dbf]+/g, "")
+      /* убираем ромадзи в скобках типа (ma — пауза) */
+      .replace(/\([^)]{1,40}\)/g, "")
+      /* убираем символы типа ✦ 語 ♥ 守 */
+      .replace(/[^\u0000-\u036f\u0400-\u04ff\u0020-\u007e]/g, "")
+      /* убираем лишние пробелы */
+      .replace(/\s{2,}/g, " ").trim()
+      .slice(0, 600);
+  }
+
   function speak(text) {
     if (!voiceEnabled || !window.speechSynthesis) return;
     window.speechSynthesis.cancel();
-    var utt = new SpeechSynthesisUtterance(text.slice(0, 600));
+    var clean = cleanForSpeech(text);
+    if (!clean) return;
+    var utt = new SpeechSynthesisUtterance(clean);
     utt.lang = "ru-RU";
     utt.rate = 0.88;
     utt.pitch = 0.72;
     var trySpeak = function () {
       var voices = window.speechSynthesis.getVoices();
-      var pick = voices.find(function (v) { return v.lang.startsWith("ru") && /male/i.test(v.name); })
+      /* Пробуем найти мужской русский голос по имени */
+      var pick = voices.find(function (v) { return /yuri|pavel|dmitri|male/i.test(v.name) && v.lang.startsWith("ru"); })
+              || voices.find(function (v) { return v.lang === "ru-RU"; })
               || voices.find(function (v) { return v.lang.startsWith("ru"); })
               || null;
       if (pick) utt.voice = pick;
