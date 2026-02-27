@@ -9,7 +9,7 @@
   "use strict";
 
   /* ── Настройки подключения ── */
-  var AI_URL = "https://gen.pollinations.ai/v1/chat/completions";
+  var AI_URL = "https://text.pollinations.ai/openai";
 
   /* ═══════ ЛИЧНОСТЬ ХРАНИТЕЛЯ ═══════ */
 
@@ -209,7 +209,7 @@
 
   function callAIWithPrompt(systemPrompt, userText, partnerNote, onSuccess, onError) {
     var body = JSON.stringify({
-      model: "claude-large",
+      model: "openai-large",
       messages: buildMessages(systemPrompt, userText, partnerNote),
       temperature: 0.82,
       max_tokens: 800,

@@ -28,10 +28,10 @@
 .samurai-bg__image {
   position: absolute;
   inset: 0;
-  background-image: url('samurai-lake.png');
+  background-image: url('samurai.jpg');
   background-size: cover;
-  background-position: 30% center;
-  filter: brightness(0.72) saturate(1.15) contrast(1.05);
+  background-position: 32% center;
+  filter: brightness(0.78) saturate(1.1) contrast(1.06);
   transition: filter 0.5s ease;
 }
 
@@ -61,14 +61,14 @@
   position: absolute;
   bottom: 0;
   left: 0;
-  width: 60%;
-  height: 58%;
+  width: 55%;
+  height: 65%;
   background: radial-gradient(
-    ellipse at 22% 88%,
-    rgba(255, 130, 20, 0.48) 0%,
-    rgba(240, 80,  5, 0.22) 26%,
-    rgba(180, 50,  0, 0.08) 50%,
-    transparent 70%
+    ellipse at 18% 85%,
+    rgba(255, 140, 20, 0.55) 0%,
+    rgba(240, 90,  5, 0.25) 25%,
+    rgba(180, 50,  0, 0.09) 48%,
+    transparent 68%
   );
   animation: fire-breathe 3s ease-in-out infinite alternate;
 }
