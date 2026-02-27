@@ -733,20 +733,22 @@ function setupSakuraOnNav() {
 
 // ---------- МАГИЯ FUJI: живые лепестки, шорох, музыка (по умолчанию всё выключено) ----------
 
-const FUJI_STORAGE = { petals: "soulart_fuji_petals", wind: "soulart_fuji_wind", music: "soulart_fuji_music" };
-// Положите в корень сайта файл music-fuji.mp3 (спокойная японская мелодия) или замените URL.
-const FUJI_MUSIC_URL = "./music-fuji.mp3";
+const FUJI_STORAGE = { petals: "soulart_fuji_petals", wind: "soulart_fuji_wind", music: "soulart_fuji_music", track: "soulart_fuji_track" };
+const FUJI_TRACKS = ["./audio/fuji-1.mp3", "./audio/fuji-2.mp3"];
 const PETAL_COUNT_MIN = 0;
 const PETAL_COUNT_MAX = 30;
+const FUJI_FADE_DURATION_MS = 400;
 
 function getFujiPrefs() {
   const p = parseInt(localStorage.getItem(FUJI_STORAGE.petals), 10);
   const w = parseInt(localStorage.getItem(FUJI_STORAGE.wind), 10);
   const m = parseInt(localStorage.getItem(FUJI_STORAGE.music), 10);
+  const t = parseInt(localStorage.getItem(FUJI_STORAGE.track), 10);
   return {
     petals: isNaN(p) || p < PETAL_COUNT_MIN ? 0 : Math.min(p, PETAL_COUNT_MAX),
     wind: isNaN(w) || w < 0 ? 0 : Math.min(100, w),
     music: isNaN(m) || m < 0 ? 0 : Math.min(100, m),
+    track: (t === 1 || t === 2) ? t : 1,
   };
 }
 
@@ -760,12 +762,14 @@ let fujiMagicState = {
   petalCount: 0,
   windVolume: 0,
   musicVolume: 0,
+  currentTrack: 1,
   petalInterval: null,
   windNode: null,
   windGain: null,
   audioContext: null,
   musicEl: null,
-  panelVisible: false,
+  panelPetalsOpen: false,
+  panelMusicOpen: false,
 };
 
 function spawnLivingPetal() {
@@ -869,9 +873,8 @@ function getMusicEl() {
   fujiMagicState.musicEl = new window.Audio();
   fujiMagicState.musicEl.loop = true;
   fujiMagicState.musicEl.volume = 0;
-  try {
-    fujiMagicState.musicEl.src = FUJI_MUSIC_URL;
-  } catch (_) {}
+  const idx = fujiMagicState.currentTrack - 1;
+  if (FUJI_TRACKS[idx]) fujiMagicState.musicEl.src = FUJI_TRACKS[idx];
   return fujiMagicState.musicEl;
 }
 
@@ -887,6 +890,51 @@ function setMusicVolume(vol) {
   }
 }
 
+function fadeMusicTo(targetVolume, onDone) {
+  const el = fujiMagicState.musicEl;
+  if (!el) {
+    if (onDone) onDone();
+    return;
+  }
+  const startVol = el.volume;
+  const start = performance.now();
+  function tick(now) {
+    const elapsed = now - start;
+    const t = Math.min(1, elapsed / FUJI_FADE_DURATION_MS);
+    const smooth = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    el.volume = startVol + (targetVolume - startVol) * smooth;
+    if (t < 1) {
+      requestAnimationFrame(tick);
+    } else {
+      if (onDone) onDone();
+    }
+  }
+  requestAnimationFrame(tick);
+}
+
+function setFujiMusicTrack(trackNum) {
+  if (trackNum !== 1 && trackNum !== 2) return;
+  if (fujiMagicState.currentTrack === trackNum) return;
+  const el = getMusicEl();
+  const currentVol = fujiMagicState.musicVolume / 100;
+  const playing = currentVol > 0 && !el.paused;
+  if (playing) {
+    fadeMusicTo(0, () => {
+      fujiMagicState.currentTrack = trackNum;
+      el.src = FUJI_TRACKS[trackNum - 1];
+      el.play().catch(() => {});
+      el.volume = 0;
+      fadeMusicTo(currentVol, null);
+    });
+  } else {
+    fujiMagicState.currentTrack = trackNum;
+    el.src = FUJI_TRACKS[trackNum - 1];
+    el.volume = currentVol;
+    if (currentVol > 0) el.play().catch(() => {});
+  }
+  setFujiPref("track", trackNum);
+}
+
 function stopMusic() {
   setMusicVolume(0);
   if (fujiMagicState.musicEl) fujiMagicState.musicEl.pause();
@@ -899,35 +947,66 @@ function buildFujiMagicPanel() {
   fujiMagicState.petalCount = prefs.petals;
   fujiMagicState.windVolume = prefs.wind;
   fujiMagicState.musicVolume = prefs.music;
+  fujiMagicState.currentTrack = prefs.track;
 
   wrap.innerHTML =
-    '<div class="fuji-magic__panel">' +
-    '<div class="fuji-magic__row">' +
-    '<span class="fuji-magic__label">Лепестки</span>' +
+    '<div class="fuji-magic__balls">' +
+    '<div class="fuji-ball fuji-ball--petals" id="fuji-ball-petals" role="button" tabindex="0" aria-label="Лепестки и ветер" aria-expanded="false">' +
+    '<span class="fuji-ball__icon" aria-hidden="true">🌸</span>' +
+    '<span class="fuji-ball__label">Лепестки</span>' +
+    '<div class="fuji-ball__panel fuji-magic__panel" id="fuji-panel-petals">' +
+    '<div class="fuji-magic__row"><span class="fuji-magic__label">Лепестки</span>' +
     '<div class="fuji-magic__count">' +
-    '<button type="button" class="fuji-magic__btn" id="fuji-petals-minus" aria-label="Меньше лепестков">−</button>' +
+    '<button type="button" class="fuji-magic__btn" id="fuji-petals-minus" aria-label="Меньше">−</button>' +
     '<span class="fuji-magic__num" id="fuji-petals-num">' + prefs.petals + "</span>" +
-    '<button type="button" class="fuji-magic__btn" id="fuji-petals-plus" aria-label="Больше лепестков">+</button>' +
+    '<button type="button" class="fuji-magic__btn" id="fuji-petals-plus" aria-label="Больше">+</button>' +
     "</div></div>" +
-    '<div class="fuji-magic__row">' +
-    '<span class="fuji-magic__label" aria-hidden="true">🍃</span>' +
+    '<div class="fuji-magic__row"><span class="fuji-magic__label">Ветер</span>' +
     '<label class="fuji-magic__slider-wrap">' +
-    '<span class="fuji-magic__slider-label">Шорох</span>' +
-    '<input type="range" class="fuji-magic__range" id="fuji-wind-slider" min="0" max="100" value="' + prefs.wind + '" aria-label="Громкость шороха" />' +
-    "</label></div>" +
-    '<div class="fuji-magic__row">' +
-    '<span class="fuji-magic__label" aria-hidden="true">♪</span>' +
+    '<input type="range" class="fuji-magic__range" id="fuji-wind-slider" min="0" max="100" value="' + prefs.wind + '" aria-label="Громкость ветра" />' +
+    "</label></div></div></div>" +
+    '<div class="fuji-ball fuji-ball--music" id="fuji-ball-music" role="button" tabindex="0" aria-label="Музыка" aria-expanded="false">' +
+    '<span class="fuji-ball__icon" aria-hidden="true">♪</span>' +
+    '<span class="fuji-ball__label">Музыка</span>' +
+    '<div class="fuji-ball__panel fuji-magic__panel" id="fuji-panel-music">' +
+    '<div class="fuji-magic__row"><span class="fuji-magic__label">Трек</span>' +
+    '<div class="fuji-magic__tracks">' +
+    '<button type="button" class="fuji-magic__track-btn' + (prefs.track === 1 ? ' fuji-magic__track-btn--active' : '') + '" id="fuji-track-1" data-track="1">Трек 1</button>' +
+    '<button type="button" class="fuji-magic__track-btn' + (prefs.track === 2 ? ' fuji-magic__track-btn--active' : '') + '" id="fuji-track-2" data-track="2">Трек 2</button>' +
+    "</div></div>" +
+    '<div class="fuji-magic__row"><span class="fuji-magic__label">Громкость</span>' +
     '<label class="fuji-magic__slider-wrap">' +
-    '<span class="fuji-magic__slider-label">Музыка</span>' +
     '<input type="range" class="fuji-magic__range" id="fuji-music-slider" min="0" max="100" value="' + prefs.music + '" aria-label="Громкость музыки" />' +
-    "</label></div>" +
-    "</div>";
+    "</label></div></div></div></div>";
 
+  const ballPetals = document.getElementById("fuji-ball-petals");
+  const ballMusic = document.getElementById("fuji-ball-music");
+  const panelPetals = document.getElementById("fuji-panel-petals");
+  const panelMusic = document.getElementById("fuji-panel-music");
   const minusBtn = document.getElementById("fuji-petals-minus");
   const plusBtn = document.getElementById("fuji-petals-plus");
   const numEl = document.getElementById("fuji-petals-num");
   const windSlider = document.getElementById("fuji-wind-slider");
   const musicSlider = document.getElementById("fuji-music-slider");
+  const track1Btn = document.getElementById("fuji-track-1");
+  const track2Btn = document.getElementById("fuji-track-2");
+
+  function togglePanel(ball, panel, isOpenKey) {
+    return function (e) {
+      if (e.target.closest(".fuji-magic__panel")) return;
+      fujiMagicState[isOpenKey] = !fujiMagicState[isOpenKey];
+      panel.classList.toggle("fuji-ball__panel--open", fujiMagicState[isOpenKey]);
+      ball.setAttribute("aria-expanded", fujiMagicState[isOpenKey]);
+    };
+  }
+  if (ballPetals && panelPetals) {
+    ballPetals.addEventListener("click", togglePanel(ballPetals, panelPetals, "panelPetalsOpen"));
+    ballPetals.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ballPetals.click(); } });
+  }
+  if (ballMusic && panelMusic) {
+    ballMusic.addEventListener("click", togglePanel(ballMusic, panelMusic, "panelMusicOpen"));
+    ballMusic.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ballMusic.click(); } });
+  }
 
   function updatePetalCount(delta) {
     let n = fujiMagicState.petalCount + delta;
@@ -935,13 +1014,10 @@ function buildFujiMagicPanel() {
     fujiMagicState.petalCount = n;
     setFujiPref("petals", n);
     if (numEl) numEl.textContent = n;
-    if (AppState.current === APP_STATES.MAIN) {
-      startPetalLoop(n);
-    }
+    if (AppState.current === APP_STATES.MAIN) startPetalLoop(n);
   }
-
-  if (minusBtn) minusBtn.addEventListener("click", () => updatePetalCount(-1));
-  if (plusBtn) plusBtn.addEventListener("click", () => updatePetalCount(1));
+  if (minusBtn) minusBtn.addEventListener("click", (e) => { e.stopPropagation(); updatePetalCount(-1); });
+  if (plusBtn) plusBtn.addEventListener("click", (e) => { e.stopPropagation(); updatePetalCount(1); });
   if (numEl) numEl.textContent = fujiMagicState.petalCount;
 
   if (windSlider) {
@@ -950,6 +1026,7 @@ function buildFujiMagicPanel() {
       setFujiPref("wind", v);
       setWindVolume(v);
     });
+    windSlider.addEventListener("click", (e) => e.stopPropagation());
   }
   if (musicSlider) {
     musicSlider.addEventListener("input", () => {
@@ -957,7 +1034,17 @@ function buildFujiMagicPanel() {
       setFujiPref("music", v);
       setMusicVolume(v);
     });
+    musicSlider.addEventListener("click", (e) => e.stopPropagation());
   }
+
+  function setTrackActive(trackNum) {
+    [track1Btn, track2Btn].forEach((btn, i) => {
+      if (btn) btn.classList.toggle("fuji-magic__track-btn--active", i + 1 === trackNum);
+    });
+    setFujiMusicTrack(trackNum);
+  }
+  if (track1Btn) track1Btn.addEventListener("click", (e) => { e.stopPropagation(); setTrackActive(1); });
+  if (track2Btn) track2Btn.addEventListener("click", (e) => { e.stopPropagation(); setTrackActive(2); });
 }
 
 function setupFujiMagic() {
@@ -972,6 +1059,7 @@ function setupFujiMagic() {
       fujiMagicState.petalCount = prefs.petals;
       fujiMagicState.windVolume = prefs.wind;
       fujiMagicState.musicVolume = prefs.music;
+      fujiMagicState.currentTrack = prefs.track;
       startPetalLoop(prefs.petals);
       setWindVolume(prefs.wind);
       setMusicVolume(prefs.music);
