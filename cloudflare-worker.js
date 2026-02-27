@@ -1,19 +1,9 @@
 /**
- * Cloudflare Worker: прокси для Gemini API
+ * Cloudflare Worker: гибкий прокси для Gemini API
  * Сайт Даши Художник — обход блокировок в России
  *
- * КАК ИСПОЛЬЗОВАТЬ:
- * 1. Зайди на https://dash.cloudflare.com/sign-up (бесплатно)
- * 2. Войди → "Workers & Pages" → "Create" → "Create Worker"
- * 3. Дай имя: guardian-proxy
- * 4. Замени весь код в редакторе на этот файл
- * 5. Нажми "Deploy"
- * 6. Перейди в Settings → Variables and Secrets → Add
- *    Имя переменной: GEMINI_KEY
- *    Значение: AIzaSyA4PG8QIYtgw1ZnpBUuxF00-dr6npDXQEw
- *    Тип: Secret (зашифровано)
- * 7. Скопируй URL Worker (вида https://guardian-proxy.ИМЯ.workers.dev)
- * 8. Сообщи URL — обновим guardian.js в одну строку
+ * Принимает любой запрос к /v1beta/models/...
+ * и перенаправляет на generativelanguage.googleapis.com
  */
 
 export default {
@@ -24,7 +14,6 @@ export default {
       "Access-Control-Allow-Headers": "Content-Type",
     };
 
-    /* Preflight */
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: cors });
     }
@@ -41,8 +30,10 @@ export default {
       );
     }
 
+    /* Берём путь из URL запроса: /v1beta/models/gemini-2.0-flash:generateContent */
+    const url = new URL(request.url);
     const geminiUrl =
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + key;
+      "https://generativelanguage.googleapis.com" + url.pathname + "?key=" + key;
 
     let body;
     try {

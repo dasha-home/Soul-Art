@@ -11,7 +11,8 @@
 
   /* ── Настройки подключения ── */
   var API_KEY   = "AIzaSyA4PG8QIYtgw1ZnpBUuxF00-dr6npDXQEw";
-  var API_URL   = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+  var API_PATH  = "/v1beta/models/gemini-2.0-flash:generateContent";
+  var API_URL   = "https://generativelanguage.googleapis.com" + API_PATH;
   /* Cloudflare Worker — прокси для обхода блокировок в России */
   var PROXY_URL = "https://guardian-proxy.qerevv.workers.dev";
 
@@ -227,7 +228,7 @@
     if (PROXY_URL) {
       /* Сначала пробуем прокси (Cloudflare Worker) — работает из России */
       doFetch(
-        PROXY_URL,
+        PROXY_URL + API_PATH,
         { "Content-Type": "application/json" },
         bodyStr,
         onSuccess,
