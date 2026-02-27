@@ -233,12 +233,8 @@
         bodyStr,
         onSuccess,
         function (proxyErr) {
-          if (proxyErr.indexOf("__NETWORK__") === 0) {
-            /* Прокси недоступен — пробуем напрямую */
-            tryDirect();
-          } else {
-            onError(proxyErr);
-          }
+          /* При любой ошибке прокси — пробуем напрямую (резервный путь) */
+          tryDirect();
         }
       );
     } else {
