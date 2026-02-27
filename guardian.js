@@ -1,13 +1,20 @@
 /**
  * Комната Хранителя — мудрый самурай у костра
  * Gemini 1.5 Flash | 4 режима: разговор, языки, рисование, душа
+ *
+ * ПРОКСИ (Cloudflare Worker) — для обхода блокировок в России:
+ * Установите PROXY_URL после деплоя Worker на Cloudflare.
+ * Пока пусто — работает напрямую через Google.
  */
 (function () {
   "use strict";
 
-  var API_KEY = "AIzaSyA4PG8QIYtgw1ZnpBUuxF00-dr6npDXQEw";
-  var API_URL =
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+  /* ── Настройки подключения ── */
+  var API_KEY   = "AIzaSyA4PG8QIYtgw1ZnpBUuxF00-dr6npDXQEw";
+  var API_URL   = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+  /* После деплоя Cloudflare Worker вставьте сюда его URL:
+     var PROXY_URL = "https://guardian-proxy.ВАШ_ЛОГИН.workers.dev"; */
+  var PROXY_URL = "";
 
   /* ═══════ ЛИЧНОСТЬ ХРАНИТЕЛЯ ═══════ */
 
@@ -166,52 +173,77 @@
     return contents;
   }
 
+  /* Разбираем ответ Gemini */
+  function parseGeminiData(data, onSuccess, onError) {
+    if (data.error) {
+      var m = data.error.message || "Ошибка API";
+      var c = data.error.code;
+      if (c === 400) m = "Запрос не принят (400). Попробуйте переформулировать.";
+      if (c === 403) m = "Ключ API не действует (403). Проверьте настройки.";
+      if (c === 429) m = "Слишком много запросов (429). Подождите минуту.";
+      if (c === 503) m = "Сервис временно недоступен. Попробуйте позже.";
+      onError(m);
+      return;
+    }
+    var text = "";
+    try { text = data.candidates[0].content.parts[0].text || ""; }
+    catch (e) { onError("Хранитель не смог ответить. Попробуйте ещё раз."); return; }
+    if (!text.trim()) { onError("Хранитель молчит. Попробуйте спросить иначе."); return; }
+    onSuccess(text);
+  }
+
+  /* Один HTTP-запрос к нужному URL */
+  function doFetch(url, headers, bodyStr, onSuccess, onError) {
+    fetch(url, { method: "POST", headers: headers, body: bodyStr })
+      .then(function (res) { return res.json(); })
+      .then(function (data) { parseGeminiData(data, onSuccess, onError); })
+      .catch(function (err) {
+        onError("__NETWORK__:" + (err && err.message ? err.message : "fetch error"));
+      });
+  }
+
   function callGemini(userText, onSuccess, onError) {
-    var url = API_URL + "?key=" + encodeURIComponent(API_KEY);
-    var body = {
+    var bodyObj = {
       systemInstruction: { parts: [{ text: PROMPTS[getMode()] || PROMPTS.assistant }] },
       contents: buildContents(userText),
       generationConfig: { temperature: 0.8, maxOutputTokens: 1024, topP: 0.95 },
     };
+    var bodyStr = JSON.stringify(bodyObj);
 
-    fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    })
-      .then(function (res) { return res.json(); })
-      .then(function (data) {
-        if (data.error) {
-          var m = data.error.message || "Ошибка API";
-          var c = data.error.code;
-          if (c === 400) m = "Запрос не принят (400). Попробуйте переформулировать.";
-          if (c === 403) m = "Ключ API не действует (403). Проверьте настройки.";
-          if (c === 429) m = "Слишком много запросов (429). Подождите минуту.";
-          if (c === 503) m = "Сервис временно недоступен. Попробуйте позже.";
+    function tryDirect() {
+      doFetch(
+        API_URL + "?key=" + encodeURIComponent(API_KEY),
+        { "Content-Type": "application/json" },
+        bodyStr,
+        onSuccess,
+        function (err) {
+          var m = err.indexOf("__NETWORK__") === 0
+            ? "Нет связи с Хранителем. Если вы в России — возможно, Google заблокирован. Скоро появится прокси."
+            : err;
           onError(m);
-          return;
         }
-        var text = "";
-        try {
-          text = data.candidates[0].content.parts[0].text || "";
-        } catch (e) {
-          onError("Хранитель не смог ответить. Попробуйте ещё раз.");
-          return;
+      );
+    }
+
+    if (PROXY_URL) {
+      /* Сначала пробуем прокси (Cloudflare Worker) — работает из России */
+      doFetch(
+        PROXY_URL,
+        { "Content-Type": "application/json" },
+        bodyStr,
+        onSuccess,
+        function (proxyErr) {
+          if (proxyErr.indexOf("__NETWORK__") === 0) {
+            /* Прокси недоступен — пробуем напрямую */
+            tryDirect();
+          } else {
+            onError(proxyErr);
+          }
         }
-        if (!text.trim()) {
-          onError("Хранитель молчит. Попробуйте спросить иначе.");
-          return;
-        }
-        onSuccess(text);
-      })
-      .catch(function (err) {
-        var m = "Нет связи с Хранителем.";
-        /* Если из России заблокирован Google */
-        if (err && (err.name === "TypeError" || (err.message && err.message.toLowerCase().indexOf("fetch") !== -1))) {
-          m = "Не удалось подключиться. Если вы в России, возможно, нужен VPN. Скоро здесь появится зеркало.";
-        }
-        onError(m);
-      });
+      );
+    } else {
+      tryDirect();
+    }
   }
 
   /* ═══════ ОТПРАВКА ═══════ */
