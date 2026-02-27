@@ -519,6 +519,42 @@
   font-style: italic;
 }
 
+/* ── Кнопка Дуэт ── */
+.guardian-mode__btn--duo {
+  background: linear-gradient(135deg, rgba(138,88,18,0.4) 0%, rgba(18,55,110,0.4) 100%);
+  border-color: rgba(160,130,220,0.45);
+  color: #c8b8f0;
+}
+.guardian-mode__btn--duo:hover,
+.guardian-mode__btn--duo.guardian-mode__btn--active {
+  background: linear-gradient(135deg, rgba(158,108,28,0.65) 0%, rgba(28,72,148,0.65) 100%);
+  border-color: rgba(180,150,240,0.72);
+  color: #e0d0ff;
+  box-shadow: 0 0 14px rgba(140,100,220,0.2);
+}
+
+/* ── Пузырь Сэнсея (синий оттенок) ── */
+.guardian-msg--linguist .guardian-msg__avatar {
+  background: rgba(22, 45, 105, 0.55);
+  border-color: rgba(80, 120, 220, 0.35);
+  color: #88aaee;
+}
+.guardian-msg--linguist .guardian-msg__bubble {
+  background: rgba(5, 10, 30, 0.86);
+  border: 1px solid rgba(60, 100, 200, 0.32);
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(80, 130, 255, 0.07);
+}
+.guardian-msg--linguist .guardian-msg__text {
+  color: #ccd8f8;
+}
+
+/* ── Пузырь Художника в дуэте (чуть ярче золото) ── */
+.guardian-msg--artist .guardian-msg__avatar {
+  background: rgba(148, 95, 18, 0.48);
+  border-color: rgba(215, 162, 55, 0.42);
+  color: #f0c860;
+}
+
 .guardian-chat__hint {
   margin: 0;
   font-size: 0.73rem;

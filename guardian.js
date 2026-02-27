@@ -23,6 +23,23 @@
     "Изредка вплетаешь японские слова с переводом в скобках — это твоя натура. " +
     "Ты немногословен, точен, тёпел. Отвечаешь по существу, с достоинством.";
 
+  /* ═══════ ДУЭТ ═══════ */
+  var ARTIST_DUO =
+    "Ты — Художник (絵師), молчаливый мастер кисти и цвета. " +
+    "Твой напарник — Сэнсэй, педант-лингвист. Ты считаешь: один образ говорит больше тысячи слов. " +
+    "Иногда мягко подтруниваешь над Сэнсэем (он слишком много болтает). " +
+    "Отвечай кратко, образно, поэтично. Изредка вплетай японские слова с переводом. " +
+    "Когда уместно — предлагай нарисовать: скажи «нарисуй [описание]» и в чате появится картина. " +
+    "Даша живёт в России, рисует, мечтает о путешествиях. Говоришь по-русски.";
+
+  var LINGUIST_DUO =
+    "Ты — Сэнсэй (先生), блестящий знаток языков: русского, английского, японского. " +
+    "Твой напарник — Художник, молчаливый мастер кисти. Ты считаешь: точное слово — сильнее картины. " +
+    "Иногда мягко споришь с Художником или подхватываешь его мысль с языковой точки зрения. " +
+    "Всегда учишь естественно: вплетай English phrases with translation, японские слова с ромадзи. " +
+    "Мягко поправляй ошибки Даши. Дружелюбен, с лёгким юмором. " +
+    "Даша живёт в России, обожает иностранные языки. Говоришь по-русски, вставляя английский и японский.";
+
   var PROMPTS = {
     assistant:
       BASE +
@@ -82,14 +99,16 @@
     messagesEl.scrollTop = messagesEl.scrollHeight;
   }
 
-  function appendMessage(role, text) {
+  function appendMessageStyled(role, text, extraClass, avatarSymbol) {
+    var isUser = role === "user";
     var msg = document.createElement("div");
-    msg.className = "guardian-msg guardian-msg--" + (role === "user" ? "user" : "bot");
+    msg.className = "guardian-msg guardian-msg--" + (isUser ? "user" : "bot") +
+                    (extraClass ? " guardian-msg--" + extraClass : "");
 
     var av = document.createElement("div");
     av.className = "guardian-msg__avatar";
     av.setAttribute("aria-hidden", "true");
-    av.textContent = role === "user" ? "✎" : "✦";
+    av.textContent = avatarSymbol || (isUser ? "✎" : "✦");
 
     var bubble = document.createElement("div");
     bubble.className = "guardian-msg__bubble";
@@ -106,22 +125,27 @@
     return msg;
   }
 
-  function showTyping() {
+  function appendMessage(role, text) {
+    return appendMessageStyled(role, text, null, role === "user" ? "✎" : "✦");
+  }
+
+  function showTyping(extraClass, symbol, label) {
     var msg = document.createElement("div");
     msg.id = "guardian-typing";
-    msg.className = "guardian-msg guardian-msg--bot guardian-msg--typing";
+    msg.className = "guardian-msg guardian-msg--bot guardian-msg--typing" +
+                    (extraClass ? " guardian-msg--" + extraClass : "");
 
     var av = document.createElement("div");
     av.className = "guardian-msg__avatar";
     av.setAttribute("aria-hidden", "true");
-    av.textContent = "✦";
+    av.textContent = symbol || "✦";
 
     var bubble = document.createElement("div");
     bubble.className = "guardian-msg__bubble";
 
     var p = document.createElement("p");
     p.className = "guardian-msg__text";
-    p.textContent = "Хранитель думает";
+    p.textContent = label || "Хранитель думает";
 
     bubble.appendChild(p);
     msg.appendChild(av);
@@ -156,49 +180,49 @@
 
   /* ═══════ POLLINATIONS API (без ключей) ═══════ */
 
-  function buildMessages(userText) {
-    var messages = [
-      { role: "system", content: PROMPTS[getMode()] || PROMPTS.assistant }
-    ];
+  function buildMessages(systemPrompt, userText, partnerNote) {
+    var messages = [{ role: "system", content: systemPrompt }];
     for (var i = 0; i < history.length; i++) {
       messages.push({
         role: history[i].role === "model" ? "assistant" : "user",
         content: history[i].text,
       });
     }
-    messages.push({ role: "user", content: userText });
+    var txt = (partnerNote)
+      ? userText + "\n[Мой коллега только что сказал: «" + partnerNote + "»]"
+      : userText;
+    messages.push({ role: "user", content: txt });
     return messages;
   }
 
-  function callAI(userText, onSuccess, onError) {
+  function callAIWithPrompt(systemPrompt, userText, partnerNote, onSuccess, onError) {
     var body = JSON.stringify({
       model: "claude-large",
-      messages: buildMessages(userText),
-      temperature: 0.8,
-      max_tokens: 1024,
+      messages: buildMessages(systemPrompt, userText, partnerNote),
+      temperature: 0.82,
+      max_tokens: 800,
     });
-
-    fetch(AI_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: body,
-    })
+    fetch(AI_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: body })
       .then(function (res) {
         if (!res.ok) {
-          if (res.status === 429) throw new Error("Слишком много запросов. Подождите немного и попробуйте снова.");
-          throw new Error("Сервис временно недоступен (" + res.status + "). Попробуйте позже.");
+          if (res.status === 429) throw new Error("Слишком много запросов. Подождите немного.");
+          throw new Error("Сервис временно недоступен (" + res.status + ").");
         }
         return res.json();
       })
       .then(function (data) {
         var text = "";
         try { text = data.choices[0].message.content || ""; } catch (e) {}
-        if (!text.trim()) { onError("Хранитель молчит. Попробуйте спросить иначе."); return; }
+        if (!text.trim()) { onError("Персонаж молчит. Попробуйте спросить иначе."); return; }
         onSuccess(text);
       })
       .catch(function (err) {
-        onError(err && err.message ? err.message : "Нет связи с Хранителем. Проверьте подключение к интернету.");
+        onError(err && err.message ? err.message : "Нет связи. Проверьте интернет.");
       });
+  }
+
+  function callAI(userText, onSuccess, onError) {
+    callAIWithPrompt(PROMPTS[getMode()] || PROMPTS.assistant, userText, null, onSuccess, onError);
   }
 
   /* ═══════ ГОЛОС (Text-to-Speech) ═══════ */
@@ -336,6 +360,39 @@
 
   /* ═══════ ОТПРАВКА ═══════ */
 
+  function finishLoading() {
+    isLoading = false;
+    sendBtn.disabled = false;
+  }
+
+  function sendDuo(userText) {
+    showTyping("artist", "✦", "Художник думает…");
+    callAIWithPrompt(ARTIST_DUO, userText, null,
+      function (artistReply) {
+        hideTyping();
+        appendMessageStyled("model", artistReply, "artist", "✦");
+        history.push({ role: "model", text: artistReply });
+        speak(artistReply);
+        maybeShowImage(userText);
+
+        /* Сэнсэй отвечает следом, зная что сказал Художник */
+        showTyping("linguist", "語", "Сэнсэй думает…");
+        callAIWithPrompt(LINGUIST_DUO, userText, artistReply,
+          function (linguistReply) {
+            hideTyping();
+            finishLoading();
+            appendMessageStyled("model", linguistReply, "linguist", "語");
+            history.push({ role: "model", text: linguistReply });
+            /* Голос Сэнсея — с небольшой задержкой чтобы не перекрыл Художника */
+            setTimeout(function () { speak(linguistReply); }, 800);
+          },
+          function (errMsg) { hideTyping(); finishLoading(); showError(errMsg); }
+        );
+      },
+      function (errMsg) { hideTyping(); finishLoading(); showError(errMsg); }
+    );
+  }
+
   function sendMessage() {
     if (isLoading) return;
     var text = (inputEl.value || "").trim();
@@ -349,14 +406,17 @@
     appendMessage("user", text);
     history.push({ role: "user", text: text });
 
-    showTyping();
+    if (getMode() === "duo") {
+      sendDuo(text);
+      return;
+    }
 
+    showTyping();
     callAI(
       text,
       function (reply) {
         hideTyping();
-        isLoading = false;
-        sendBtn.disabled = false;
+        finishLoading();
         appendMessage("model", reply);
         history.push({ role: "model", text: reply });
         speak(reply);
@@ -364,8 +424,7 @@
       },
       function (errMsg) {
         hideTyping();
-        isLoading = false;
-        sendBtn.disabled = false;
+        finishLoading();
         showError(errMsg);
       }
     );
