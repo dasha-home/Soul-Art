@@ -82,15 +82,19 @@
           id="guardian-input"
           class="guardian-chat__input"
           rows="2"
-          placeholder="Напиши Хранителю…"
+          placeholder="Напиши или скажи Хранителю… (или: нарисуй закат)"
           data-i18n-placeholder="guardian_placeholder"
           aria-label="Сообщение Хранителю"
         ></textarea>
+        <button type="button" id="guardian-mic" class="guardian-chat__mic" aria-label="Говорить голосом" title="Говорить голосом">🎤</button>
         <button type="button" id="guardian-send" class="guardian-chat__send" aria-label="Отправить">
           <span aria-hidden="true">→</span>
         </button>
+        <button type="button" id="guardian-voice-toggle" class="guardian-chat__voice-btn" aria-label="Голос Хранителя" title="Включить / выключить голос Хранителя">
+          <span class="voice-icon">🔊</span>
+        </button>
       </div>
-      <p class="guardian-chat__hint" data-i18n="guardian_hint">Хранитель помнит контекст разговора</p>
+      <p class="guardian-chat__hint" data-i18n="guardian_hint">🎤 голос · 🔊 речь · нарисуй [описание] — картина</p>
     </div>
   </div>
 

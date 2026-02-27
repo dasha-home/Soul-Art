@@ -442,6 +442,83 @@
   transform: none;
 }
 
+/* ── Микрофон ── */
+.guardian-chat__mic {
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  border-radius: 10px;
+  border: 1px solid rgba(162, 118, 40, 0.32);
+  background: rgba(14, 9, 3, 0.72);
+  color: #c8a855;
+  cursor: pointer;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.22s;
+  backdrop-filter: blur(8px);
+}
+.guardian-chat__mic:hover {
+  background: rgba(38, 25, 8, 0.82);
+  border-color: rgba(215, 162, 48, 0.48);
+}
+.guardian-chat__mic--recording {
+  background: rgba(160, 25, 12, 0.75) !important;
+  border-color: rgba(255, 70, 50, 0.65) !important;
+  animation: mic-pulse 0.75s ease-in-out infinite alternate;
+}
+@keyframes mic-pulse {
+  from { box-shadow: 0 0 6px rgba(255, 55, 25, 0.3); }
+  to   { box-shadow: 0 0 22px rgba(255, 55, 25, 0.7); }
+}
+
+/* ── Кнопка голоса ── */
+.guardian-chat__voice-btn {
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  border-radius: 10px;
+  border: 1px solid rgba(162, 118, 40, 0.32);
+  background: rgba(14, 9, 3, 0.72);
+  color: #c8a855;
+  cursor: pointer;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.22s;
+  backdrop-filter: blur(8px);
+}
+.guardian-chat__voice-btn:hover {
+  background: rgba(38, 25, 8, 0.82);
+  border-color: rgba(215, 162, 48, 0.48);
+}
+.guardian-chat__voice-btn--off {
+  opacity: 0.38;
+}
+.guardian-chat__voice-btn--off:hover {
+  opacity: 0.65;
+}
+
+/* ── Картинка в чате ── */
+.guardian-msg__image {
+  width: 100%;
+  max-width: 290px;
+  border-radius: 10px;
+  display: block;
+  margin-top: 0.55rem;
+  border: 1px solid rgba(162, 118, 40, 0.28);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
+  animation: msg-in 0.4s ease-out both;
+}
+.guardian-msg__image-caption {
+  font-size: 0.78rem;
+  color: rgba(210, 170, 90, 0.6);
+  margin: 0 0 0.3rem;
+  font-style: italic;
+}
+
 .guardian-chat__hint {
   margin: 0;
   font-size: 0.73rem;

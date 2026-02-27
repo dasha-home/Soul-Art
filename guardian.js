@@ -201,6 +201,139 @@
       });
   }
 
+  /* ═══════ ГОЛОС (Text-to-Speech) ═══════ */
+
+  var voiceEnabled = localStorage.getItem("guardian_voice") !== "off";
+  var voiceToggleBtn = document.getElementById("guardian-voice-toggle");
+
+  function updateVoiceUI() {
+    if (!voiceToggleBtn) return;
+    var icon = voiceToggleBtn.querySelector(".voice-icon");
+    if (icon) icon.textContent = voiceEnabled ? "🔊" : "🔇";
+    voiceToggleBtn.classList.toggle("guardian-chat__voice-btn--off", !voiceEnabled);
+  }
+
+  function speak(text) {
+    if (!voiceEnabled || !window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    var utt = new SpeechSynthesisUtterance(text.slice(0, 600));
+    utt.lang = "ru-RU";
+    utt.rate = 0.88;
+    utt.pitch = 0.72;
+    var trySpeak = function () {
+      var voices = window.speechSynthesis.getVoices();
+      var pick = voices.find(function (v) { return v.lang.startsWith("ru") && /male/i.test(v.name); })
+              || voices.find(function (v) { return v.lang.startsWith("ru"); })
+              || null;
+      if (pick) utt.voice = pick;
+      window.speechSynthesis.speak(utt);
+    };
+    if (window.speechSynthesis.getVoices().length) {
+      trySpeak();
+    } else {
+      window.speechSynthesis.onvoiceschanged = trySpeak;
+    }
+  }
+
+  if (voiceToggleBtn) {
+    voiceToggleBtn.addEventListener("click", function () {
+      voiceEnabled = !voiceEnabled;
+      localStorage.setItem("guardian_voice", voiceEnabled ? "on" : "off");
+      if (!voiceEnabled && window.speechSynthesis) window.speechSynthesis.cancel();
+      updateVoiceUI();
+    });
+    updateVoiceUI();
+  }
+
+  /* ═══════ МИКРОФОН (Speech-to-Text) ═══════ */
+
+  var micBtn = document.getElementById("guardian-mic");
+  var isRecording = false;
+  var recognition = null;
+
+  if (micBtn) {
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SR) {
+      recognition = new SR();
+      recognition.lang = "ru-RU";
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      function stopRecording() {
+        isRecording = false;
+        micBtn.classList.remove("guardian-chat__mic--recording");
+      }
+
+      recognition.onresult = function (e) {
+        var transcript = e.results[0][0].transcript;
+        inputEl.value = transcript;
+        inputEl.style.height = "auto";
+        inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + "px";
+        stopRecording();
+        sendMessage();
+      };
+      recognition.onerror = stopRecording;
+      recognition.onend   = stopRecording;
+
+      micBtn.addEventListener("click", function () {
+        if (isLoading) return;
+        if (isRecording) {
+          recognition.stop();
+        } else {
+          isRecording = true;
+          micBtn.classList.add("guardian-chat__mic--recording");
+          try { recognition.start(); } catch (_) { stopRecording(); }
+        }
+      });
+    } else {
+      micBtn.style.display = "none";
+    }
+  }
+
+  /* ═══════ ГЕНЕРАЦИЯ КАРТИНКИ ═══════ */
+
+  var IMG_RE = /^(нарисуй мне|нарисуй,?|покажи картину|покажи мне картину|изобрази|создай картину|нарисуй картину)\s+/i;
+
+  function maybeShowImage(userText) {
+    var m = userText.match(IMG_RE);
+    if (!m) return;
+    var subject = userText.slice(m[0].length).trim();
+    if (!subject) subject = userText;
+
+    var prompt = subject + ", watercolor painting, Japanese ink art, wabi-sabi aesthetic, soft light, beautiful, 4k";
+    var imgUrl = "https://image.pollinations.ai/prompt/" + encodeURIComponent(prompt) + "?width=512&height=512&nologo=true&model=flux";
+
+    var imgMsg = document.createElement("div");
+    imgMsg.className = "guardian-msg guardian-msg--bot";
+
+    var av = document.createElement("div");
+    av.className = "guardian-msg__avatar";
+    av.setAttribute("aria-hidden", "true");
+    av.textContent = "✦";
+
+    var bubble = document.createElement("div");
+    bubble.className = "guardian-msg__bubble";
+
+    var caption = document.createElement("p");
+    caption.className = "guardian-msg__image-caption";
+    caption.textContent = "Создаю картину…";
+
+    var img = document.createElement("img");
+    img.className = "guardian-msg__image";
+    img.alt = subject;
+    img.loading = "lazy";
+    img.src = imgUrl;
+    img.onload  = function () { caption.textContent = "✦ " + subject; scrollToBottom(); };
+    img.onerror = function () { caption.textContent = "Картина не загрузилась — попробуй переформулировать."; };
+
+    bubble.appendChild(caption);
+    bubble.appendChild(img);
+    imgMsg.appendChild(av);
+    imgMsg.appendChild(bubble);
+    messagesEl.appendChild(imgMsg);
+    scrollToBottom();
+  }
+
   /* ═══════ ОТПРАВКА ═══════ */
 
   function sendMessage() {
@@ -209,6 +342,7 @@
     if (!text) return;
 
     inputEl.value = "";
+    inputEl.style.height = "auto";
     isLoading = true;
     sendBtn.disabled = true;
 
@@ -225,6 +359,8 @@
         sendBtn.disabled = false;
         appendMessage("model", reply);
         history.push({ role: "model", text: reply });
+        speak(reply);
+        maybeShowImage(text);
       },
       function (errMsg) {
         hideTyping();
