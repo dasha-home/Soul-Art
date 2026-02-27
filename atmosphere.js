@@ -5,28 +5,29 @@
 (function () {
   var STORAGE_BG = "soulart_atm_bg";
   var STORAGE_TEXT = "soulart_atm_text";
-  var DEFAULT_BG = 120;
-  var DEFAULT_TEXT = 120;
+  var STORAGE_AUTO = "soulart_atm_auto";
   var MIN = 40;
   var MAX = 200;
+  /** Стандартный вид: светлый фон, чёткий тёмный текст. */
+  var STANDARD_BG = 200;
+  var STANDARD_TEXT = 200;
+
+  function isAuto() {
+    return localStorage.getItem(STORAGE_AUTO) === "1";
+  }
 
   function getStored() {
+    if (isAuto()) return { bg: STANDARD_BG, text: STANDARD_TEXT, auto: true };
     var bg = parseInt(localStorage.getItem(STORAGE_BG), 10);
     var text = parseInt(localStorage.getItem(STORAGE_TEXT), 10);
-    if (isNaN(bg) || bg < MIN || bg > MAX) bg = DEFAULT_BG;
-    if (isNaN(text) || text < MIN || text > MAX) text = DEFAULT_TEXT;
-    return { bg: bg, text: text };
+    if (isNaN(bg) || bg < MIN || bg > MAX) bg = STANDARD_BG;
+    if (isNaN(text) || text < MIN || text > MAX) text = STANDARD_TEXT;
+    return { bg: bg, text: text, auto: false };
   }
 
   function setStored(bg, text) {
     localStorage.setItem(STORAGE_BG, String(bg));
     localStorage.setItem(STORAGE_TEXT, String(text));
-  }
-
-  /** Полная очистка: вернуть к оригиналу и не восстанавливать из памяти при обновлении. */
-  function clearStored() {
-    localStorage.removeItem(STORAGE_BG);
-    localStorage.removeItem(STORAGE_TEXT);
   }
 
   function interpolateHex(hex1, hex2, t) {
@@ -74,7 +75,6 @@
     document.body.style.setProperty("color", textColor);
   }
 
-  /** Применить сохранённую атмосферу сразу при загрузке (чтобы не было мелькания при переходе). */
   (function applyStoredOnLoad() {
     var stored = getStored();
     applyAtmosphere(stored.bg, stored.text);
@@ -92,9 +92,10 @@
       ".atmosphere-widget__panel[hidden]{display:none!important}" +
       ".atmosphere-widget__panel-inner{display:flex;flex-direction:column;gap:.5rem}" +
       ".atmosphere-widget__panel-header{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-bottom:.15rem}" +
-      ".atmosphere-widget__panel-title{font-size:.65rem;text-transform:uppercase;letter-spacing:.12em;opacity:.9;margin:0}" +
-      ".atmosphere-widget__auto-btn{flex-shrink:0;padding:.25rem .5rem;font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:inherit;cursor:pointer;transition:background .15s ease,border-color .15s ease}" +
-      ".atmosphere-widget__auto-btn:hover{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.3)}" +
+      ".atmosphere-widget__panel-title{font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.1em;opacity:.95;margin:0;-webkit-font-smoothing:antialiased}" +
+      ".atmosphere-widget__auto-btn{flex-shrink:0;padding:.3rem .55rem;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;border-radius:6px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.1);color:inherit;cursor:pointer;font-family:inherit;-webkit-font-smoothing:antialiased;transition:background .15s ease,border-color .15s ease}" +
+      ".atmosphere-widget__auto-btn:hover{background:rgba(255,255,255,0.18);border-color:rgba(255,255,255,0.35)}" +
+      ".atmosphere-widget .brightness-control__label{flex-shrink:0;font-weight:600;-webkit-font-smoothing:antialiased}" +
       ".atmosphere-widget .brightness-control{display:flex;align-items:center;gap:.5rem;font-size:.7rem;max-width:none;padding:.4rem .5rem}" +
       ".atmosphere-widget .brightness-control__label{flex-shrink:0}" +
       ".atmosphere-widget .brightness-control__range{flex:1;min-width:0;height:10px;border-radius:999px;background:rgba(0,0,0,0.25);-webkit-appearance:none;appearance:none;cursor:pointer}" +
@@ -148,22 +149,38 @@
     }
 
     function apply() {
-      var bg = parseInt(bgSlider.value, 10) || DEFAULT_BG;
-      var text = parseInt(textSlider.value, 10) || DEFAULT_TEXT;
+      if (isAuto()) return;
+      var bg = parseInt(bgSlider.value, 10) || STANDARD_BG;
+      var text = parseInt(textSlider.value, 10) || STANDARD_TEXT;
       applyAtmosphere(bg, text);
       setStored(bg, text);
     }
 
-    if (bgSlider) bgSlider.addEventListener("input", apply);
-    if (textSlider) textSlider.addEventListener("input", apply);
+    if (bgSlider) bgSlider.addEventListener("input", function () {
+      localStorage.removeItem(STORAGE_AUTO);
+      apply();
+    });
+    if (textSlider) textSlider.addEventListener("input", function () {
+      localStorage.removeItem(STORAGE_AUTO);
+      apply();
+    });
 
     var autoBtn = document.getElementById("atmosphere-auto-btn");
     if (autoBtn) {
       autoBtn.addEventListener("click", function () {
-        clearStored();
-        applyAtmosphere(DEFAULT_BG, DEFAULT_TEXT);
-        if (bgSlider) bgSlider.value = DEFAULT_BG;
-        if (textSlider) textSlider.value = DEFAULT_TEXT;
+        if (isAuto()) {
+          localStorage.removeItem(STORAGE_AUTO);
+          var stored = getStored();
+          applyAtmosphere(stored.bg, stored.text);
+          if (bgSlider) bgSlider.value = stored.bg;
+          if (textSlider) textSlider.value = stored.text;
+        } else {
+          setStored(parseInt(bgSlider.value, 10) || STANDARD_BG, parseInt(textSlider.value, 10) || STANDARD_TEXT);
+          localStorage.setItem(STORAGE_AUTO, "1");
+          applyAtmosphere(STANDARD_BG, STANDARD_TEXT);
+          if (bgSlider) bgSlider.value = STANDARD_BG;
+          if (textSlider) textSlider.value = STANDARD_TEXT;
+        }
       });
     }
   }
