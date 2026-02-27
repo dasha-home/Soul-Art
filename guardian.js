@@ -10,7 +10,7 @@
   "use strict";
 
   /* ── Настройки подключения ── */
-  var API_KEY   = "AIzaSyA4PG8QIYtgw1ZnpBUuxF00-dr6npDXQEw";
+  var API_KEY   = "AIzaSyCyRjWOzoH9o9OsknHh8sCxAf5hlfLSGiw";
   var API_PATH  = "/v1beta/models/gemini-2.0-flash:generateContent";
   var API_URL   = "https://generativelanguage.googleapis.com" + API_PATH;
   /* Cloudflare Worker — прокси для обхода блокировок в России */
