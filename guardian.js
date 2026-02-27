@@ -368,16 +368,54 @@
 
   /* ═══════ ГЕНЕРАЦИЯ КАРТИНКИ ═══════ */
 
-  var IMG_RE = /^(нарисуй мне|нарисуй,?|покажи картину|покажи мне картину|изобрази|создай картину|нарисуй картину)\s+/i;
+  var IMG_RE = /^(нарисуй мне|нарисуй|покажи картину|покажи мне картину|изобрази|создай картину|нарисуй картину)\s*/i;
+
+  /* Словарь часто встречающихся русских слов → английский для промпта */
+  var RU_EN = {
+    "закат":"sunset","рассвет":"sunrise","озеро":"lake","море":"sea","лес":"forest",
+    "горы":"mountains","гора":"mountain","река":"river","небо":"sky","облака":"clouds",
+    "цветы":"flowers","цветок":"flower","дерево":"tree","деревья":"trees","снег":"snow",
+    "дождь":"rain","туман":"fog","луна":"moon","солнце":"sun","звёзды":"stars",
+    "звезды":"stars","кот":"cat","кошка":"cat","собака":"dog","птица":"bird",
+    "птицы":"birds","самурай":"samurai","девушка":"girl","женщина":"woman",
+    "мужчина":"man","ребёнок":"child","ребенок":"child","дом":"house","замок":"castle",
+    "город":"city","деревня":"village","осень":"autumn","весна":"spring",
+    "лето":"summer","зима":"winter","ночь":"night","день":"day","утро":"morning",
+    "вечер":"evening","красный":"red","синий":"blue","зелёный":"green","зеленый":"green",
+    "жёлтый":"yellow","желтый":"yellow","белый":"white","чёрный":"black","черный":"black",
+    "золотой":"golden","серебряный":"silver","волк":"wolf","медведь":"bear",
+    "лошадь":"horse","конь":"horse","огонь":"fire","костёр":"campfire","костер":"campfire",
+    "вода":"water","камень":"stone","скала":"cliff","радуга":"rainbow",
+    "абстракция":"abstract","портрет":"portrait","пейзаж":"landscape",
+    "в стиле":"in style of","аниме":"anime","акварель":"watercolor","масло":"oil painting",
+    "карандаш":"pencil drawing","рисунок":"drawing"
+  };
+
+  function translatePrompt(text) {
+    var words = text.toLowerCase().split(/\s+/);
+    var translated = words.map(function(w) {
+      var clean = w.replace(/[.,!?;:]/g, "");
+      return RU_EN[clean] || w;
+    });
+    return translated.join(" ");
+  }
+
+  /* Список URL для попытки — от простого к сложному */
+  function buildImageUrls(subject) {
+    var base = translatePrompt(subject);
+    var fullPrompt = base + ", beautiful art, soft light, detailed, high quality";
+    return [
+      "https://image.pollinations.ai/prompt/" + encodeURIComponent(fullPrompt) + "?width=768&height=512&nologo=true&seed=" + Math.floor(Math.random()*9999),
+      "https://image.pollinations.ai/prompt/" + encodeURIComponent(base + ", digital art, beautiful") + "?width=512&height=512&nologo=true",
+      "https://image.pollinations.ai/prompt/" + encodeURIComponent(base) + "?width=512&height=512"
+    ];
+  }
 
   function maybeShowImage(userText) {
     var m = userText.match(IMG_RE);
     if (!m) return;
     var subject = userText.slice(m[0].length).trim();
-    if (!subject) subject = userText;
-
-    var prompt = subject + ", watercolor painting, Japanese ink art, wabi-sabi aesthetic, soft light, beautiful, 4k";
-    var imgUrl = "https://image.pollinations.ai/prompt/" + encodeURIComponent(prompt) + "?width=512&height=512&nologo=true&model=flux";
+    if (!subject) return;
 
     var imgMsg = document.createElement("div");
     imgMsg.className = "guardian-msg guardian-msg--bot";
@@ -392,15 +430,26 @@
 
     var caption = document.createElement("p");
     caption.className = "guardian-msg__image-caption";
-    caption.textContent = "Создаю картину…";
+    caption.textContent = "Создаю картину… ⏳";
 
     var img = document.createElement("img");
     img.className = "guardian-msg__image";
     img.alt = subject;
-    img.loading = "lazy";
-    img.src = imgUrl;
+
+    var urls = buildImageUrls(subject);
+    var attempt = 0;
+
+    function tryNext() {
+      if (attempt >= urls.length) {
+        caption.textContent = "Не удалось нарисовать. Попробуй написать по-другому или чуть позже.";
+        return;
+      }
+      caption.textContent = "Создаю картину… ⏳" + (attempt > 0 ? " (попытка " + (attempt+1) + ")" : "");
+      img.src = urls[attempt++];
+    }
+
     img.onload  = function () { caption.textContent = "✦ " + subject; scrollToBottom(); };
-    img.onerror = function () { caption.textContent = "Картина не загрузилась — попробуй переформулировать."; };
+    img.onerror = function () { setTimeout(tryNext, 800); };
 
     bubble.appendChild(caption);
     bubble.appendChild(img);
@@ -408,6 +457,8 @@
     imgMsg.appendChild(bubble);
     messagesEl.appendChild(imgMsg);
     scrollToBottom();
+
+    tryNext();
   }
 
   /* ═══════ ОТПРАВКА ═══════ */
