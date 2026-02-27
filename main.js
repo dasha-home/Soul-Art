@@ -1009,20 +1009,27 @@ function buildFujiMagicPanel() {
     musicOnOffBtn.setAttribute("aria-label", on ? "Выключить музыку" : "Включить музыку");
   }
 
-  function togglePanel(ball, panel, isOpenKey) {
+  function togglePanel(ball, panel, isOpenKey, onClose) {
     return function (e) {
       if (e.target.closest(".fuji-magic__panel")) return;
+      const wasOpen = fujiMagicState[isOpenKey];
       fujiMagicState[isOpenKey] = !fujiMagicState[isOpenKey];
       panel.classList.toggle("fuji-ball__panel--open", fujiMagicState[isOpenKey]);
       ball.setAttribute("aria-expanded", fujiMagicState[isOpenKey]);
+      if (wasOpen && !fujiMagicState[isOpenKey] && onClose) onClose();
     };
   }
   if (ballPetals && panelPetals) {
-    ballPetals.addEventListener("click", togglePanel(ballPetals, panelPetals, "panelPetalsOpen"));
+    ballPetals.addEventListener("click", togglePanel(ballPetals, panelPetals, "panelPetalsOpen", null));
     ballPetals.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ballPetals.click(); } });
   }
   if (ballMusic && panelMusic) {
-    ballMusic.addEventListener("click", togglePanel(ballMusic, panelMusic, "panelMusicOpen"));
+    ballMusic.addEventListener("click", togglePanel(ballMusic, panelMusic, "panelMusicOpen", function () {
+      setMusicVolume(0);
+      setFujiPref("music", 0);
+      if (musicSlider) musicSlider.value = 0;
+      updateMusicOnOffLabel();
+    }));
     ballMusic.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ballMusic.click(); } });
   }
 

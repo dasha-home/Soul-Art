@@ -1458,47 +1458,52 @@ body.sakura-sway {
 }
 
 .fuji-magic__panel {
-  padding: 0.65rem 0.85rem;
+  padding: 0.75rem 0.95rem;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  background: rgba(20, 18, 16, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
-  min-width: 172px;
+  gap: 0.85rem;
+  min-width: 180px;
 }
 
 .fuji-magic__row {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.6rem;
+  min-height: 2rem;
+  flex-shrink: 0;
 }
 
 .fuji-magic__label {
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
-  min-width: 3.2rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #fff;
+  min-width: 3.5rem;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
   -webkit-font-smoothing: antialiased;
 }
 
 .fuji-magic__count {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.35rem;
 }
 
 .fuji-magic__btn {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  background: rgba(255, 255, 255, 0.1);
-  color: inherit;
-  font-size: 1.1rem;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 1.15rem;
   font-weight: 600;
   line-height: 1;
   cursor: pointer;
@@ -1514,10 +1519,12 @@ body.sakura-sway {
 }
 
 .fuji-magic__num {
-  min-width: 1.8em;
+  min-width: 2em;
   text-align: center;
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);
 }
 
 /* Кнопки выбора трека */
@@ -1527,13 +1534,13 @@ body.sakura-sway {
 }
 
 .fuji-magic__track-btn {
-  padding: 0.35rem 0.6rem;
-  font-size: 0.7rem;
-  font-weight: 600;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.85);
+  padding: 0.4rem 0.7rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease;
   -webkit-font-smoothing: antialiased;
@@ -1552,17 +1559,18 @@ body.sakura-sway {
 
 /* Кнопка Вкл/Выкл музыки — один клик включить или выключить */
 .fuji-magic__onoff {
-  padding: 0.4rem 0.85rem;
-  font-size: 0.75rem;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.78rem;
   font-weight: 700;
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
   cursor: pointer;
   transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
   -webkit-font-smoothing: antialiased;
-  min-width: 3.2rem;
+  min-width: 3.4rem;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
 }
 
 .fuji-magic__onoff:hover {
@@ -1583,39 +1591,69 @@ body.sakura-sway {
 .fuji-magic__slider-wrap {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.5rem;
   flex: 1;
   min-width: 0;
+  min-height: 28px;
 }
 
 .fuji-magic__range {
   flex: 1;
   min-width: 0;
-  height: 6px;
+  height: 8px;
   -webkit-appearance: none;
   appearance: none;
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.25);
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   cursor: pointer;
 }
 
 .fuji-magic__range::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 14px;
-  height: 14px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(0, 0, 0, 0.15);
+  background: #fff;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
   cursor: grab;
 }
 
 .fuji-magic__range::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(0, 0, 0, 0.15);
+  background: #fff;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
   cursor: grab;
+}
+
+/* Адаптив: на узких экранах панели открываются вверх, чтобы не уезжали за край */
+@media (max-width: 480px) {
+  .fuji-magic__balls {
+    gap: 0.6rem;
+  }
+  .fuji-ball {
+    width: 52px;
+    height: 52px;
+  }
+  .fuji-ball__panel {
+    left: 0;
+    bottom: 100%;
+    margin-left: 0;
+    margin-bottom: 10px;
+    transform: translateY(8px);
+  }
+  .fuji-ball__panel--open {
+    transform: translateY(0);
+  }
+  .fuji-magic__panel {
+    min-width: 168px;
+    padding: 0.7rem 0.85rem;
+    gap: 0.75rem;
+  }
 }
 
 
