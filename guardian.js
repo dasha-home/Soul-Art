@@ -374,8 +374,10 @@
     var seed = Math.floor(Math.random() * 99999);
     var full = englishPrompt + ", beautiful, detailed, soft light, high quality art";
     return [
-      "https://image.pollinations.ai/prompt/" + encodeURIComponent(full) + "?width=768&height=512&nologo=true&seed=" + seed,
-      "https://image.pollinations.ai/prompt/" + encodeURIComponent(englishPrompt + ", digital art") + "?width=512&height=512&nologo=true&seed=" + seed,
+      /* Основной рабочий эндпоинт */
+      "https://pollinations.ai/p/" + encodeURIComponent(full) + "?width=768&height=512&seed=" + seed + "&nologo=true",
+      "https://pollinations.ai/p/" + encodeURIComponent(englishPrompt) + "?width=512&height=512&seed=" + seed,
+      /* Старый эндпоинт как запасной */
       "https://image.pollinations.ai/prompt/" + encodeURIComponent(englishPrompt) + "?width=512&height=512&seed=" + seed
     ];
   }
