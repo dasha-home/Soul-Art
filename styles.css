@@ -610,6 +610,19 @@ body,
   border-color: rgba(0, 0, 0, 0.18);
 }
 
+/* Кнопка Хранителя в навигации */
+.top-nav__link--guardian {
+  background: rgba(44, 40, 37, 0.82);
+  color: #e8c870 !important;
+  border-color: rgba(185, 138, 50, 0.5);
+  letter-spacing: 0.05em;
+}
+.top-nav__link--guardian:hover {
+  background: rgba(60, 50, 30, 0.92);
+  color: #f0d888 !important;
+  border-color: rgba(210, 168, 60, 0.7);
+}
+
 #app-content {
   flex: 1;
   padding: clamp(0.5rem, 2vh, 1.25rem) max(4vw, env(safe-area-inset-right), 3.5rem) clamp(2rem, 7vh, 4rem) max(4vw, env(safe-area-inset-left));
