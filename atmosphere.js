@@ -23,6 +23,12 @@
     localStorage.setItem(STORAGE_TEXT, String(text));
   }
 
+  /** Полная очистка: вернуть к оригиналу и не восстанавливать из памяти при обновлении. */
+  function clearStored() {
+    localStorage.removeItem(STORAGE_BG);
+    localStorage.removeItem(STORAGE_TEXT);
+  }
+
   function interpolateHex(hex1, hex2, t) {
     t = Math.max(0, Math.min(1, t));
     var r1 = parseInt(hex1.slice(1, 3), 16);
@@ -85,7 +91,10 @@
       ".atmosphere-widget__panel{position:absolute;top:calc(100% + .5rem);right:0;min-width:200px;padding:.6rem .75rem;border-radius:12px;background:rgba(255,255,255,0.08);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.15);box-shadow:0 8px 24px rgba(0,0,0,0.15)}" +
       ".atmosphere-widget__panel[hidden]{display:none!important}" +
       ".atmosphere-widget__panel-inner{display:flex;flex-direction:column;gap:.5rem}" +
-      ".atmosphere-widget__panel-title{font-size:.65rem;text-transform:uppercase;letter-spacing:.12em;opacity:.9}" +
+      ".atmosphere-widget__panel-header{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-bottom:.15rem}" +
+      ".atmosphere-widget__panel-title{font-size:.65rem;text-transform:uppercase;letter-spacing:.12em;opacity:.9;margin:0}" +
+      ".atmosphere-widget__auto-btn{flex-shrink:0;padding:.25rem .5rem;font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:inherit;cursor:pointer;transition:background .15s ease,border-color .15s ease}" +
+      ".atmosphere-widget__auto-btn:hover{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.3)}" +
       ".atmosphere-widget .brightness-control{display:flex;align-items:center;gap:.5rem;font-size:.7rem;max-width:none;padding:.4rem .5rem}" +
       ".atmosphere-widget .brightness-control__label{flex-shrink:0}" +
       ".atmosphere-widget .brightness-control__range{flex:1;min-width:0;height:10px;border-radius:999px;background:rgba(0,0,0,0.25);-webkit-appearance:none;appearance:none;cursor:pointer}" +
@@ -108,7 +117,10 @@
       '<span class="atmosphere-widget__sun" aria-hidden="true">☀</span></button>' +
       '<div class="atmosphere-widget__panel" id="atmosphere-panel" role="dialog" aria-label="Настройки яркости" hidden>' +
       '<div class="atmosphere-widget__panel-inner">' +
+      '<div class="atmosphere-widget__panel-header">' +
       '<span class="atmosphere-widget__panel-title">Атмосфера</span>' +
+      '<button type="button" class="atmosphere-widget__auto-btn" id="atmosphere-auto-btn" aria-label="Вернуть к стандартному виду">Авто</button>' +
+      '</div>' +
       '<label class="brightness-control" for="brightness-mountain-slider"><span class="brightness-control__label">Фон</span>' +
       '<input id="brightness-mountain-slider" class="brightness-control__range" type="range" min="' + MIN + '" max="' + MAX + '" value="' + stored.bg + '" aria-label="Яркость фона" /></label>' +
       '<label class="brightness-control" for="brightness-text-slider"><span class="brightness-control__label">Текст</span>' +
@@ -144,6 +156,16 @@
 
     if (bgSlider) bgSlider.addEventListener("input", apply);
     if (textSlider) textSlider.addEventListener("input", apply);
+
+    var autoBtn = document.getElementById("atmosphere-auto-btn");
+    if (autoBtn) {
+      autoBtn.addEventListener("click", function () {
+        clearStored();
+        applyAtmosphere(DEFAULT_BG, DEFAULT_TEXT);
+        if (bgSlider) bgSlider.value = DEFAULT_BG;
+        if (textSlider) textSlider.value = DEFAULT_TEXT;
+      });
+    }
   }
 
   if (document.readyState === "loading") {
