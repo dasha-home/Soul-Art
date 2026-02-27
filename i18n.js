@@ -185,6 +185,7 @@
     } else {
       document.body.appendChild(globe);
     }
+    setTimeout(function () { applyToPage(); }, 50);
   }
 
   window.I18n = {

@@ -85,7 +85,7 @@
     var style = document.createElement("style");
     style.id = "atmosphere-widget-styles";
     style.textContent =
-      ".atmosphere-widget{position:fixed;top:max(1rem,env(safe-area-inset-top));right:max(1rem,env(safe-area-inset-right));z-index:50;pointer-events:auto}" +
+      ".atmosphere-widget{position:fixed;top:max(1rem,env(safe-area-inset-top));right:max(1rem,env(safe-area-inset-right));z-index:50;pointer-events:auto;display:flex;flex-direction:column;align-items:flex-end}" +
       ".atmosphere-widget__trigger{width:48px;height:48px;min-width:48px;min-height:48px;border-radius:50%;border:1px solid rgba(255,220,100,0.5);background:rgba(255,240,180,0.2);backdrop-filter:blur(12px);color:#ffeb3b;font-size:1.5rem;cursor:pointer;display:grid;place-items:center;box-shadow:0 0 32px rgba(255,235,59,0.7);transition:transform .2s ease}" +
       ".atmosphere-widget__trigger:hover{transform:scale(1.08)}" +
       ".atmosphere-widget__panel{position:absolute;top:calc(100% + .5rem);right:0;min-width:200px;padding:.6rem .75rem;border-radius:12px;background:rgba(255,255,255,0.08);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.15);box-shadow:0 8px 24px rgba(0,0,0,0.15)}" +

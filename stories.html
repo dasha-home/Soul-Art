@@ -68,13 +68,22 @@
     <a class="stories-nav__btn" href="index.html" id="stories-btn-start" data-i18n="stories_nav_start">На стартовую</a>
   </nav>
   <div id="atmosphere-widget" class="atmosphere-widget" aria-label="Настройки атмосферы"></div>
-  <script src="atmosphere.js" defer></script>
   <script src="i18n.js" defer></script>
+  <script src="atmosphere.js" defer></script>
   <script>
 (function () {
-  document.addEventListener("DOMContentLoaded", function() {
-    if (window.I18n) window.I18n.init(document.getElementById("globe-container"));
-  });
+  function initGlobeAndTranslate() {
+    if (!window.I18n) return;
+    var container = document.getElementById("globe-container");
+    if (container) window.I18n.init(container);
+    else window.I18n.applyToPage();
+    setTimeout(function() { if (window.I18n) window.I18n.applyToPage(); }, 0);
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initGlobeAndTranslate);
+  } else {
+    initGlobeAndTranslate();
+  }
   const root = document.getElementById("root");
   const url = "https://raw.githubusercontent.com/dasha-home/Soul-Art/main/data/stories.json";
   fetch(url + "?t=" + Date.now(), { cache: "no-store" })
@@ -87,10 +96,11 @@
         if (window.I18n) window.I18n.applyToPage();
         return;
       }
-      root.innerHTML = stories.map(s => {
+      root.innerHTML = stories.map(function(s) {
         const cover = s.coverUrl ? "<img class=\"story-cover\" src=\"" + escapeAttr(s.coverUrl) + "\" alt=\"\" loading=\"lazy\" />" : "";
         return "<article>" + cover + "<h1 class=\"story-title\">" + escapeHtml(s.title || "") + "</h1><div class=\"story-content\">" + linkify(s.content || "") + "</div></article>";
       }).join("");
+      if (window.I18n) window.I18n.applyToPage();
     })
         .catch(() => {
       fetch("./data/stories.json", { cache: "no-store" })
@@ -99,12 +109,13 @@
           const data = JSON.parse(text);
           const stories = Array.isArray(data.stories) ? data.stories : [];
           if (stories.length === 0) { root.innerHTML = "<p class=\"loading\" data-i18n=\"stories_no\">" + (window.I18n ? window.I18n.t("stories_no") : "Пока нет рассказов.") + "</p>"; if (window.I18n) window.I18n.applyToPage(); return; }
-          root.innerHTML = stories.map(s => {
-            const cover = s.coverUrl ? "<img class=\"story-cover\" src=\"" + escapeAttr(s.coverUrl) + "\" alt=\"\" loading=\"lazy\" />" : "";
+          root.innerHTML = stories.map(function(s) {
+            var cover = s.coverUrl ? "<img class=\"story-cover\" src=\"" + escapeAttr(s.coverUrl) + "\" alt=\"\" loading=\"lazy\" />" : "";
             return "<article>" + cover + "<h1 class=\"story-title\">" + escapeHtml(s.title || "") + "</h1><div class=\"story-content\">" + linkify(s.content || "") + "</div></article>";
           }).join("");
+          if (window.I18n) window.I18n.applyToPage();
         })
-        .catch(() => { root.innerHTML = "<p class=\"error\" data-i18n=\"stories_error\">" + (window.I18n ? window.I18n.t("stories_error") : "Не удалось загрузить рассказы.") + "</p>"; if (window.I18n) window.I18n.applyToPage(); });
+        .catch(function() { root.innerHTML = "<p class=\"error\" data-i18n=\"stories_error\">" + (window.I18n ? window.I18n.t("stories_error") : "Не удалось загрузить рассказы.") + "</p>"; if (window.I18n) window.I18n.applyToPage(); });
     });
 
   function escapeHtml(s) {

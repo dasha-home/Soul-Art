@@ -108,9 +108,18 @@
     <script src="atmosphere.js" defer></script>
     <script src="i18n.js" defer></script>
     <script>
-      document.addEventListener("DOMContentLoaded", function() {
-        if (window.I18n) window.I18n.init(document.getElementById("globe-container"));
-      });
+      function initGlobeAndTranslate() {
+        if (!window.I18n) return;
+        var container = document.getElementById("globe-container");
+        if (container) window.I18n.init(container);
+        else window.I18n.applyToPage();
+        setTimeout(function() { if (window.I18n) window.I18n.applyToPage(); }, 0);
+      }
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initGlobeAndTranslate);
+      } else {
+        initGlobeAndTranslate();
+      }
       (function () {
         function playPapyrusClick(variant) {
           try {
