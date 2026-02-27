@@ -950,7 +950,7 @@ function buildFujiMagicPanel() {
   fujiMagicState.currentTrack = prefs.track;
 
   wrap.innerHTML =
-    '<div class="fuji-magic__balls">' +
+    '<div class="fuji-magic__ball-wrap fuji-magic__ball-wrap--left">' +
     '<div class="fuji-ball fuji-ball--petals" id="fuji-ball-petals" role="button" tabindex="0" aria-label="Лепестки и ветер" aria-expanded="false">' +
     '<span class="fuji-ball__icon" aria-hidden="true">🌸</span>' +
     '<span class="fuji-ball__label">Лепестки</span>' +
@@ -965,6 +965,8 @@ function buildFujiMagicPanel() {
     '<label class="fuji-magic__slider-wrap">' +
     '<input type="range" class="fuji-magic__range" id="fuji-wind-slider" min="0" max="100" value="' + prefs.wind + '" aria-label="Громкость ветра" />' +
     "</label></div></div></div>" +
+    '</div>' +
+    '<div class="fuji-magic__ball-wrap fuji-magic__ball-wrap--right">' +
     '<div class="fuji-ball fuji-ball--music" id="fuji-ball-music" role="button" tabindex="0" aria-label="Музыка" aria-expanded="false">' +
     '<span class="fuji-ball__icon" aria-hidden="true">♪</span>' +
     '<span class="fuji-ball__label">Музыка</span>' +
@@ -981,7 +983,7 @@ function buildFujiMagicPanel() {
     '<div class="fuji-magic__row"><span class="fuji-magic__label">Громкость</span>' +
     '<label class="fuji-magic__slider-wrap">' +
     '<input type="range" class="fuji-magic__range" id="fuji-music-slider" min="0" max="100" value="' + prefs.music + '" aria-label="Громкость музыки" />' +
-    "</label></div></div></div></div>";
+    "</label></div></div></div></div></div>";
 
   const ballPetals = document.getElementById("fuji-ball-petals");
   const ballMusic = document.getElementById("fuji-ball-music");
