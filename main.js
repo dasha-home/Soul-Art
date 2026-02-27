@@ -34,17 +34,11 @@ const ARTWORKS_JSON = "https://raw.githubusercontent.com/dasha-home/Soul-Art/mai
 /** Базовый URL картинок галереи — один и тот же репозиторий, чтобы работало с file://, планшета и телефона. */
 const GALLERY_IMAGES_BASE = "https://dasha-home.github.io/Soul-Art";
 
-/** Первый URL для показа (приоритет WebP). */
-function imageUrlForDisplay(url) {
-  if (!url || typeof url !== "string") return url;
-  return url.replace(/\.(jpe?g|png)$/i, ".webp");
-}
-
-/** При ошибке загрузки пробуем те же имена с разными расширениями (.webp, .png, .jpg). */
+/** При ошибке загрузки пробуем те же имена с расширениями .png, .jpg, .jpeg (золотой стандарт). */
 function imageFallbackUrls(url) {
   if (!url || typeof url !== "string") return [];
-  const base = url.replace(/\.(jpe?g|png|webp)$/i, "");
-  return [base + ".webp", base + ".png", base + ".jpg", base + ".jpeg"].filter(function (u) { return u !== url; });
+  const base = url.replace(/\.(jpe?g|png)$/i, "");
+  return [base + ".png", base + ".jpg", base + ".jpeg"].filter(function (u) { return u !== url; });
 }
 
 /** Относительные пути к картинкам всегда грузим с GitHub Pages. Сегменты пути кодируем, чтобы буквы не ломали ссылку. */
@@ -133,10 +127,8 @@ function createArtSlider(artworks) {
   const images = artworks.map((art, i) => {
     const img = document.createElement("img");
     img.className = "art-slider__img" + (i === 0 ? " art-slider__img--active" : "");
-    const displayUrl = imageUrlForDisplay(art.imageUrl);
-    const originalUrl = art.imageUrl;
-    let rawUrls = [displayUrl];
-    if (originalUrl && rawUrls.indexOf(originalUrl) === -1) rawUrls.push(originalUrl);
+    const primaryUrl = art.imageUrl;
+    let rawUrls = [primaryUrl];
     imageFallbackUrls(art.imageUrl).forEach(function (u) { if (rawUrls.indexOf(u) === -1) rawUrls.push(u); });
     let urlsToTry = rawUrls.map(resolveGalleryImageUrl);
     urlsToTry = urlsToTry.filter(function (u, idx) { return urlsToTry.indexOf(u) === idx; });
@@ -280,9 +272,8 @@ function createArtSlider(artworks) {
       }, { passive: true });
       const updateLightbox = () => {
         const a = artworks[index];
-        const displayUrl = imageUrlForDisplay(a.imageUrl);
-        let rawUrls = [displayUrl];
-        if (a.imageUrl && rawUrls.indexOf(a.imageUrl) === -1) rawUrls.push(a.imageUrl);
+        const primaryUrl = a.imageUrl;
+        let rawUrls = [primaryUrl];
         imageFallbackUrls(a.imageUrl).forEach(function (u) { if (rawUrls.indexOf(u) === -1) rawUrls.push(u); });
         let urlsToTry = rawUrls.map(resolveGalleryImageUrl);
         urlsToTry = urlsToTry.filter(function (u, idx) { return urlsToTry.indexOf(u) === idx; });
@@ -799,133 +790,12 @@ function setupTopNav() {
   });
 }
 
-// ---------- КОНТРОЛЛЕРЫ ЯРКОСТИ: ГОРА И ТЕКСТ РАЗДЕЛЬНО ----------
-
-function interpolateHex(hex1, hex2, t) {
-  const r1 = parseInt(hex1.slice(1, 3), 16);
-  const g1 = parseInt(hex1.slice(3, 5), 16);
-  const b1 = parseInt(hex1.slice(5, 7), 16);
-  const r2 = parseInt(hex2.slice(1, 3), 16);
-  const g2 = parseInt(hex2.slice(3, 5), 16);
-  const b2 = parseInt(hex2.slice(5, 7), 16);
-  const r = Math.round(r1 + (r2 - r1) * t);
-  const g = Math.round(g1 + (g2 - g1) * t);
-  const b = Math.round(b1 + (b2 - b1) * t);
-  return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
-}
-
-/**
- * Ползунок для горы: меняет ТОЛЬКО яркость фона (01_fuji.png).
- * Гора остаётся на нормальной яркости по умолчанию (120 = 1.2).
- */
-function setupMountainBrightnessControl() {
-  const slider = document.getElementById("brightness-mountain-slider");
-  if (!slider) return;
-
-  const root = document.documentElement;
-
-  const applyValue = () => {
-    const value = Number(slider.value) || 120;
-    const normalized = value / 100;
-    root.style.setProperty("--mountain-brightness", String(normalized));
-  };
-
-  slider.addEventListener("input", applyValue);
-  applyValue();
-}
-
-/**
- * Ползунок для текста: меняет ТОЛЬКО цвет букв и свечение.
- * Левый край (40) = ночь → светлый текст + свечение; правый (200) = очень светло → тёмные буквы.
- */
-function setupTextBrightnessControl() {
-  const slider = document.getElementById("brightness-text-slider");
-  if (!slider) return;
-
-  const root = document.documentElement;
-
-  const applyValue = () => {
-    const value = Number(slider.value) || 120;
-    // t: 0 (ночь, value 40) → светлый текст; 1 (день, value 200) → тёмный текст
-    const t = Math.max(0, Math.min(1, (value - 40) / 160));
-
-    const textColorLight = "#f7f7ff";
-    const textColorDark = "#0d0d18";
-    const mutedColorLight = "#b8bce0";
-    const mutedColorDark = "#2d2d4a";
-
-    const textColor = interpolateHex(textColorLight, textColorDark, t);
-    const mutedColor = interpolateHex(mutedColorLight, mutedColorDark, t);
-
-    const glowNone = "none";
-    const glowStrong = "0 0 28px rgba(255, 255, 255, 0.35), 0 0 60px rgba(255, 255, 255, 0.12)";
-    const glowMid = "0 0 20px rgba(255, 255, 255, 0.2)";
-    const textGlow = t <= 0.35 ? glowStrong : t <= 0.6 ? glowMid : glowNone;
-
-    root.style.setProperty("--text-color", textColor);
-    root.style.setProperty("--muted-color", mutedColor);
-    root.style.setProperty("--text-glow", textGlow);
-  };
-
-  slider.addEventListener("input", applyValue);
-  applyValue();
-}
-
-function setupAtmosphereWidget() {
-  const container = document.getElementById("atmosphere-widget");
-  if (!container) return;
-
-  container.innerHTML = `
-    <button type="button" class="atmosphere-widget__trigger" id="atmosphere-trigger" aria-label="Настройки атмосферы" aria-expanded="false">
-      <span class="atmosphere-widget__sun" aria-hidden="true">☀</span>
-    </button>
-    <div class="atmosphere-widget__panel" id="atmosphere-panel" role="dialog" aria-label="Настройки яркости" hidden>
-      <div class="atmosphere-widget__panel-inner">
-        <span class="atmosphere-widget__panel-title">Атмосфера</span>
-        <label class="brightness-control" for="brightness-mountain-slider">
-          <span class="brightness-control__label">Фон</span>
-          <input id="brightness-mountain-slider" class="brightness-control__range" type="range" min="40" max="200" value="120" aria-label="Яркость фона" />
-        </label>
-        <label class="brightness-control" for="brightness-text-slider">
-          <span class="brightness-control__label">Текст</span>
-          <input id="brightness-text-slider" class="brightness-control__range" type="range" min="40" max="200" value="120" aria-label="Прозрачность текста" />
-        </label>
-      </div>
-    </div>
-  `;
-
-  const trigger = document.getElementById("atmosphere-trigger");
-  const panel = document.getElementById("atmosphere-panel");
-
-  if (trigger && panel) {
-    trigger.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const willBeOpen = panel.hidden;
-      panel.hidden = !willBeOpen;
-      trigger.setAttribute("aria-expanded", String(willBeOpen));
-    });
-    document.addEventListener("click", (e) => {
-      if (!panel.hidden && container && !container.contains(e.target)) {
-        panel.hidden = true;
-        trigger.setAttribute("aria-expanded", "false");
-      }
-    });
-  }
-
-  setupMountainBrightnessControl();
-  setupTextBrightnessControl();
-}
-
-function setupBrightnessControl() {
-  setupAtmosphereWidget();
-}
-
 // ---------- ИНИЦИАЛИЗАЦИЯ ----------
+// Атмосфера (Фон и Текст) подключается через atmosphere.js и сохраняется в localStorage.
 
 window.addEventListener("DOMContentLoaded", () => {
   setupIntroScene();
   setupTopNav();
-  setupBrightnessControl();
 
   const intro = document.getElementById("intro-layer");
   const appShell = document.getElementById("app-shell");

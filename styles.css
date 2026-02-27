@@ -2,8 +2,9 @@
   --main-speed: 0.9s;
   --accent-color: #ff6b9c;
   --bg-color: #050712;
-  --text-color: #1a1a2e;
-  --muted-color: #3d3d5c;
+  --page-bg: #e8e0d6;
+  --text-color: #1a1510;
+  --muted-color: #5c564d;
   --mountain-brightness: 1.2;
   --clouds-brightness: 0.75;
   --text-glow: none;
@@ -21,7 +22,7 @@ html {
 
 html,
 body {
-  background: #e8e0d6;
+  background: var(--page-bg);
 }
 
 *,
@@ -61,38 +62,14 @@ body.fuji-visible::before {
   opacity: 1;
 }
 
-/* На папирусе (Галерея, О Даше): тёмный текст, без белого/стекла */
+/* На папирусе (Галерея, О Даше): цвет текста из Атмосферы (--text-color, --muted-color) */
 body:not(.fuji-visible) .top-nav {
   border-bottom-color: rgba(0, 0, 0, 0.08);
 }
 
 body:not(.fuji-visible) .top-nav__brand {
-  color: #1a1510;
   -webkit-text-stroke: none;
   text-stroke: none;
-  text-shadow: none;
-}
-
-
-
-body:not(.fuji-visible) .about-view__title,
-body:not(.fuji-visible) .about-view__text {
-  color: #2c2825;
-  -webkit-text-stroke: none;
-  text-stroke: none;
-  text-shadow: none;
-}
-
-body:not(.fuji-visible) .gallery-view__heading,
-body:not(.fuji-visible) .gallery-view__caption-title {
-  color: #2c2825;
-  text-shadow: none;
-}
-
-body:not(.fuji-visible) .gallery-view__caption-subtitle,
-body:not(.fuji-visible) .gallery-view__caption-index {
-  color: #5c564d;
-  text-shadow: none;
 }
 
 body:not(.fuji-visible) .art-slider {
@@ -196,11 +173,11 @@ body,
   transition: opacity 0.9s ease-out;
 }
 
-/* Рама start.png поверх текстурного фона; пустые зоны — светлая бумага/папирус */
+/* Рама start.png поверх текстурного фона; пустые зоны — фон из Атмосферы */
 .intro__bg {
   position: absolute;
   inset: 0;
-  background-color: #e6dfd4;
+  background-color: var(--page-bg);
   background-image:
     url("./start.png"),
     radial-gradient(ellipse 120% 120% at 50% 50%, rgba(255, 252, 245, 0.35), transparent 55%),
@@ -333,17 +310,6 @@ body,
   paint-order: stroke fill;
   text-shadow: 0 0 20px rgba(0, 0, 0, 0.6), 0 0 32px rgba(255, 255, 255, 0.25), 0 1px 2px rgba(0, 0, 0, 0.8);
   text-decoration: none;
-}
-
-body:not(.fuji-visible) .top-nav {
-  border-bottom-color: rgba(0, 0, 0, 0.08);
-}
-
-body:not(.fuji-visible) .top-nav__brand {
-  color: #2c2825;
-  -webkit-text-stroke: none;
-  text-stroke: none;
-  text-shadow: none;
 }
 
 .top-nav__links {
@@ -1168,10 +1134,6 @@ body:not(.fuji-visible) .top-nav__brand {
   top: max(1rem, env(safe-area-inset-top));
   right: max(1rem, env(safe-area-inset-right));
   z-index: 50;
-  pointer-events: none;
-}
-
-#app-shell.app-shell--active .atmosphere-widget {
   pointer-events: auto;
 }
 
