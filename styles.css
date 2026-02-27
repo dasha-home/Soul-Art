@@ -1550,6 +1550,36 @@ body.sakura-sway {
   color: #fff;
 }
 
+/* Кнопка Вкл/Выкл музыки — один клик включить или выключить */
+.fuji-magic__onoff {
+  padding: 0.4rem 0.85rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.95);
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+  -webkit-font-smoothing: antialiased;
+  min-width: 3.2rem;
+}
+
+.fuji-magic__onoff:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.fuji-magic__onoff--on {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.45);
+  color: #fff;
+}
+
+.fuji-magic__onoff--on:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
 .fuji-magic__slider-wrap {
   display: flex;
   align-items: center;

@@ -974,6 +974,10 @@ function buildFujiMagicPanel() {
     '<button type="button" class="fuji-magic__track-btn' + (prefs.track === 1 ? ' fuji-magic__track-btn--active' : '') + '" id="fuji-track-1" data-track="1">Трек 1</button>' +
     '<button type="button" class="fuji-magic__track-btn' + (prefs.track === 2 ? ' fuji-magic__track-btn--active' : '') + '" id="fuji-track-2" data-track="2">Трек 2</button>' +
     "</div></div>" +
+    '<div class="fuji-magic__row fuji-magic__row--toggle">' +
+    '<span class="fuji-magic__label">Звук</span>' +
+    '<button type="button" class="fuji-magic__onoff" id="fuji-music-onoff" aria-label="Включить или выключить музыку">Вкл</button>' +
+    "</div>" +
     '<div class="fuji-magic__row"><span class="fuji-magic__label">Громкость</span>' +
     '<label class="fuji-magic__slider-wrap">' +
     '<input type="range" class="fuji-magic__range" id="fuji-music-slider" min="0" max="100" value="' + prefs.music + '" aria-label="Громкость музыки" />' +
@@ -990,6 +994,20 @@ function buildFujiMagicPanel() {
   const musicSlider = document.getElementById("fuji-music-slider");
   const track1Btn = document.getElementById("fuji-track-1");
   const track2Btn = document.getElementById("fuji-track-2");
+  const musicOnOffBtn = document.getElementById("fuji-music-onoff");
+
+  function isMusicPlaying() {
+    const el = fujiMagicState.musicEl;
+    return el && el.volume > 0 && !el.paused;
+  }
+
+  function updateMusicOnOffLabel() {
+    if (!musicOnOffBtn) return;
+    const on = isMusicPlaying();
+    musicOnOffBtn.textContent = on ? "Выкл" : "Вкл";
+    musicOnOffBtn.classList.toggle("fuji-magic__onoff--on", on);
+    musicOnOffBtn.setAttribute("aria-label", on ? "Выключить музыку" : "Включить музыку");
+  }
 
   function togglePanel(ball, panel, isOpenKey) {
     return function (e) {
@@ -1033,8 +1051,27 @@ function buildFujiMagicPanel() {
       const v = parseInt(musicSlider.value, 10) || 0;
       setFujiPref("music", v);
       setMusicVolume(v);
+      updateMusicOnOffLabel();
     });
     musicSlider.addEventListener("click", (e) => e.stopPropagation());
+  }
+
+  if (musicOnOffBtn) {
+    musicOnOffBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (isMusicPlaying()) {
+        setMusicVolume(0);
+        setFujiPref("music", 0);
+        // Ползунок не трогаем — при «Вкл» снова будет прежняя громкость
+      } else {
+        const v = Math.max(parseInt(musicSlider?.value, 10) || 50, 10);
+        setFujiPref("music", v);
+        setMusicVolume(v);
+        if (musicSlider) musicSlider.value = v;
+      }
+      updateMusicOnOffLabel();
+    });
+    updateMusicOnOffLabel();
   }
 
   function setTrackActive(trackNum) {
