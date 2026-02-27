@@ -372,16 +372,13 @@
 
   function buildImageUrls(englishPrompt) {
     var seed = Math.floor(Math.random() * 99999);
-    /* Берём первые 3 слова как ключевые для поиска фото */
-    var keywords = englishPrompt.trim().replace(/,/g, "").split(/\s+/).slice(0, 4).join(",");
-    var full = englishPrompt + ", beautiful, detailed, soft light, high quality art";
+    var enc = encodeURIComponent(englishPrompt + ", beautiful art, detailed, soft light");
+    var enc2 = encodeURIComponent(englishPrompt);
     return [
-      /* 1. Pollinations AI-генерация (когда работает) */
-      "https://image.pollinations.ai/prompt/" + encodeURIComponent(full) + "?width=768&height=512&nologo=true&seed=" + seed,
-      /* 2. loremflickr — реальные красивые фотографии по ключевым словам (всегда работает) */
-      "https://loremflickr.com/768/512/" + encodeURIComponent(keywords) + "?random=" + seed,
-      /* 3. Запасной loremflickr с меньшим размером */
-      "https://loremflickr.com/512/384/" + encodeURIComponent(keywords)
+      "https://image.pollinations.ai/prompt/" + enc  + "?width=768&height=512&seed=" + seed + "&model=flux",
+      "https://image.pollinations.ai/prompt/" + enc2 + "?width=768&height=512&seed=" + seed + "&model=turbo",
+      "https://image.pollinations.ai/prompt/" + enc2 + "?width=512&height=512&seed=" + seed,
+      "https://image.pollinations.ai/prompt/" + enc2 + "?width=512&height=512"
     ];
   }
 
@@ -429,16 +426,25 @@
 
         function tryNext() {
           if (attempt >= urls.length) {
-            caption.textContent = "Не удалось нарисовать. Попробуй чуть позже.";
+            caption.textContent = "Сервис рисования временно недоступен. Попробуй позже.";
+            console.warn("[Guardian] Все попытки генерации картинки исчерпаны");
             return;
           }
-          if (attempt > 0) caption.textContent = "Рисую… ⏳ (попытка " + (attempt + 1) + ")";
-          else caption.textContent = "Рисую… ⏳";
-          img.src = urls[attempt++];
+          var url = urls[attempt++];
+          console.log("[Guardian] Пробую картинку #" + attempt + ":", url);
+          caption.textContent = "Рисую… ⏳" + (attempt > 1 ? " (попытка " + attempt + ")" : "");
+          img.src = url;
         }
 
-        img.onload  = function () { caption.textContent = "✦ " + subject; scrollToBottom(); };
-        img.onerror = function () { setTimeout(tryNext, 1000); };
+        img.onload  = function () {
+          console.log("[Guardian] Картинка загружена:", img.src);
+          caption.textContent = "✦ " + subject;
+          scrollToBottom();
+        };
+        img.onerror = function () {
+          console.warn("[Guardian] Ошибка загрузки:", img.src);
+          setTimeout(tryNext, 1500);
+        };
 
         tryNext();
       },
