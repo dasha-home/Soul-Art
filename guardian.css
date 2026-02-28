@@ -545,6 +545,48 @@
   opacity: 0.65;
 }
 
+/* ── Кнопка «Картинки»: по желанию / только по просьбе ── */
+.guardian-chat__images-btn {
+  flex-shrink: 0;
+  min-width: 46px;
+  height: 46px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(162, 118, 40, 0.32);
+  background: rgba(14, 9, 3, 0.72);
+  color: #c8a855;
+  cursor: pointer;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  transition: all 0.22s;
+  backdrop-filter: blur(8px);
+}
+.guardian-chat__images-btn:hover {
+  background: rgba(38, 25, 8, 0.82);
+  border-color: rgba(215, 162, 48, 0.48);
+}
+.guardian-chat__images-btn .images-icon {
+  font-size: 1.1rem;
+}
+.guardian-chat__images-btn .images-label {
+  white-space: nowrap;
+}
+@media (max-width: 480px) {
+  .guardian-chat__images-btn .images-label {
+    display: none;
+  }
+  .guardian-chat__images-btn {
+    width: 46px;
+    padding: 0;
+  }
+}
+.guardian-chat__images-btn--request-only .images-icon {
+  opacity: 0.9;
+}
+
 /* ── Пузырь Психолога (тёплый розово-лиловый) ── */
 .guardian-msg--psychologist .guardian-msg__avatar {
   background: rgba(100, 28, 58, 0.55);

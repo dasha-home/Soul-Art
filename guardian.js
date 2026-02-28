@@ -331,6 +331,31 @@
     updateVoiceUI();
   }
 
+  /* ═══════ КАРТИНКИ: по желанию Хранителя или только по просьбе ═══════ */
+
+  var IMAGES_STORAGE_KEY = "guardian_images_mode";
+  var imagesMode = localStorage.getItem(IMAGES_STORAGE_KEY) || "auto"; // "auto" | "request"
+  var imagesToggleBtn = document.getElementById("guardian-images-toggle");
+
+  function updateImagesUI() {
+    if (!imagesToggleBtn) return;
+    var label = imagesToggleBtn.querySelector(".images-label");
+    if (label) label.textContent = imagesMode === "request" ? "по просьбе" : "по желанию";
+    imagesToggleBtn.classList.toggle("guardian-chat__images-btn--request-only", imagesMode === "request");
+    imagesToggleBtn.title = imagesMode === "request"
+      ? "Картинки только когда ты просишь (нарисуй…, найди фото…). Нажми — разрешить Хранителю рисовать по желанию."
+      : "Хранитель может сам предлагать картинки. Нажми — только когда ты просишь.";
+  }
+
+  if (imagesToggleBtn) {
+    imagesToggleBtn.addEventListener("click", function () {
+      imagesMode = imagesMode === "auto" ? "request" : "auto";
+      localStorage.setItem(IMAGES_STORAGE_KEY, imagesMode);
+      updateImagesUI();
+    });
+    updateImagesUI();
+  }
+
   /* ═══════ МИКРОФОН (Speech-to-Text) ═══════ */
 
   var micBtn = document.getElementById("guardian-mic");
@@ -723,6 +748,16 @@
     );
   }
 
+  /* ── «Не рисуй» / «хватит картинок» → режим «только по просьбе» ── */
+  var NO_IMAGES_RE = /^(не рисуй|хватит картинок|не показывай картинки|без картинок|не выдавай картинки|картинки не надо|больше не рисуй)\s*[.!]?$/i;
+  function maybeDisableAutoImages(userText) {
+    if (!NO_IMAGES_RE.test(userText.trim())) return false;
+    imagesMode = "request";
+    localStorage.setItem(IMAGES_STORAGE_KEY, imagesMode);
+    updateImagesUI();
+    return true;
+  }
+
   /* ── Проверяем сообщение пользователя на все команды ── */
   function maybeShowImage(userText) {
     /* Маршрут */
@@ -796,7 +831,8 @@
       showDrawRoomBtn();
     }
 
-    /* Самурай рисует сам */
+    /* Самурай рисует сам — только если картинки «по желанию» */
+    if (imagesMode !== "auto") return;
     var m = botText.replace(/\[ОТКРЫТЬ_МАСТЕРСКУЮ\]/g, "").match(/нарисуй\s+([^\n.!?]{4,80})/i);
     if (!m) return;
     var subject = m[1].trim().replace(/[«»"']+/g, "");
@@ -896,6 +932,14 @@
 
     appendMessage("user", text);
     history.push({ role: "user", text: text });
+
+    /* «Хватит картинок» / «не рисуй» — переключаем на «только по просьбе» */
+    if (maybeDisableAutoImages(text)) {
+      appendMessageStyled("model", "Хорошо. Буду рисовать только когда попросишь — напиши «нарисуй …» или «найди фото …».", null, "✦");
+      history.push({ role: "model", text: "Хорошо. Буду рисовать только когда попросишь." });
+      finishLoading();
+      return;
+    }
 
     if (getMode() === "duo")  { sendDuo(text);  return; }
     if (getMode() === "trio") { sendTrio(text); return; }
