@@ -41,8 +41,36 @@ export default {
       const prompt = body.prompt || "beautiful landscape";
       try {
         const result = await env.AI.run("@cf/black-forest-labs/flux-1-schnell", { prompt });
-        /* Возвращаем PNG-бинарник напрямую */
-        return new Response(result, {
+
+        let imageData;
+        if (result && typeof result.getReader === "function") {
+          const reader = result.getReader();
+          const chunks = [];
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            chunks.push(value);
+          }
+          const total = chunks.reduce((s, c) => s + c.length, 0);
+          imageData = new Uint8Array(total);
+          let offset = 0;
+          for (const chunk of chunks) { imageData.set(chunk, offset); offset += chunk.length; }
+        } else if (result instanceof Uint8Array) {
+          imageData = result;
+        } else if (result instanceof ArrayBuffer) {
+          imageData = new Uint8Array(result);
+        } else if (result && result.image) {
+          const bin = atob(result.image);
+          imageData = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) imageData[i] = bin.charCodeAt(i);
+        } else {
+          return new Response(
+            JSON.stringify({ error: "Unknown format", type: typeof result }),
+            { status: 502, headers: { "Content-Type": "application/json", ...cors } }
+          );
+        }
+
+        return new Response(imageData, {
           status: 200,
           headers: { "Content-Type": "image/png", ...cors }
         });
