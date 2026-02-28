@@ -1,6 +1,8 @@
-# Даша Художник — разрешаем индексацию всего сайта
+# Даша Художник — разрешаем индексацию всего сайта, кроме админки
 User-agent: *
 Allow: /
+Disallow: /admin.html
+Disallow: /dasha-admin.html
 
 # Указываем поисковикам карту сайта
 Sitemap: https://dasha-home.github.io/Soul-Art/sitemap.xml
