@@ -25,14 +25,32 @@
   pointer-events: none;
 }
 
+/* ── Медленный дрейф фона (Ken Burns) — самурай живёт ── */
+@keyframes samurai-ken-burns {
+  0%   { transform: scale(1.00) translate(0px,   0px); }
+  25%  { transform: scale(1.03) translate(-6px,  -3px); }
+  50%  { transform: scale(1.05) translate(-11px,  2px); }
+  75%  { transform: scale(1.03) translate(-5px,   4px); }
+  100% { transform: scale(1.00) translate(0px,   0px); }
+}
+
+/* ── Дыхание: самурай чуть светлеет-темнеет ── */
+@keyframes samurai-breathe {
+  0%   { filter: brightness(0.80) saturate(1.12) contrast(1.04); }
+  50%  { filter: brightness(0.88) saturate(1.22) contrast(1.05); }
+  100% { filter: brightness(0.80) saturate(1.12) contrast(1.04); }
+}
+
 .samurai-bg__image {
   position: absolute;
   inset: 0;
   background-image: url('samurai.jpg');
   background-size: cover;
   background-position: 38% center;
-  filter: brightness(0.82) saturate(1.15) contrast(1.04);
-  transition: filter 0.5s ease;
+  animation:
+    samurai-ken-burns 28s ease-in-out infinite,
+    samurai-breathe   5s  ease-in-out infinite;
+  will-change: transform, filter;
 }
 
 /* Градиент: левая сторона прозрачная (самурай виден),
@@ -56,7 +74,7 @@
     );
 }
 
-/* Пульсирующее свечение огня */
+/* ── Пульсирующее свечение огня — спокойное ── */
 .samurai-bg__fire-glow {
   position: absolute;
   bottom: 0;
@@ -71,12 +89,37 @@
     transparent 68%
   );
   animation: fire-breathe 3s ease-in-out infinite alternate;
+  transition: animation-duration 0.5s;
 }
 
 @keyframes fire-breathe {
-  0%   { opacity: 0.60; transform: scale(1.00); }
-  40%  { opacity: 0.90; }
-  100% { opacity: 0.70; transform: scale(1.07) translateY(-1%); }
+  0%   { opacity: 0.55; transform: scale(1.00); }
+  40%  { opacity: 0.88; }
+  100% { opacity: 0.65; transform: scale(1.08) translateY(-1.5%); }
+}
+
+/* ── Огонь оживает когда самурай думает ── */
+.guardian-page--thinking .samurai-bg__fire-glow {
+  animation: fire-thinking 1.4s ease-in-out infinite alternate;
+}
+
+@keyframes fire-thinking {
+  0%   { opacity: 0.75; transform: scale(1.02); filter: brightness(1.1); }
+  50%  { opacity: 1.00; }
+  100% { opacity: 0.85; transform: scale(1.14) translateY(-2.5%); filter: brightness(1.3); }
+}
+
+/* ── Самурай светлеет когда думает ── */
+.guardian-page--thinking .samurai-bg__image {
+  animation:
+    samurai-ken-burns 28s ease-in-out infinite,
+    samurai-thinking  1.8s ease-in-out infinite;
+}
+
+@keyframes samurai-thinking {
+  0%   { filter: brightness(0.84) saturate(1.25) contrast(1.06); }
+  50%  { filter: brightness(0.92) saturate(1.35) contrast(1.08); }
+  100% { filter: brightness(0.84) saturate(1.25) contrast(1.06); }
 }
 
 /* ══════════════════════════════

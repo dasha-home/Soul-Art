@@ -614,9 +614,14 @@
 
   /* ═══════ ОТПРАВКА ═══════ */
 
+  function setThinking(on) {
+    document.body.classList.toggle("guardian-page--thinking", on);
+  }
+
   function finishLoading() {
     isLoading = false;
     sendBtn.disabled = false;
+    setThinking(false);
   }
 
   function sendDuo(userText) {
@@ -695,6 +700,7 @@
     inputEl.style.height = "auto";
     isLoading = true;
     sendBtn.disabled = true;
+    setThinking(true);
 
     appendMessage("user", text);
     history.push({ role: "user", text: text });
