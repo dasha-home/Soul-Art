@@ -699,35 +699,41 @@ breatheOuter.addEventListener('click', function() {
 });
 
 /* ══════════════════════════════════════════════
-   ЗВУК — медитативный дрон
+   ЗВУК — медитативная музыка с Фудзи
    ══════════════════════════════════════════════ */
-let audioCtx=null, soundNodes=[], soundOn=false;
-function startSound() {
-  if (!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-  [55,82.41,110,164.81].forEach(function(f,i){
-    const osc=audioCtx.createOscillator(),gain=audioCtx.createGain();
-    const lfo=audioCtx.createOscillator(),lfoG=audioCtx.createGain();
-    lfo.frequency.value=0.11+i*.06; lfoG.gain.value=0.22;
-    lfo.connect(lfoG); lfoG.connect(osc.frequency); lfo.start();
-    osc.type=i%2===0?'sine':'triangle'; osc.frequency.value=f;
-    gain.gain.setValueAtTime(0,audioCtx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.02/(i+1),audioCtx.currentTime+4);
-    osc.connect(gain); gain.connect(audioCtx.destination); osc.start();
-    soundNodes.push({osc,gain,lfo});
-  });
+var music = new Audio('./audio/fuji-1.mp3');
+music.loop = true;
+music.volume = 0;
+var soundOn = false;
+var fadeInterval = null;
+
+function fadeMusic(targetVol, duration) {
+  clearInterval(fadeInterval);
+  var start = music.volume;
+  var steps = 40;
+  var stepTime = duration / steps;
+  var step = 0;
+  fadeInterval = setInterval(function() {
+    step++;
+    music.volume = Math.max(0, Math.min(1, start + (targetVol - start) * (step / steps)));
+    if (step >= steps) {
+      clearInterval(fadeInterval);
+      if (targetVol === 0) music.pause();
+    }
+  }, stepTime);
 }
-function stopSound() {
-  soundNodes.forEach(function(n){
-    n.gain.gain.linearRampToValueAtTime(0,audioCtx.currentTime+2);
-    setTimeout(function(){try{n.osc.stop();n.lfo.stop();}catch(e){}},2200);
-  });
-  soundNodes=[];
-}
-document.getElementById('sound-btn').addEventListener('click',function(){
-  soundOn=!soundOn;
-  this.textContent=soundOn?'♪ Тишина':'♪ Звук';
-  this.classList.toggle('on',soundOn);
-  if(soundOn)startSound();else stopSound();
+
+document.getElementById('sound-btn').addEventListener('click', function() {
+  soundOn = !soundOn;
+  this.textContent = soundOn ? '♪ Тишина' : '♪ Звук';
+  this.classList.toggle('on', soundOn);
+  if (soundOn) {
+    music.currentTime = music.currentTime || 0;
+    music.play().catch(function(){});
+    fadeMusic(0.55, 3000);
+  } else {
+    fadeMusic(0, 2000);
+  }
 });
 
 /* ══════════════════════════════════════════════
@@ -737,14 +743,15 @@ let timerInterval=null;
 const timerEl=document.getElementById('timer-display');
 const bellEl=document.getElementById('bell-msg');
 function ringBell(){
-  if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  var bellCtx = new(window.AudioContext||window.webkitAudioContext)();
   [432,528,639].forEach(function(f,i){
-    const o=audioCtx.createOscillator(),g=audioCtx.createGain();
-    o.type='sine';o.frequency.value=f;
-    g.gain.setValueAtTime(0.28,audioCtx.currentTime+i*.38);
-    g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+i*.38+5);
-    o.connect(g);g.connect(audioCtx.destination);
-    o.start(audioCtx.currentTime+i*.38);o.stop(audioCtx.currentTime+i*.38+5);
+    var o=bellCtx.createOscillator(), g=bellCtx.createGain();
+    o.type='sine'; o.frequency.value=f;
+    g.gain.setValueAtTime(0.28, bellCtx.currentTime+i*.38);
+    g.gain.exponentialRampToValueAtTime(0.001, bellCtx.currentTime+i*.38+5);
+    o.connect(g); g.connect(bellCtx.destination);
+    o.start(bellCtx.currentTime+i*.38);
+    o.stop(bellCtx.currentTime+i*.38+5);
   });
 }
 function startTimer(min){
