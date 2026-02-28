@@ -70,10 +70,17 @@ export default {
           );
         }
 
-        return new Response(imageData, {
-          status: 200,
-          headers: { "Content-Type": "image/png", ...cors }
-        });
+        /* Конвертируем в base64 — браузер может сразу поставить в img.src */
+        let binary = "";
+        for (let i = 0; i < imageData.length; i++) {
+          binary += String.fromCharCode(imageData[i]);
+        }
+        const base64 = btoa(binary);
+
+        return new Response(
+          JSON.stringify({ image: base64 }),
+          { status: 200, headers: { "Content-Type": "application/json", ...cors } }
+        );
       } catch (err) {
         return new Response(
           JSON.stringify({ error: "Image generation failed: " + err.message }),

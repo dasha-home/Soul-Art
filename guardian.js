@@ -368,21 +368,42 @@
 
   /* ═══════ ГЕНЕРАЦИЯ КАРТИНКИ ═══════ */
 
-  var IMG_RE = /^(нарисуй мне|нарисуй|покажи картину|покажи мне картину|изобрази|создай картину|нарисуй картину)\s*/i;
+  var IMG_RE = /(?:^|\s)(нарисуй мне|нарисуй|покажи картину|покажи мне картину|изобрази|создай картину|нарисуй картину)\s+/i;
+  var CF_IMAGE_URL = "https://guardian-proxy.qerevv.workers.dev/v1/image";
 
-  /* ── Генерация картинок через img.src (без CORS) ── */
-  function generateImage(englishPrompt, img, caption, subject) {
+  /* ── Попытка через Cloudflare AI (flux-1-schnell) ── */
+  function generateImageCF(englishPrompt, img, caption, subject, onFail) {
+    caption.textContent = "Рисую… ✨";
+    fetch(CF_IMAGE_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt: englishPrompt + ", beautiful art, detailed, soft light" })
+    })
+      .then(function (res) {
+        if (!res.ok) { onFail(); return null; }
+        return res.json();
+      })
+      .then(function (data) {
+        if (!data || !data.image) { onFail(); return; }
+        img.onload  = function () { caption.textContent = "✦ " + subject; scrollToBottom(); };
+        img.onerror = function () { onFail(); };
+        img.src = "data:image/png;base64," + data.image;
+      })
+      .catch(function () { onFail(); });
+  }
+
+  /* ── Запасной вариант: Pollinations.ai через img.src (без CORS) ── */
+  function generateImagePollinations(englishPrompt, img, caption, subject) {
     var seed = Math.floor(Math.random() * 99999);
     var enc = encodeURIComponent(englishPrompt);
     var encFull = encodeURIComponent(englishPrompt + ", beautiful art, detailed, soft light");
 
-    /* Все варианты через прямые GET-ссылки — браузер грузит без CORS */
     var urls = [
       "https://image.pollinations.ai/prompt/" + encFull + "?width=768&height=512&seed=" + seed + "&nologo=true",
       "https://image.pollinations.ai/prompt/" + encFull + "?width=768&height=512&seed=" + seed + "&model=flux&nologo=true",
-      "https://image.pollinations.ai/prompt/" + enc   + "?width=512&height=512&seed=" + seed + "&model=turbo",
-      "https://image.pollinations.ai/prompt/" + enc   + "?width=512&height=512&seed=" + seed,
-      "https://image.pollinations.ai/prompt/" + enc   + "?width=512&height=512"
+      "https://image.pollinations.ai/prompt/" + enc + "?width=512&height=512&seed=" + seed + "&model=turbo",
+      "https://image.pollinations.ai/prompt/" + enc + "?width=512&height=512&seed=" + seed,
+      "https://image.pollinations.ai/prompt/" + enc + "?width=512&height=512"
     ];
 
     var attempt = 0;
@@ -392,7 +413,6 @@
         return;
       }
       var url = urls[attempt++];
-      console.log("[Guardian] Картинка попытка " + attempt + ":", url);
       caption.textContent = "Рисую… ⏳" + (attempt > 1 ? " (вариант " + attempt + ")" : "");
       img.src = url;
     }
@@ -402,12 +422,16 @@
     tryNext();
   }
 
-  function maybeShowImage(userText) {
-    var m = userText.match(IMG_RE);
-    if (!m) return;
-    var subject = userText.slice(m[0].length).trim();
-    if (!subject) return;
+  /* ── Основная точка входа: CF AI → Pollinations.ai ── */
+  function generateImage(englishPrompt, img, caption, subject) {
+    generateImageCF(englishPrompt, img, caption, subject, function () {
+      /* CF не ответил — переключаемся на Pollinations.ai */
+      generateImagePollinations(englishPrompt, img, caption, subject);
+    });
+  }
 
+  /* ── Создать блок с картинкой в чате ── */
+  function createImageBlock(subject) {
     var imgMsg = document.createElement("div");
     imgMsg.className = "guardian-msg guardian-msg--bot";
 
@@ -433,22 +457,43 @@
     imgMsg.appendChild(bubble);
     messagesEl.appendChild(imgMsg);
     scrollToBottom();
+    return { img: img, caption: caption };
+  }
 
-    /* Переводим на английский, потом рисуем */
+  /* ── Запустить рисование по теме (переводим → рисуем) ── */
+  function startDrawing(subject) {
+    var el = createImageBlock(subject);
     callAIWithPrompt(
       "Translate the Russian image description to a short English image generation prompt. " +
       "Return ONLY the English prompt, 3-8 words, no explanations, no quotes.",
       subject, null,
-      function(englishPrompt) {
+      function (englishPrompt) {
         englishPrompt = englishPrompt.trim().replace(/^["']|["']$/g, "");
-        generateImage(englishPrompt, img, caption, subject);
+        generateImage(englishPrompt, el.img, el.caption, subject);
       },
-      function() {
-        /* Перевод не удался — пробуем как есть */
-        generateImage(subject, img, caption, subject);
-        tryNext();
+      function () {
+        /* Перевод не удался — рисуем как есть */
+        generateImage(subject, el.img, el.caption, subject);
       }
     );
+  }
+
+  /* ── Проверяем сообщение пользователя на команду рисования ── */
+  function maybeShowImage(userText) {
+    var m = userText.match(IMG_RE);
+    if (!m) return;
+    var subject = userText.slice(userText.indexOf(m[0]) + m[0].length).trim();
+    if (!subject) return;
+    startDrawing(subject);
+  }
+
+  /* ── Проверяем ответ бота: вдруг он сам предложил нарисовать ── */
+  function maybeShowImageFromBot(botText) {
+    var m = botText.match(/нарисуй\s+([^\n.!?]{4,80})/i);
+    if (!m) return;
+    var subject = m[1].trim().replace(/[«»"']+/g, "");
+    if (!subject) return;
+    startDrawing(subject);
   }
 
   /* ═══════ ОТПРАВКА ═══════ */
@@ -467,6 +512,7 @@
         history.push({ role: "model", text: artistReply });
         speak(artistReply);
         maybeShowImage(userText);
+        maybeShowImageFromBot(artistReply);
 
         showTyping("linguist", "語", "Сэнсэй думает…");
         callAIWithPrompt(LINGUIST_DUO, userText, artistReply,
@@ -493,6 +539,7 @@
         history.push({ role: "model", text: artistReply });
         speak(artistReply);
         maybeShowImage(userText);
+        maybeShowImageFromBot(artistReply);
 
         showTyping("linguist", "語", "Сэнсэй думает…");
         callAIWithPrompt(LINGUIST_DUO, userText, artistReply,
@@ -549,6 +596,7 @@
         history.push({ role: "model", text: reply });
         speak(reply);
         maybeShowImage(text);
+        maybeShowImageFromBot(reply);
       },
       function (errMsg) {
         hideTyping();
