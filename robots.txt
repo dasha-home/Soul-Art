@@ -1,0 +1,6 @@
+# Даша Художник — разрешаем индексацию всего сайта
+User-agent: *
+Allow: /
+
+# Указываем поисковикам карту сайта
+Sitemap: https://dasha-home.github.io/Soul-Art/sitemap.xml
