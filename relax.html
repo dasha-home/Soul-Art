@@ -337,9 +337,9 @@
 <!-- ══════════ UI ══════════ -->
 <div class="relax-ui">
   <header class="relax-header" id="relax-header">
-    <a href="index.html" class="relax-back">← Главная</a>
-    <span class="relax-title">✦ Комната отдыха</span>
-    <button class="sound-btn" id="sound-btn">♪ Звук</button>
+    <a href="index.html" class="relax-back" data-i18n="relax_back">← Главная</a>
+    <span class="relax-title" data-i18n="relax_title">✦ Комната отдыха</span>
+    <button class="sound-btn" id="sound-btn" data-i18n="relax_sound">♪ Звук</button>
   </header>
 
   <div class="breathe-wrap" id="breathe-wrap">
@@ -348,21 +348,21 @@
         <div class="breathe-dot"></div>
       </div>
     </div>
-    <p class="breathe-label" id="breathe-label">вдыхай...</p>
+    <p class="breathe-label" id="breathe-label" data-i18n="relax_breathe_in">вдыхай...</p>
   </div>
 
   <div class="relax-bottom" id="relax-bottom">
-    <button class="relax-btn" id="btn-timer-5">⏱ 5 мин</button>
-    <button class="relax-btn" id="btn-timer-10">⏱ 10 мин</button>
-    <button class="relax-btn" id="btn-timer-15">⏱ 15 мин</button>
-    <a href="guardian.html" class="relax-btn">✦ Хранитель</a>
-    <a href="draw.html" class="relax-btn">🎨 Рисовать</a>
-    <a href="stories.html" class="relax-btn">📖 Рассказы</a>
+    <button class="relax-btn" id="btn-timer-5" data-i18n="relax_timer_5">⏱ 5 мин</button>
+    <button class="relax-btn" id="btn-timer-10" data-i18n="relax_timer_10">⏱ 10 мин</button>
+    <button class="relax-btn" id="btn-timer-15" data-i18n="relax_timer_15">⏱ 15 мин</button>
+    <a href="guardian.html" class="relax-btn" data-i18n="nav_guardian">✦ Хранитель</a>
+    <a href="draw.html" class="relax-btn" data-i18n="relax_draw">🎨 Рисовать</a>
+    <a href="stories.html" class="relax-btn" data-i18n="nav_stories">📖 Рассказы</a>
   </div>
 </div>
 
 <div class="timer-display" id="timer-display"></div>
-<div class="bell-msg"      id="bell-msg">🔔 Медитация завершена</div>
+<div class="bell-msg" id="bell-msg" data-i18n="relax_meditation_done">🔔 Медитация завершена</div>
 
 <script>
 /* ── Плавное появление после загрузки ── */
@@ -377,15 +377,18 @@ function onLoad() {
 }
 if (img.complete) onLoad(); else img.addEventListener('load', onLoad);
 
-/* ── Дыхание (4 · 2 · 6 = 12 сек) ── */
-var PHASES = [{t:'вдыхай...',ms:4000},{t:'задержи...',ms:2000},{t:'выдыхай...',ms:6000}];
+/* ── Дыхание (4 · 2 · 6 = 12 сек), ключи для перевода ── */
+var PHASES = [{key:'relax_breathe_in',ms:4000},{key:'relax_breathe_hold',ms:2000},{key:'relax_breathe_out',ms:6000}];
 var phaseIdx = 0, breatheOn = true;
 var breatheLabel = document.getElementById('breathe-label');
 var breatheOuter = document.getElementById('breathe-outer');
 var breatheTimer;
+function relaxT(key) { return window.I18n && window.I18n.t ? window.I18n.t(key) : key; }
 function nextPhase() {
   if (!breatheOn) return;
-  breatheLabel.textContent = PHASES[phaseIdx].t;
+  var key = PHASES[phaseIdx].key;
+  breatheLabel.setAttribute('data-i18n', key);
+  breatheLabel.textContent = relaxT(key);
   breatheTimer = setTimeout(nextPhase, PHASES[phaseIdx].ms);
   phaseIdx = (phaseIdx + 1) % PHASES.length;
 }
@@ -397,7 +400,11 @@ breatheOuter.addEventListener('click', function() {
     el.style.animationPlayState = st;
   });
   if (breatheOn) { phaseIdx = 0; nextPhase(); }
-  else { clearTimeout(breatheTimer); breatheLabel.textContent = '· пауза ·'; }
+  else {
+    clearTimeout(breatheTimer);
+    breatheLabel.setAttribute('data-i18n', 'relax_pause');
+    breatheLabel.textContent = relaxT('relax_pause');
+  }
 });
 
 /* ── Медитативная музыка ── */
@@ -415,7 +422,8 @@ function fadeMusic(to, ms) {
 }
 document.getElementById('sound-btn').addEventListener('click', function() {
   soundOn = !soundOn;
-  this.textContent = soundOn ? '♪ Тишина' : '♪ Звук';
+  this.setAttribute('data-i18n', soundOn ? 'relax_silence' : 'relax_sound');
+  this.textContent = relaxT(soundOn ? 'relax_silence' : 'relax_sound');
   this.classList.toggle('on', soundOn);
   if (soundOn) { music.play().catch(function(){}); fadeMusic(0.55, 3000); }
   else { fadeMusic(0, 2000); }
@@ -450,7 +458,7 @@ function startTimer(min) {
       clearInterval(timerInterval); timerEl.classList.remove('show');
       ringBell(); bellEl.classList.add('show');
       setTimeout(function() { bellEl.classList.remove('show'); }, 6000);
-      if (btn) { btn.textContent = '✓ Готово'; btn.classList.remove('active'); }
+      if (btn) { btn.textContent = relaxT('relax_done'); btn.classList.remove('active'); }
       return;
     }
     var m = Math.floor(rem / 60000), s = Math.floor((rem % 60000) / 1000);
