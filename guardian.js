@@ -371,8 +371,35 @@
   var IMG_RE = /(?:^|\s)(нарисуй мне|нарисуй|покажи картину|покажи мне картину|изобрази|создай картину|нарисуй картину)\s+/i;
   var CF_IMAGE_URL = "https://guardian-proxy.qerevv.workers.dev/v1/image";
 
+  /* ── Показать кнопку скачивания когда картинка готова ── */
+  function showDownloadBtn(downloadBtn, img, subject) {
+    var filename = subject.replace(/[^\u0400-\u04ffa-z0-9\s]/gi, "").trim().slice(0, 40) || "картина";
+    downloadBtn.download = filename + ".png";
+    /* Для CF-картинок (data URL) — скачиваем напрямую */
+    if (img.src.startsWith("data:")) {
+      downloadBtn.href = img.src;
+    } else {
+      /* Для Pollinations (внешний URL) — пробуем через canvas */
+      try {
+        var canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        canvas.getContext("2d").drawImage(img, 0, 0);
+        downloadBtn.href = canvas.toDataURL("image/png");
+      } catch (_) {
+        /* CORS не позволил — открываем в новой вкладке */
+        downloadBtn.href = img.src;
+        downloadBtn.removeAttribute("download");
+        downloadBtn.target = "_blank";
+        downloadBtn.textContent = "🔗 Открыть";
+      }
+    }
+    downloadBtn.style.display = "inline-flex";
+    scrollToBottom();
+  }
+
   /* ── Попытка через Cloudflare AI (flux-1-schnell) ── */
-  function generateImageCF(englishPrompt, img, caption, subject, onFail) {
+  function generateImageCF(englishPrompt, img, caption, subject, downloadBtn, onFail) {
     caption.textContent = "Рисую… ✨";
     fetch(CF_IMAGE_URL, {
       method: "POST",
@@ -385,7 +412,10 @@
       })
       .then(function (data) {
         if (!data || !data.image) { onFail(); return; }
-        img.onload  = function () { caption.textContent = "✦ " + subject; scrollToBottom(); };
+        img.onload  = function () {
+          caption.textContent = "✦ " + subject;
+          showDownloadBtn(downloadBtn, img, subject);
+        };
         img.onerror = function () { onFail(); };
         img.src = "data:image/png;base64," + data.image;
       })
@@ -393,7 +423,7 @@
   }
 
   /* ── Запасной вариант: Pollinations.ai через img.src (без CORS) ── */
-  function generateImagePollinations(englishPrompt, img, caption, subject) {
+  function generateImagePollinations(englishPrompt, img, caption, subject, downloadBtn) {
     var seed = Math.floor(Math.random() * 99999);
     var enc = encodeURIComponent(englishPrompt);
     var encFull = encodeURIComponent(englishPrompt + ", beautiful art, detailed, soft light");
@@ -417,16 +447,18 @@
       img.src = url;
     }
 
-    img.onload  = function () { caption.textContent = "✦ " + subject; scrollToBottom(); };
+    img.onload  = function () {
+      caption.textContent = "✦ " + subject;
+      showDownloadBtn(downloadBtn, img, subject);
+    };
     img.onerror = function () { setTimeout(tryNext, 2000); };
     tryNext();
   }
 
   /* ── Основная точка входа: CF AI → Pollinations.ai ── */
-  function generateImage(englishPrompt, img, caption, subject) {
-    generateImageCF(englishPrompt, img, caption, subject, function () {
-      /* CF не ответил — переключаемся на Pollinations.ai */
-      generateImagePollinations(englishPrompt, img, caption, subject);
+  function generateImage(englishPrompt, img, caption, subject, downloadBtn) {
+    generateImageCF(englishPrompt, img, caption, subject, downloadBtn, function () {
+      generateImagePollinations(englishPrompt, img, caption, subject, downloadBtn);
     });
   }
 
@@ -451,13 +483,19 @@
     img.className = "guardian-msg__image";
     img.alt = subject;
 
+    var downloadBtn = document.createElement("a");
+    downloadBtn.className = "guardian-msg__image-download";
+    downloadBtn.textContent = "⬇ Скачать";
+    downloadBtn.style.display = "none";
+
     bubble.appendChild(caption);
     bubble.appendChild(img);
+    bubble.appendChild(downloadBtn);
     imgMsg.appendChild(av);
     imgMsg.appendChild(bubble);
     messagesEl.appendChild(imgMsg);
     scrollToBottom();
-    return { img: img, caption: caption };
+    return { img: img, caption: caption, downloadBtn: downloadBtn };
   }
 
   /* ── Запустить рисование по теме (переводим → рисуем) ── */
@@ -469,11 +507,10 @@
       subject, null,
       function (englishPrompt) {
         englishPrompt = englishPrompt.trim().replace(/^["']|["']$/g, "");
-        generateImage(englishPrompt, el.img, el.caption, subject);
+        generateImage(englishPrompt, el.img, el.caption, subject, el.downloadBtn);
       },
       function () {
-        /* Перевод не удался — рисуем как есть */
-        generateImage(subject, el.img, el.caption, subject);
+        generateImage(subject, el.img, el.caption, subject, el.downloadBtn);
       }
     );
   }

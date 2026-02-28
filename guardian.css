@@ -535,6 +535,26 @@
   font-style: italic;
 }
 
+.guardian-msg__image-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 20px;
+  border: 1px solid rgba(162, 118, 40, 0.45);
+  background: rgba(162, 118, 40, 0.15);
+  color: rgba(210, 170, 90, 0.85);
+  font-size: 0.78rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.guardian-msg__image-download:hover {
+  background: rgba(162, 118, 40, 0.3);
+  color: #d8b87e;
+}
+
 /* ── Кнопка Психолог ── */
 .guardian-mode__btn--psychologist {
   background: rgba(100, 30, 70, 0.4);
