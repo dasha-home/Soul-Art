@@ -250,28 +250,29 @@
 </head>
 <body class="draw-page">
   <div id="globe-container" class="globe-fixed"></div>
+  <div id="atmosphere-widget" class="atmosphere-widget" aria-label="Настройки атмосферы"></div>
 
   <header class="draw-header">
-    <a href="index.html" class="draw-header__back">← На главную</a>
-    <span class="draw-header__title">✦ Творческая комната</span>
+    <a href="index.html" class="draw-header__back" data-i18n="draw_back">← На главную</a>
+    <span class="draw-header__title" data-i18n="draw_title">✦ Творческая комната</span>
     <nav style="display:flex;gap:0.6rem;align-items:center;">
-      <a href="relax.html" class="draw-header__back">🌙 Отдых</a>
-      <a href="guardian.html" class="draw-header__back">Хранитель →</a>
+      <a href="relax.html" class="draw-header__back" data-i18n="draw_nav_relax">🌙 Отдых</a>
+      <a href="guardian.html" class="draw-header__back" data-i18n="draw_nav_guardian">Хранитель →</a>
     </nav>
   </header>
 
   <!-- Приветственная подсказка — исчезает при первом касании -->
   <div class="draw-welcome" id="draw-welcome">
     <div class="draw-welcome__box">
-      <p class="draw-welcome__title">🎨 Творческая комната</p>
+      <p class="draw-welcome__title" data-i18n="draw_welcome_title">🎨 Творческая комната</p>
       <div class="draw-welcome__steps">
-        <span>🖌 <b>Выбери цвет</b> внизу</span>
-        <span>📏 <b>Размер кисти</b> — ползунок</span>
-        <span>✏ <b>Рисуй</b> по белому холсту</span>
-        <span>↩ <b>Ctrl+Z</b> — отменить</span>
-        <span>⬇ <b>Сохранить</b> — кнопка справа</span>
+        <span data-i18n="draw_welcome_step1">🖌 <b>Выбери цвет</b> внизу</span>
+        <span data-i18n="draw_welcome_step2">📏 <b>Размер кисти</b> — ползунок</span>
+        <span data-i18n="draw_welcome_step3">✏ <b>Рисуй</b> по белому холсту</span>
+        <span data-i18n="draw_welcome_step4">↩ <b>Ctrl+Z</b> — отменить</span>
+        <span data-i18n="draw_welcome_step5">⬇ <b>Сохранить</b> — кнопка справа</span>
       </div>
-      <button class="draw-welcome__btn" id="draw-welcome-close">Понятно, начинаю!</button>
+      <button class="draw-welcome__btn" id="draw-welcome-close" data-i18n="draw_welcome_btn">Понятно, начинаю!</button>
     </div>
   </div>
 
@@ -279,7 +280,7 @@
     <canvas id="draw-canvas" width="900" height="600"></canvas>
   </div>
 
-  <p class="draw-tool-hint" id="draw-hint">выбери цвет и рисуй!</p>
+  <p class="draw-tool-hint" id="draw-hint" data-i18n="draw_hint">выбери цвет и рисуй!</p>
 
   <div class="draw-toolbar" id="draw-toolbar">
     <!-- Цвета -->
@@ -310,14 +311,14 @@
     <div class="draw-sep"></div>
 
     <!-- Инструменты -->
-    <button class="draw-btn draw-btn--active" id="btn-brush" title="Кисть">🖌</button>
-    <button class="draw-btn" id="btn-eraser" title="Ластик">⬜</button>
-    <button class="draw-btn" id="btn-undo" title="Отменить (Ctrl+Z)">↩</button>
-    <button class="draw-btn draw-btn--danger" id="btn-clear" title="Очистить всё">🗑</button>
+    <button class="draw-btn draw-btn--active" id="btn-brush" title="Кисть" data-i18n="draw_brush" data-i18n-attr="title">🖌</button>
+    <button class="draw-btn" id="btn-eraser" title="Ластик" data-i18n="draw_eraser" data-i18n-attr="title">⬜</button>
+    <button class="draw-btn" id="btn-undo" title="Отменить (Ctrl+Z)" data-i18n="draw_undo" data-i18n-attr="title">↩</button>
+    <button class="draw-btn draw-btn--danger" id="btn-clear" title="Очистить всё" data-i18n="draw_clear" data-i18n-attr="title">🗑</button>
 
     <div class="draw-sep"></div>
 
-    <button class="draw-btn draw-btn--save" id="btn-save" title="Скачать рисунок">⬇</button>
+    <button class="draw-btn draw-btn--save" id="btn-save" title="Скачать рисунок" data-i18n="draw_save" data-i18n-attr="title">⬇</button>
   </div>
 
   <script src="i18n.js" defer></script>
