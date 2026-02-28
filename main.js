@@ -442,9 +442,13 @@ function fileToBase64(file) {
   });
 }
 
+/** Максимальный размер файла при загрузке (20 МБ). GitHub допускает до 100 МБ, но большие файлы часто приводят к таймауту или ошибке. */
+var ADMIN_MAX_FILE_SIZE = 20 * 1024 * 1024;
+
 function sanitizeFilename(name) {
   const base = name.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 40) || "image";
-  const ext = (name.match(/\.[^.]+$/) || [".png"])[0].toLowerCase();
+  let ext = (name.match(/\.[^.]+$/) || [".png"])[0].toLowerCase();
+  if (!/\.(png|jpe?g)$/i.test(ext)) ext = ".png";
   return base + ext;
 }
 
@@ -564,11 +568,11 @@ function renderAdmin() {
     wrapper.innerHTML = `
       <div class="admin-view__eyebrow">для Даши</div>
       <h2 class="admin-view__title">Загрузить фото с компьютера</h2>
-      <p class="admin-view__text">Выберите картинку, подпись — и она появится в галерее на сайте.</p>
+      <p class="admin-view__text">Выберите картинку, подпись — и она появится в галерее на сайте. Подходят PNG и JPG, макс. 20 МБ (большие файлы сожмите).</p>
       <form id="admin-upload-form" class="admin-view__form">
         <label class="admin-view__label">
           <span>Файл (фото)</span>
-          <input type="file" id="admin-file" name="file" accept="image/*" required class="admin-view__input" />
+          <input type="file" id="admin-file" name="file" accept="image/png,image/jpeg,image/jpg" required class="admin-view__input" />
         </label>
         <label class="admin-view__label">
           <span>Название работы</span>
@@ -603,6 +607,11 @@ function renderAdmin() {
       const file = fileInput.files[0];
       if (!file) {
         msgEl.textContent = "Выберите файл.";
+        return;
+      }
+      if (file.size > ADMIN_MAX_FILE_SIZE) {
+        msgEl.textContent = "Файл слишком большой (макс. 20 МБ). Сожмите изображение или сохраните в JPG с меньшим качеством.";
+        msgEl.className = "admin-view__message admin-view__message--error";
         return;
       }
       const title = (titleInput.value || "").trim() || file.name;
@@ -656,7 +665,13 @@ function renderAdmin() {
         form.reset();
         loadPhotoList();
       } catch (err) {
-        msgEl.textContent = "Ошибка: " + (err.message || "не удалось загрузить");
+        let msg = err.message || "не удалось загрузить";
+        if (/large|size|base64|422|validation/i.test(msg)) {
+          msg = "Не удалось загрузить (часто из‑за большого размера). Сожмите файл до 20 МБ или сохраните в JPG.";
+        } else {
+          msg = "Ошибка: " + msg;
+        }
+        msgEl.textContent = msg;
         msgEl.className = "admin-view__message admin-view__message--error";
       }
       uploadBtn.disabled = false;
