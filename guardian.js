@@ -370,6 +370,23 @@
 
   var IMG_RE = /^(нарисуй мне|нарисуй|покажи картину|покажи мне картину|изобрази|создай картину|нарисуй картину)\s*/i;
 
+  var IMAGE_WORKER = "https://guardian-proxy.qerevv.workers.dev/v1/image";
+
+  /* ── Cloudflare Workers AI (лучшее качество, через наш воркер) ── */
+  function generateViaCFWorker(prompt, onSuccess, onFail) {
+    fetch(IMAGE_WORKER, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt: prompt })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.image) { onSuccess(data.image); }
+      else { console.warn("[Guardian] CF Worker image error:", data.error); onFail(); }
+    })
+    .catch(function(e) { console.warn("[Guardian] CF Worker fetch error:", e); onFail(); });
+  }
+
   /* ── AI Horde: бесплатная генерация без регистрации ── */
   function generateViaHorde(prompt, onSuccess, onFail) {
     var HORDE = "https://stablehorde.net/api/v2";
@@ -463,16 +480,23 @@
       subject, null,
       function(englishPrompt) {
         englishPrompt = englishPrompt.trim().replace(/^["']|["']$/g, "");
-        caption.textContent = "Рисую: \"" + englishPrompt + "\"… ⏳ (может занять 30 сек)";
-        generateViaHorde(
-          englishPrompt + ", masterpiece, beautiful, detailed, soft lighting",
-          function(src) {
-            img.onload = function() { caption.textContent = "✦ " + subject; scrollToBottom(); };
-            img.onerror = function() { generateViaPollinations(englishPrompt, img, caption, subject); };
-            img.src = src;
-          },
-          function() { generateViaPollinations(englishPrompt, img, caption, subject); }
-        );
+        var fullPrompt = englishPrompt + ", masterpiece, beautiful, detailed, soft lighting";
+        caption.textContent = "Рисую: \"" + englishPrompt + "\"… ⏳";
+
+        function showImage(src) {
+          img.onload = function() { caption.textContent = "✦ " + subject; scrollToBottom(); };
+          img.onerror = function() { generateViaPollinations(englishPrompt, img, caption, subject); };
+          img.src = src;
+        }
+
+        /* 1. Cloudflare AI (быстро, качественно) */
+        generateViaCFWorker(fullPrompt, showImage, function() {
+          /* 2. AI Horde (медленно, но бесплатно) */
+          caption.textContent = "Рисую через Horde… ⏳ (30-60 сек)";
+          generateViaHorde(fullPrompt, showImage,
+            function() { generateViaPollinations(englishPrompt, img, caption, subject); }
+          );
+        });
       },
       function() {
         /* Перевод не удался — пробуем как есть */
