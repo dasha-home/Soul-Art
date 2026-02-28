@@ -610,6 +610,19 @@ body,
   border-color: rgba(0, 0, 0, 0.18);
 }
 
+/* Кнопка Рисовать */
+.top-nav__link--draw {
+  background: linear-gradient(135deg, rgba(60, 120, 80, 0.75), rgba(30, 90, 55, 0.75));
+  color: #b8f0c0 !important;
+  border-color: rgba(80, 180, 100, 0.55);
+  box-shadow: 0 0 12px rgba(80, 200, 100, 0.18), 0 1px 4px rgba(0,0,0,0.15);
+}
+.top-nav__link--draw:hover {
+  background: linear-gradient(135deg, rgba(70, 150, 90, 0.88), rgba(40, 110, 65, 0.88));
+  color: #d0ffd8 !important;
+  border-color: rgba(100, 220, 120, 0.75);
+}
+
 /* Кнопка Хранителя в навигации — тёплый янтарный, не чёрный */
 .top-nav__link--guardian {
   background: linear-gradient(135deg, rgba(185, 130, 35, 0.75), rgba(140, 90, 15, 0.75));

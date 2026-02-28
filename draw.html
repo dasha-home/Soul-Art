@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Творческая комната — Даша Художник</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* ── Страница ── */
+    .draw-page {
+      min-height: 100dvh;
+      background: #0e0a06;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Шапка ── */
+    .draw-header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.7rem max(8.5rem, calc(env(safe-area-inset-right) + 8rem)) 0.7rem clamp(1rem, 3vw, 2rem);
+      background: linear-gradient(to bottom, rgba(10, 6, 2, 0.92) 0%, transparent 100%);
+    }
+    .draw-header__back {
+      font-size: 0.88rem;
+      color: rgba(215, 178, 100, 0.75);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .draw-header__back:hover { color: #d8b87e; }
+    .draw-header__title {
+      font-size: clamp(0.9rem, 2vw, 1.1rem);
+      color: rgba(235, 205, 145, 0.8);
+      letter-spacing: 0.12em;
+      font-family: Georgia, serif;
+    }
+
+    /* ── Холст ── */
+    .draw-canvas-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4rem 1rem 9rem;
+      box-sizing: border-box;
+    }
+    #draw-canvas {
+      border-radius: 4px;
+      border: 1px solid rgba(185, 138, 50, 0.3);
+      box-shadow: 0 0 60px rgba(0,0,0,0.8), 0 0 120px rgba(255, 140, 20, 0.06);
+      cursor: crosshair;
+      touch-action: none;
+      display: block;
+      max-width: 100%;
+      max-height: calc(100dvh - 13rem);
+      background: #fff;
+    }
+    #draw-canvas.eraser-mode { cursor: cell; }
+
+    /* ── Панель инструментов ── */
+    .draw-toolbar {
+      position: fixed;
+      bottom: max(1rem, env(safe-area-inset-bottom));
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      padding: 0.6rem 1rem;
+      background: rgba(12, 8, 3, 0.88);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(185, 138, 50, 0.25);
+      border-radius: 40px;
+      box-shadow: 0 4px 32px rgba(0,0,0,0.5);
+    }
+
+    /* Цветовые кружки */
+    .draw-colors {
+      display: flex;
+      gap: 0.3rem;
+      align-items: center;
+    }
+    .draw-color {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: transform 0.15s, border-color 0.15s;
+      flex-shrink: 0;
+    }
+    .draw-color:hover { transform: scale(1.2); }
+    .draw-color--active { border-color: rgba(255, 220, 100, 0.9); transform: scale(1.15); }
+
+    /* Выбор своего цвета */
+    .draw-color-custom {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      border: 2px solid rgba(185, 138, 50, 0.5);
+      cursor: pointer;
+      overflow: hidden;
+      padding: 0;
+      background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red);
+      flex-shrink: 0;
+    }
+    .draw-color-custom input[type="color"] {
+      width: 200%;
+      height: 200%;
+      opacity: 0;
+      cursor: pointer;
+      margin: -50%;
+    }
+
+    .draw-sep { width: 1px; height: 24px; background: rgba(185, 138, 50, 0.2); flex-shrink: 0; }
+
+    /* Размер кисти */
+    .draw-size {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .draw-size__label { font-size: 0.7rem; color: rgba(185, 150, 80, 0.7); white-space: nowrap; }
+    .draw-size__range {
+      -webkit-appearance: none;
+      width: 70px; height: 4px;
+      border-radius: 2px;
+      background: rgba(185, 138, 50, 0.3);
+      outline: none;
+      cursor: pointer;
+    }
+    .draw-size__range::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: #d8a84a;
+      cursor: pointer;
+    }
+
+    /* Кнопки инструментов */
+    .draw-btn {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      border: 1px solid rgba(185, 138, 50, 0.3);
+      background: rgba(30, 20, 8, 0.6);
+      color: rgba(215, 178, 100, 0.75);
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+      flex-shrink: 0;
+    }
+    .draw-btn:hover { background: rgba(60, 40, 10, 0.8); color: #d8b87e; border-color: rgba(215, 165, 55, 0.5); }
+    .draw-btn--active { background: rgba(185, 138, 50, 0.3); color: #f0d070; border-color: rgba(215, 165, 55, 0.7); }
+    .draw-btn--danger:hover { background: rgba(120, 30, 20, 0.5); color: #e08070; border-color: rgba(180, 60, 50, 0.5); }
+    .draw-btn--save { background: rgba(40, 90, 50, 0.4); border-color: rgba(80, 160, 90, 0.4); color: rgba(140, 220, 140, 0.85); }
+    .draw-btn--save:hover { background: rgba(50, 120, 60, 0.6); color: #a8eab8; border-color: rgba(100, 200, 110, 0.6); }
+
+    /* Подсказка текущего инструмента */
+    .draw-tool-hint {
+      position: fixed;
+      top: 4rem; left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.75rem;
+      color: rgba(215, 178, 100, 0.45);
+      pointer-events: none;
+      transition: opacity 0.4s;
+      white-space: nowrap;
+      z-index: 20;
+    }
+
+    /* Мобильные адаптации */
+    @media (max-width: 600px) {
+      .draw-toolbar { border-radius: 20px; gap: 0.35rem; padding: 0.5rem 0.7rem; }
+      .draw-color { width: 22px; height: 22px; }
+      .draw-size__range { width: 50px; }
+      .draw-btn { width: 32px; height: 32px; font-size: 0.88rem; }
+    }
+  </style>
+</head>
+<body class="draw-page">
+  <div id="globe-container" class="globe-fixed"></div>
+
+  <header class="draw-header">
+    <a href="index.html" class="draw-header__back">← На главную</a>
+    <span class="draw-header__title">✦ Творческая комната</span>
+    <a href="guardian.html" class="draw-header__back">Хранитель →</a>
+  </header>
+
+  <div class="draw-canvas-wrap">
+    <canvas id="draw-canvas" width="900" height="600"></canvas>
+  </div>
+
+  <p class="draw-tool-hint" id="draw-hint">кисть · рисуй</p>
+
+  <div class="draw-toolbar" id="draw-toolbar">
+    <!-- Цвета -->
+    <div class="draw-colors" id="draw-colors">
+      <div class="draw-color draw-color--active" data-color="#1a1a1a" style="background:#1a1a1a" title="Чёрный"></div>
+      <div class="draw-color" data-color="#e8e0d6" style="background:#e8e0d6;border:1px solid #bbb" title="Белый"></div>
+      <div class="draw-color" data-color="#c44" style="background:#c44" title="Красный"></div>
+      <div class="draw-color" data-color="#e8a23a" style="background:#e8a23a" title="Оранжевый"></div>
+      <div class="draw-color" data-color="#e8c83a" style="background:#e8c83a" title="Жёлтый"></div>
+      <div class="draw-color" data-color="#4caf50" style="background:#4caf50" title="Зелёный"></div>
+      <div class="draw-color" data-color="#2196f3" style="background:#2196f3" title="Синий"></div>
+      <div class="draw-color" data-color="#9c27b0" style="background:#9c27b0" title="Фиолетовый"></div>
+      <div class="draw-color" data-color="#f48fb1" style="background:#f48fb1" title="Розовый"></div>
+      <div class="draw-color" data-color="#795548" style="background:#795548" title="Коричневый"></div>
+      <label class="draw-color-custom" title="Свой цвет">
+        <input type="color" id="draw-color-picker" value="#1a1a1a" />
+      </label>
+    </div>
+
+    <div class="draw-sep"></div>
+
+    <!-- Размер кисти -->
+    <div class="draw-size">
+      <span class="draw-size__label">✏</span>
+      <input type="range" class="draw-size__range" id="draw-size" min="1" max="60" value="5" />
+    </div>
+
+    <div class="draw-sep"></div>
+
+    <!-- Инструменты -->
+    <button class="draw-btn draw-btn--active" id="btn-brush" title="Кисть">🖌</button>
+    <button class="draw-btn" id="btn-eraser" title="Ластик">⬜</button>
+    <button class="draw-btn" id="btn-undo" title="Отменить (Ctrl+Z)">↩</button>
+    <button class="draw-btn draw-btn--danger" id="btn-clear" title="Очистить всё">🗑</button>
+
+    <div class="draw-sep"></div>
+
+    <button class="draw-btn draw-btn--save" id="btn-save" title="Скачать рисунок">⬇</button>
+  </div>
+
+  <script src="i18n.js" defer></script>
+  <script src="atmosphere.js" defer></script>
+  <script>
+  (function () {
+    var canvas  = document.getElementById("draw-canvas");
+    var ctx     = canvas.getContext("2d");
+    var hint    = document.getElementById("draw-hint");
+
+    var currentColor = "#1a1a1a";
+    var currentSize  = 5;
+    var isEraser     = false;
+    var isDrawing    = false;
+    var lastX = 0, lastY = 0;
+    var undoStack    = [];
+    var MAX_UNDO     = 25;
+
+    /* ── Размер холста под экран ── */
+    function resizeCanvas() {
+      var wrap = canvas.parentElement;
+      var maxW = wrap.clientWidth  - 32;
+      var maxH = wrap.clientHeight - 32;
+      var ratio = 900 / 600;
+      var w = Math.min(900, maxW);
+      var h = w / ratio;
+      if (h > maxH) { h = maxH; w = h * ratio; }
+      /* Сохраняем содержимое */
+      var tmp = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      canvas.style.width  = Math.round(w) + "px";
+      canvas.style.height = Math.round(h) + "px";
+      /* Логический размер не меняем чтобы не потерять рисунок */
+    }
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+
+    /* ── Холст — белый фон по умолчанию ── */
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    /* ── Координаты с учётом масштаба ── */
+    function getPos(e) {
+      var rect = canvas.getBoundingClientRect();
+      var scaleX = canvas.width  / rect.width;
+      var scaleY = canvas.height / rect.height;
+      var src = e.touches ? e.touches[0] : e;
+      return {
+        x: (src.clientX - rect.left) * scaleX,
+        y: (src.clientY - rect.top)  * scaleY
+      };
+    }
+
+    /* ── Undo ── */
+    function saveUndo() {
+      if (undoStack.length >= MAX_UNDO) undoStack.shift();
+      undoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+    }
+
+    function undo() {
+      if (!undoStack.length) return;
+      ctx.putImageData(undoStack.pop(), 0, 0);
+    }
+
+    /* ── Рисование ── */
+    function startDraw(e) {
+      e.preventDefault();
+      var pos = getPos(e);
+      saveUndo();
+      isDrawing = true;
+      lastX = pos.x; lastY = pos.y;
+      /* Точка при клике */
+      ctx.beginPath();
+      ctx.arc(lastX, lastY, currentSize / 2, 0, Math.PI * 2);
+      ctx.fillStyle = isEraser ? "#fff" : currentColor;
+      ctx.fill();
+    }
+
+    function draw(e) {
+      e.preventDefault();
+      if (!isDrawing) return;
+      var pos = getPos(e);
+      ctx.beginPath();
+      ctx.moveTo(lastX, lastY);
+      ctx.lineTo(pos.x, pos.y);
+      ctx.strokeStyle = isEraser ? "#fff" : currentColor;
+      ctx.lineWidth   = currentSize;
+      ctx.lineCap     = "round";
+      ctx.lineJoin    = "round";
+      ctx.globalCompositeOperation = isEraser ? "destination-out" : "source-over";
+      ctx.stroke();
+      lastX = pos.x; lastY = pos.y;
+    }
+
+    function stopDraw() {
+      if (isDrawing) ctx.globalCompositeOperation = "source-over";
+      isDrawing = false;
+    }
+
+    canvas.addEventListener("mousedown",  startDraw);
+    canvas.addEventListener("mousemove",  draw);
+    canvas.addEventListener("mouseup",    stopDraw);
+    canvas.addEventListener("mouseleave", stopDraw);
+    canvas.addEventListener("touchstart", startDraw, { passive: false });
+    canvas.addEventListener("touchmove",  draw,      { passive: false });
+    canvas.addEventListener("touchend",   stopDraw);
+
+    /* ── Цвета ── */
+    document.getElementById("draw-colors").addEventListener("click", function (e) {
+      var el = e.target.closest(".draw-color");
+      if (!el) return;
+      document.querySelectorAll(".draw-color").forEach(function (c) { c.classList.remove("draw-color--active"); });
+      el.classList.add("draw-color--active");
+      currentColor = el.dataset.color;
+      setTool("brush");
+    });
+
+    document.getElementById("draw-color-picker").addEventListener("input", function () {
+      currentColor = this.value;
+      document.querySelectorAll(".draw-color").forEach(function (c) { c.classList.remove("draw-color--active"); });
+      setTool("brush");
+    });
+
+    /* ── Размер ── */
+    document.getElementById("draw-size").addEventListener("input", function () {
+      currentSize = parseInt(this.value, 10);
+    });
+
+    /* ── Инструменты ── */
+    function setTool(tool) {
+      isEraser = (tool === "eraser");
+      canvas.classList.toggle("eraser-mode", isEraser);
+      document.getElementById("btn-brush").classList.toggle("draw-btn--active", !isEraser);
+      document.getElementById("btn-eraser").classList.toggle("draw-btn--active", isEraser);
+      hint.textContent = isEraser ? "ластик · стираю" : "кисть · рисуй";
+    }
+
+    document.getElementById("btn-brush").addEventListener("click", function () { setTool("brush"); });
+    document.getElementById("btn-eraser").addEventListener("click", function () { setTool("eraser"); });
+    document.getElementById("btn-undo").addEventListener("click", undo);
+    document.getElementById("btn-clear").addEventListener("click", function () {
+      if (!confirm("Очистить весь холст?")) return;
+      saveUndo();
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    });
+
+    document.getElementById("btn-save").addEventListener("click", function () {
+      var link = document.createElement("a");
+      link.download = "рисунок-даши-" + Date.now() + ".png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+
+    /* Ctrl+Z */
+    document.addEventListener("keydown", function (e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === "z") { e.preventDefault(); undo(); }
+    });
+
+    /* ── Globe / i18n ── */
+    function initI18n() {
+      if (!window.I18n) return;
+      var container = document.getElementById("globe-container");
+      if (container) window.I18n.init(container);
+    }
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", initI18n);
+    } else {
+      initI18n();
+    }
+  })();
+  </script>
+</body>
+</html>
