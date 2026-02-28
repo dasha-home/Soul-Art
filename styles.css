@@ -292,7 +292,7 @@ body,
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  padding: clamp(0.4rem, 1.2vw, 0.65rem) max(4vw, env(safe-area-inset-right), 3rem) clamp(0.5rem, 1.5vw, 0.75rem) max(4vw, env(safe-area-inset-left));
+  padding: clamp(0.4rem, 1.2vw, 0.65rem) max(4vw, env(safe-area-inset-right), 8.5rem) clamp(0.5rem, 1.5vw, 0.75rem) max(4vw, env(safe-area-inset-left));
   padding-top: max(clamp(0.4rem, 1.2vw, 0.65rem), env(safe-area-inset-top));
   background: transparent;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
