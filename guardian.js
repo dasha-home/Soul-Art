@@ -371,35 +371,139 @@
   var IMG_RE = /(?:^|\s)(нарисуй мне|нарисуй|покажи картину|покажи мне картину|изобрази|создай картину|нарисуй картину)\s+/i;
   var CF_IMAGE_URL = "https://guardian-proxy.qerevv.workers.dev/v1/image";
 
-  /* ── Показать кнопку скачивания когда картинка готова ── */
-  function showDownloadBtn(downloadBtn, img, subject) {
+  /* ═══════ СОХРАНЕНИЕ КАРТИНОК В БРАУЗЕРЕ ═══════ */
+
+  var STORAGE_KEY = "guardian_saved_images";
+  var MAX_SAVED   = 30;
+
+  function loadSavedImages() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); } catch (_) { return []; }
+  }
+
+  function persistSavedImages(list) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); } catch (_) {}
+  }
+
+  function saveImage(subject, src, id) {
+    var list = loadSavedImages();
+    /* Не дублируем */
+    if (list.some(function (x) { return x.id === id; })) return;
+    list.unshift({ id: id, subject: subject, src: src, ts: Date.now() });
+    /* Храним не больше MAX_SAVED */
+    if (list.length > MAX_SAVED) list = list.slice(0, MAX_SAVED);
+    persistSavedImages(list);
+  }
+
+  function deleteSavedImage(id) {
+    var list = loadSavedImages().filter(function (x) { return x.id !== id; });
+    persistSavedImages(list);
+  }
+
+  /* ── Создать DOM-блок картинки (используется и при генерации, и при восстановлении) ── */
+  function buildImageCard(subject, src, id, isSaved) {
+    var imgMsg = document.createElement("div");
+    imgMsg.className = "guardian-msg guardian-msg--bot";
+    imgMsg.dataset.imageId = id;
+
+    var av = document.createElement("div");
+    av.className = "guardian-msg__avatar";
+    av.setAttribute("aria-hidden", "true");
+    av.textContent = "✦";
+
+    var bubble = document.createElement("div");
+    bubble.className = "guardian-msg__bubble";
+
+    var caption = document.createElement("p");
+    caption.className = "guardian-msg__image-caption";
+    caption.textContent = "✦ " + subject;
+
+    var img = document.createElement("img");
+    img.className = "guardian-msg__image";
+    img.alt = subject;
+    if (src) img.src = src;
+
+    var btnRow = document.createElement("div");
+    btnRow.className = "guardian-msg__image-btns";
+
+    var downloadBtn = document.createElement("a");
+    downloadBtn.className = "guardian-msg__image-download";
+    downloadBtn.textContent = "⬇ Скачать";
+    downloadBtn.style.display = src ? "inline-flex" : "none";
+    if (src) {
+      var filename = subject.replace(/[^\u0400-\u04ffa-z0-9\s]/gi, "").trim().slice(0, 40) || "картина";
+      downloadBtn.download = filename + ".png";
+      downloadBtn.href = src;
+    }
+
+    var deleteBtn = document.createElement("button");
+    deleteBtn.className = "guardian-msg__image-delete";
+    deleteBtn.textContent = isSaved ? "✕ Удалить" : "✕";
+    deleteBtn.title = "Удалить картинку";
+    deleteBtn.addEventListener("click", function () {
+      deleteSavedImage(id);
+      imgMsg.remove();
+    });
+
+    btnRow.appendChild(downloadBtn);
+    btnRow.appendChild(deleteBtn);
+    bubble.appendChild(caption);
+    bubble.appendChild(img);
+    bubble.appendChild(btnRow);
+    imgMsg.appendChild(av);
+    imgMsg.appendChild(bubble);
+    return { el: imgMsg, img: img, caption: caption, downloadBtn: downloadBtn };
+  }
+
+  /* ── Восстановить сохранённые картинки при загрузке страницы ── */
+  function restoreSavedImages() {
+    var list = loadSavedImages();
+    if (!list.length) return;
+
+    var divider = document.createElement("p");
+    divider.className = "guardian-msg__saved-divider";
+    divider.textContent = "✦ Сохранённые картинки";
+    messagesEl.insertBefore(divider, messagesEl.firstChild);
+
+    list.slice().reverse().forEach(function (item) {
+      var card = buildImageCard(item.subject, item.src, item.id, true);
+      messagesEl.insertBefore(card.el, divider.nextSibling);
+    });
+  }
+
+  /* ── Показать кнопку скачивания и сохранить картинку ── */
+  function showDownloadBtn(downloadBtn, img, subject, imageId) {
     var filename = subject.replace(/[^\u0400-\u04ffa-z0-9\s]/gi, "").trim().slice(0, 40) || "картина";
-    downloadBtn.download = filename + ".png";
-    /* Для CF-картинок (data URL) — скачиваем напрямую */
+    var finalSrc;
+
     if (img.src.startsWith("data:")) {
-      downloadBtn.href = img.src;
+      finalSrc = img.src;
     } else {
-      /* Для Pollinations (внешний URL) — пробуем через canvas */
       try {
         var canvas = document.createElement("canvas");
         canvas.width = img.naturalWidth;
         canvas.height = img.naturalHeight;
         canvas.getContext("2d").drawImage(img, 0, 0);
-        downloadBtn.href = canvas.toDataURL("image/png");
+        finalSrc = canvas.toDataURL("image/png");
       } catch (_) {
-        /* CORS не позволил — открываем в новой вкладке */
-        downloadBtn.href = img.src;
+        finalSrc = img.src;
         downloadBtn.removeAttribute("download");
         downloadBtn.target = "_blank";
         downloadBtn.textContent = "🔗 Открыть";
       }
     }
+
+    downloadBtn.download = filename + ".png";
+    downloadBtn.href = finalSrc;
     downloadBtn.style.display = "inline-flex";
+
+    /* Сохраняем в localStorage чтобы не пропадала при обновлении */
+    saveImage(subject, finalSrc.startsWith("data:") ? finalSrc : img.src, imageId);
+
     scrollToBottom();
   }
 
   /* ── Попытка через Cloudflare AI (flux-1-schnell) ── */
-  function generateImageCF(englishPrompt, img, caption, subject, downloadBtn, onFail) {
+  function generateImageCF(englishPrompt, img, caption, subject, downloadBtn, imageId, onFail) {
     caption.textContent = "Рисую… ✨";
     fetch(CF_IMAGE_URL, {
       method: "POST",
@@ -414,7 +518,7 @@
         if (!data || !data.image) { onFail(); return; }
         img.onload  = function () {
           caption.textContent = "✦ " + subject;
-          showDownloadBtn(downloadBtn, img, subject);
+          showDownloadBtn(downloadBtn, img, subject, imageId);
         };
         img.onerror = function () { onFail(); };
         img.src = "data:image/png;base64," + data.image;
@@ -423,7 +527,7 @@
   }
 
   /* ── Запасной вариант: Pollinations.ai через img.src (без CORS) ── */
-  function generateImagePollinations(englishPrompt, img, caption, subject, downloadBtn) {
+  function generateImagePollinations(englishPrompt, img, caption, subject, downloadBtn, imageId) {
     var seed = Math.floor(Math.random() * 99999);
     var enc = encodeURIComponent(englishPrompt);
     var encFull = encodeURIComponent(englishPrompt + ", beautiful art, detailed, soft light");
@@ -449,53 +553,28 @@
 
     img.onload  = function () {
       caption.textContent = "✦ " + subject;
-      showDownloadBtn(downloadBtn, img, subject);
+      showDownloadBtn(downloadBtn, img, subject, imageId);
     };
     img.onerror = function () { setTimeout(tryNext, 2000); };
     tryNext();
   }
 
   /* ── Основная точка входа: CF AI → Pollinations.ai ── */
-  function generateImage(englishPrompt, img, caption, subject, downloadBtn) {
-    generateImageCF(englishPrompt, img, caption, subject, downloadBtn, function () {
-      generateImagePollinations(englishPrompt, img, caption, subject, downloadBtn);
+  function generateImage(englishPrompt, img, caption, subject, downloadBtn, imageId) {
+    generateImageCF(englishPrompt, img, caption, subject, downloadBtn, imageId, function () {
+      generateImagePollinations(englishPrompt, img, caption, subject, downloadBtn, imageId);
     });
   }
 
-  /* ── Создать блок с картинкой в чате ── */
+  /* ── Создать блок с картинкой в чате (во время генерации) ── */
   function createImageBlock(subject) {
-    var imgMsg = document.createElement("div");
-    imgMsg.className = "guardian-msg guardian-msg--bot";
-
-    var av = document.createElement("div");
-    av.className = "guardian-msg__avatar";
-    av.setAttribute("aria-hidden", "true");
-    av.textContent = "✦";
-
-    var bubble = document.createElement("div");
-    bubble.className = "guardian-msg__bubble";
-
-    var caption = document.createElement("p");
-    caption.className = "guardian-msg__image-caption";
-    caption.textContent = "Перевожу… ⏳";
-
-    var img = document.createElement("img");
-    img.className = "guardian-msg__image";
-    img.alt = subject;
-
-    var downloadBtn = document.createElement("a");
-    downloadBtn.className = "guardian-msg__image-download";
-    downloadBtn.textContent = "⬇ Скачать";
-    downloadBtn.style.display = "none";
-
-    bubble.appendChild(caption);
-    bubble.appendChild(img);
-    bubble.appendChild(downloadBtn);
-    imgMsg.appendChild(av);
-    imgMsg.appendChild(bubble);
-    messagesEl.appendChild(imgMsg);
+    var imageId = "img_" + Date.now() + "_" + Math.floor(Math.random() * 9999);
+    var card = buildImageCard(subject, null, imageId, false);
+    card.caption.textContent = "Перевожу… ⏳";
+    card.downloadBtn.style.display = "none";
+    messagesEl.appendChild(card.el);
     scrollToBottom();
-    return { img: img, caption: caption, downloadBtn: downloadBtn };
+    return { img: card.img, caption: card.caption, downloadBtn: card.downloadBtn, imageId: imageId };
   }
 
   /* ── Запустить рисование по теме (переводим → рисуем) ── */
@@ -507,10 +586,10 @@
       subject, null,
       function (englishPrompt) {
         englishPrompt = englishPrompt.trim().replace(/^["']|["']$/g, "");
-        generateImage(englishPrompt, el.img, el.caption, subject, el.downloadBtn);
+        generateImage(englishPrompt, el.img, el.caption, subject, el.downloadBtn, el.imageId);
       },
       function () {
-        generateImage(subject, el.img, el.caption, subject, el.downloadBtn);
+        generateImage(subject, el.img, el.caption, subject, el.downloadBtn, el.imageId);
       }
     );
   }
@@ -670,4 +749,7 @@
     this.style.height = "auto";
     this.style.height = Math.min(this.scrollHeight, 120) + "px";
   });
+
+  /* Восстанавливаем сохранённые картинки при загрузке */
+  restoreSavedImages();
 })();

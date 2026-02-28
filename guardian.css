@@ -535,11 +535,17 @@
   font-style: italic;
 }
 
+.guardian-msg__image-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
 .guardian-msg__image-download {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  margin-top: 0.5rem;
   padding: 0.35rem 0.85rem;
   border-radius: 20px;
   border: 1px solid rgba(162, 118, 40, 0.45);
@@ -553,6 +559,32 @@
 .guardian-msg__image-download:hover {
   background: rgba(162, 118, 40, 0.3);
   color: #d8b87e;
+}
+
+.guardian-msg__image-delete {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  border: 1px solid rgba(180, 60, 60, 0.35);
+  background: rgba(140, 30, 30, 0.12);
+  color: rgba(220, 120, 100, 0.75);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.guardian-msg__image-delete:hover {
+  background: rgba(160, 40, 40, 0.28);
+  color: #e08070;
+}
+
+.guardian-msg__saved-divider {
+  text-align: center;
+  font-size: 0.75rem;
+  color: rgba(210, 170, 90, 0.4);
+  letter-spacing: 0.08em;
+  margin: 0.5rem 0 1rem;
+  font-style: italic;
 }
 
 /* ── Кнопка Психолог ── */
