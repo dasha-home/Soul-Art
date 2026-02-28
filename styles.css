@@ -1109,13 +1109,14 @@ body,
   box-sizing: border-box;
 }
 
+/* На светлом фоне (папирус) используем цвет из атмосферы — буквы всегда читаемы */
 .about-view__title,
 .about-view__text {
-  color: #fff;
-  -webkit-text-stroke: 0.6px rgba(0, 0, 0, 0.75);
-  text-stroke: 0.6px rgba(0, 0, 0, 0.75);
-  paint-order: stroke fill;
-  text-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), 0 1px 4px rgba(0, 0, 0, 0.5), 0 0 24px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.4);
+  color: var(--text-color);
+  -webkit-text-stroke: none;
+  text-stroke: none;
+  paint-order: unset;
+  text-shadow: var(--text-readability);
 }
 
 .about-view__title {
@@ -1128,6 +1129,7 @@ body,
   margin: 0 0 0.75em;
   font-size: clamp(0.95rem, 1.15vw, 1.05rem);
   line-height: 1.6;
+  color: var(--text-color);
 }
 
 .about-view__text:last-child {
