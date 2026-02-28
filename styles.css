@@ -338,10 +338,10 @@ body,
   justify-content: center;
 }
 
-/* Глобус слева от солнышка (Атмосфера), чтобы оба были видны */
+/* Глобус слева от солнышка — выровнен по той же высоте */
 .globe-fixed {
   position: fixed;
-  top: max(0.5rem, env(safe-area-inset-top));
+  top: max(1rem, env(safe-area-inset-top));
   right: max(4.5rem, calc(env(safe-area-inset-right) + 4rem));
   z-index: 49;
   display: flex;
