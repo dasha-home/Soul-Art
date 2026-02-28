@@ -1195,12 +1195,12 @@ function setupFujiMagic() {
       wrap.classList.add("fuji-magic-widget--visible");
       const prefs = getFujiPrefs();
       fujiMagicState.petalCount = prefs.petals;
-      fujiMagicState.windVolume = prefs.wind;
-      fujiMagicState.musicVolume = prefs.music;
       fujiMagicState.currentTrack = prefs.track;
+      /* Звуки всегда стартуют тихо — пользователь включает сам */
+      fujiMagicState.windVolume = 0;
+      fujiMagicState.musicVolume = 0;
       startPetalLoop(prefs.petals);
-      setWindVolume(prefs.wind);
-      // Музыка не включается автоматически — пользователь включает сам через кнопку «Музыка» и ползунок
+      setWindVolume(0);
       if (fujiMagicState.musicEl) {
         fujiMagicState.musicEl.volume = 0;
         fujiMagicState.musicEl.pause();
