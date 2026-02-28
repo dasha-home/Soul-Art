@@ -379,6 +379,7 @@
   var IMG_RE    = /(?:^|\s)(нарисуй мне|нарисуй|покажи картину|покажи мне картину|изобрази|создай картину|нарисуй картину)\s+/i;
   var FIND_RE   = /(?:^|\s)(найди фото|найди картинку|найди картину|покажи фото|найди изображение|поищи фото|поищи картинку)\s+/i;
   var MAP_RE    = /(?:^|\s)(найди карту|покажи карту|найди на карте|покажи на карте|где находится|карта)\s+/i;
+  var ROUTE_RE  = /(?:маршрут|проложи|как добраться|как попасть|как доехать|как дойти|дорога|путь).*(?:из|от)\s+(.+?)\s+(?:в|до|к)\s+(.+?)(?:\s*[.!?]|$)/i;
   var CF_IMAGE_URL = "https://guardian-proxy.qerevv.workers.dev/v1/image";
 
   /* ── Поиск реальной фотографии через LoremFlickr (бесплатно, без ключей) ── */
@@ -423,6 +424,66 @@
         generateImage(subject, el.img, el.caption, subject, el.downloadBtn, el.imageId);
       }
     );
+  }
+
+  /* ── Маршрут через Google Maps (открывается в новой вкладке) ── */
+  function showRoute(from, to) {
+    var mapsUrl = "https://www.google.com/maps/dir/?api=1" +
+      "&origin=" + encodeURIComponent(from) +
+      "&destination=" + encodeURIComponent(to) +
+      "&travelmode=driving";
+
+    var msgEl = document.createElement("div");
+    msgEl.className = "guardian-msg guardian-msg--bot";
+
+    var av = document.createElement("div");
+    av.className = "guardian-msg__avatar";
+    av.setAttribute("aria-hidden", "true");
+    av.textContent = "✦";
+
+    var bubble = document.createElement("div");
+    bubble.className = "guardian-msg__bubble";
+
+    var caption = document.createElement("p");
+    caption.className = "guardian-msg__image-caption";
+    caption.textContent = "🗺 Маршрут: " + from + " → " + to;
+
+    var btnRow = document.createElement("div");
+    btnRow.className = "guardian-msg__image-btns";
+
+    /* Кнопка на авто */
+    var btnCar = document.createElement("a");
+    btnCar.className = "guardian-msg__route-btn";
+    btnCar.textContent = "🚗 На авто";
+    btnCar.href = mapsUrl;
+    btnCar.target = "_blank";
+    btnCar.rel = "noopener";
+
+    /* Кнопка пешком */
+    var btnWalk = document.createElement("a");
+    btnWalk.className = "guardian-msg__route-btn";
+    btnWalk.textContent = "🚶 Пешком";
+    btnWalk.href = mapsUrl.replace("travelmode=driving", "travelmode=walking");
+    btnWalk.target = "_blank";
+    btnWalk.rel = "noopener";
+
+    /* Кнопка транспорт */
+    var btnTransit = document.createElement("a");
+    btnTransit.className = "guardian-msg__route-btn";
+    btnTransit.textContent = "🚌 Транспорт";
+    btnTransit.href = mapsUrl.replace("travelmode=driving", "travelmode=transit");
+    btnTransit.target = "_blank";
+    btnTransit.rel = "noopener";
+
+    btnRow.appendChild(btnCar);
+    btnRow.appendChild(btnWalk);
+    btnRow.appendChild(btnTransit);
+    bubble.appendChild(caption);
+    bubble.appendChild(btnRow);
+    msgEl.appendChild(av);
+    msgEl.appendChild(bubble);
+    messagesEl.appendChild(msgEl);
+    scrollToBottom();
   }
 
   /* ── Карта через Pollinations (стилизованная) ── */
@@ -662,18 +723,28 @@
 
   /* ── Проверяем сообщение пользователя на все команды ── */
   function maybeShowImage(userText) {
+    /* Маршрут */
+    var mRoute = userText.match(ROUTE_RE);
+    if (mRoute && mRoute[1] && mRoute[2]) {
+      showRoute(mRoute[1].trim(), mRoute[2].trim());
+      return;
+    }
+
+    /* Карта */
     var mMap = userText.match(MAP_RE);
     if (mMap) {
       var place = userText.slice(userText.indexOf(mMap[0]) + mMap[0].length).trim();
       if (place) { startMap(place); return; }
     }
 
+    /* Поиск реального фото */
     var mFind = userText.match(FIND_RE);
     if (mFind) {
       var subject = userText.slice(userText.indexOf(mFind[0]) + mFind[0].length).trim();
       if (subject) { startFinding(subject); return; }
     }
 
+    /* Рисование */
     var mDraw = userText.match(IMG_RE);
     if (mDraw) {
       var drawSubject = userText.slice(userText.indexOf(mDraw[0]) + mDraw[0].length).trim();

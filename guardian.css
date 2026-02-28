@@ -630,6 +630,27 @@
   font-style: italic;
 }
 
+.guardian-msg__route-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  border: 1px solid rgba(80, 160, 100, 0.45);
+  background: rgba(40, 100, 60, 0.18);
+  color: rgba(140, 220, 150, 0.9);
+  font-size: 0.82rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  white-space: nowrap;
+}
+.guardian-msg__route-btn:hover {
+  background: rgba(50, 130, 70, 0.35);
+  color: #a8eab8;
+  border-color: rgba(100, 200, 120, 0.65);
+}
+
 /* ── Кнопка Психолог ── */
 .guardian-mode__btn--psychologist {
   background: rgba(100, 30, 70, 0.4);
