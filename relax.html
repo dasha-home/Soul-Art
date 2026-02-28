@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Комната отдыха · Soul-Art</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: #02010a;
+      font-family: Georgia, serif;
+      color: #d8c89a;
+    }
+
+    /* ── Звёздный холст ── */
+    #star-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+
+    /* ── Виньетка ── */
+    .relax-vignette {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      background: radial-gradient(ellipse at 50% 50%, transparent 35%, rgba(1,0,8,0.5) 100%);
+      pointer-events: none;
+    }
+
+    /* ══════════════════════════════
+       СТВОРКИ — открываются при загрузке
+       ══════════════════════════════ */
+    .shutters {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      display: flex;
+      pointer-events: none;
+    }
+    .shutter {
+      flex: 1;
+      background:
+        repeating-linear-gradient(
+          0deg,
+          rgba(185,138,50,0.04) 0px, transparent 1px, transparent 40px,
+          rgba(185,138,50,0.03) 41px
+        ),
+        repeating-linear-gradient(
+          90deg,
+          rgba(255,210,130,0.025) 0px, transparent 1px, transparent 80px
+        ),
+        linear-gradient(180deg, #12090400 0%, #0e0702 40%, #0c0501 100%);
+      transition: transform 2s cubic-bezier(0.76, 0, 0.24, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .shutter--left {
+      border-right: 1px solid rgba(185,138,50,0.18);
+      transform-origin: left center;
+    }
+    .shutter--right {
+      border-left: 1px solid rgba(185,138,50,0.18);
+      transform-origin: right center;
+    }
+    /* Декоративные щели на створках */
+    .shutter__slats {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .shutter__slat {
+      flex: 1;
+      border-bottom: 1px solid rgba(140,100,35,0.08);
+    }
+    /* Текст в центре перед открытием */
+    .shutter--left .shutter__label {
+      position: absolute;
+      right: 1.8rem;
+      font-size: 0.75rem;
+      letter-spacing: 0.18em;
+      color: rgba(185,150,80,0.4);
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      user-select: none;
+    }
+    .shutter--right .shutter__label {
+      position: absolute;
+      left: 1.8rem;
+      font-size: 0.75rem;
+      letter-spacing: 0.18em;
+      color: rgba(185,150,80,0.4);
+      writing-mode: vertical-rl;
+      user-select: none;
+    }
+
+    .shutters.open .shutter--left  { transform: translateX(-100%); }
+    .shutters.open .shutter--right { transform: translateX(100%); }
+
+    /* ══════════════════════════════
+       UI-ОВЕРЛЕЙ
+       ══════════════════════════════ */
+    .relax-ui {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: max(1.2rem, env(safe-area-inset-top)) 1.5rem max(1.2rem, env(safe-area-inset-bottom));
+    }
+
+    /* Шапка */
+    .relax-header {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      pointer-events: all;
+      opacity: 0;
+      transition: opacity 1.2s ease 2.8s;
+    }
+    .relax-header.visible { opacity: 1; }
+    .relax-back {
+      font-size: 0.82rem;
+      color: rgba(200,175,130,0.55);
+      text-decoration: none;
+      letter-spacing: 0.05em;
+      transition: color 0.25s;
+      backdrop-filter: blur(4px);
+      padding: 0.35rem 0.7rem;
+      border-radius: 14px;
+      border: 1px solid rgba(185,138,50,0.12);
+    }
+    .relax-back:hover { color: rgba(220,195,150,0.9); border-color: rgba(185,138,50,0.3); }
+    .relax-title {
+      font-size: 0.85rem;
+      color: rgba(185,160,110,0.45);
+      letter-spacing: 0.22em;
+    }
+    .relax-sound-btn {
+      background: rgba(15,8,3,0.55);
+      border: 1px solid rgba(185,138,50,0.18);
+      border-radius: 16px;
+      padding: 0.35rem 0.85rem;
+      color: rgba(200,175,130,0.6);
+      font-size: 0.8rem;
+      cursor: pointer;
+      letter-spacing: 0.05em;
+      transition: all 0.25s;
+      backdrop-filter: blur(8px);
+      font-family: Georgia, serif;
+      pointer-events: all;
+    }
+    .relax-sound-btn:hover { border-color: rgba(185,138,50,0.45); color: rgba(225,200,155,0.9); }
+    .relax-sound-btn.on {
+      border-color: rgba(140,180,255,0.4);
+      color: rgba(160,195,255,0.85);
+      background: rgba(100,140,255,0.07);
+    }
+
+    /* ── Дыхательный круг ── */
+    .breathe-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.1rem;
+      opacity: 0;
+      transition: opacity 1.2s ease 3.2s;
+      pointer-events: all;
+      user-select: none;
+    }
+    .breathe-wrap.visible { opacity: 1; }
+
+    .breathe-outer {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(120,165,255,0.18);
+      animation: breathe-outer 12s ease-in-out infinite;
+      cursor: pointer;
+      position: relative;
+    }
+    @keyframes breathe-outer {
+      0%   { transform: scale(1);    box-shadow: 0 0 15px rgba(100,150,255,0.06); border-color: rgba(120,165,255,0.18); }
+      33%  { transform: scale(1.5);  box-shadow: 0 0 70px rgba(100,150,255,0.22), 0 0 120px rgba(80,120,220,0.1); border-color: rgba(160,200,255,0.55); }
+      50%  { transform: scale(1.5);  box-shadow: 0 0 60px rgba(100,150,255,0.18); border-color: rgba(150,190,255,0.45); }
+      83%  { transform: scale(0.85); box-shadow: 0 0 10px rgba(100,150,255,0.04); border-color: rgba(100,140,220,0.12); }
+      100% { transform: scale(1);    box-shadow: 0 0 15px rgba(100,150,255,0.06); border-color: rgba(120,165,255,0.18); }
+    }
+    .breathe-ring {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle, rgba(100,145,255,0.12) 0%, rgba(80,120,220,0.05) 50%, transparent 70%);
+      border: 1px solid rgba(120,165,255,0.25);
+      animation: breathe-ring 12s ease-in-out infinite;
+    }
+    @keyframes breathe-ring {
+      0%   { transform: scale(1);    background: radial-gradient(circle, rgba(100,145,255,0.12) 0%, transparent 70%); }
+      33%  { transform: scale(1.15); background: radial-gradient(circle, rgba(120,165,255,0.28) 0%, rgba(100,145,255,0.12) 50%, transparent 70%); }
+      50%  { transform: scale(1.15); }
+      83%  { transform: scale(0.88); background: radial-gradient(circle, rgba(80,120,200,0.07) 0%, transparent 70%); }
+      100% { transform: scale(1);    background: radial-gradient(circle, rgba(100,145,255,0.12) 0%, transparent 70%); }
+    }
+    .breathe-dot {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(180,210,255,0.6) 0%, rgba(140,175,255,0.25) 60%, transparent 100%);
+      animation: breathe-dot 12s ease-in-out infinite;
+    }
+    @keyframes breathe-dot {
+      0%   { transform: scale(1);   opacity: 0.6; }
+      33%  { transform: scale(1.5); opacity: 1;   }
+      50%  { transform: scale(1.5); opacity: 0.9; }
+      83%  { transform: scale(0.6); opacity: 0.3; }
+      100% { transform: scale(1);   opacity: 0.6; }
+    }
+
+    .breathe-label {
+      font-size: 0.78rem;
+      color: rgba(155,185,245,0.55);
+      letter-spacing: 0.14em;
+      text-align: center;
+      min-height: 1.2em;
+      transition: opacity 0.5s;
+    }
+    .breathe-hint {
+      font-size: 0.7rem;
+      color: rgba(140,165,220,0.35);
+      letter-spacing: 0.08em;
+      margin-top: -0.4rem;
+    }
+
+    /* ── Нижние кнопки ── */
+    .relax-bottom {
+      display: flex;
+      gap: 0.7rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      pointer-events: all;
+      opacity: 0;
+      transition: opacity 1.2s ease 3.5s;
+    }
+    .relax-bottom.visible { opacity: 1; }
+    .relax-btn {
+      padding: 0.45rem 1.1rem;
+      border-radius: 18px;
+      border: 1px solid rgba(185,138,50,0.18);
+      background: rgba(10,6,2,0.55);
+      color: rgba(200,175,130,0.6);
+      font-size: 0.78rem;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      letter-spacing: 0.05em;
+      transition: all 0.25s;
+      font-family: Georgia, serif;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .relax-btn:hover {
+      border-color: rgba(185,138,50,0.42);
+      color: rgba(220,195,150,0.95);
+      background: rgba(185,138,50,0.07);
+    }
+    .relax-btn.active {
+      border-color: rgba(140,180,255,0.38);
+      color: rgba(160,195,255,0.88);
+      background: rgba(100,140,255,0.08);
+    }
+
+    /* Таймер */
+    .relax-timer-display {
+      position: fixed;
+      bottom: 5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 12;
+      font-size: 2rem;
+      color: rgba(160,195,255,0.35);
+      letter-spacing: 0.1em;
+      pointer-events: none;
+      font-variant-numeric: tabular-nums;
+      transition: opacity 0.5s;
+      opacity: 0;
+    }
+    .relax-timer-display.visible { opacity: 1; }
+
+    /* Сообщение "время вышло" */
+    .relax-bell {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 20;
+      font-size: 1.1rem;
+      color: rgba(200,220,255,0.85);
+      letter-spacing: 0.15em;
+      text-align: center;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.8s;
+    }
+    .relax-bell.visible { opacity: 1; }
+
+    @media (max-width: 480px) {
+      .breathe-outer { width: 110px; height: 110px; }
+      .breathe-ring  { width: 78px;  height: 78px;  }
+      .relax-title   { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Звёздный холст -->
+  <canvas id="star-canvas"></canvas>
+  <div class="relax-vignette"></div>
+
+  <!-- Створки -->
+  <div class="shutters" id="shutters">
+    <div class="shutter shutter--left">
+      <div class="shutter__slats">
+        <div class="shutter__slat"></div><div class="shutter__slat"></div>
+        <div class="shutter__slat"></div><div class="shutter__slat"></div>
+        <div class="shutter__slat"></div><div class="shutter__slat"></div>
+        <div class="shutter__slat"></div><div class="shutter__slat"></div>
+        <div class="shutter__slat"></div><div class="shutter__slat"></div>
+        <div class="shutter__slat"></div><div class="shutter__slat"></div>
+      </div>
+      <span class="shutter__label">комната отдыха</span>
+    </div>
+    <div class="shutter shutter--right">
+      <div class="shutter__slats">
+        <div class="shutter__slat"></div><div class="shutter__slat"></div>
+        <div class="shutter__slat"></div><div class="shutter__slat"></div>
+        <div class="shutter__slat"></div><div class="shutter__slat"></div>
+        <div class="shutter__slat"></div><div class="shutter__slat"></div>
+        <div class="shutter__slat"></div><div class="shutter__slat"></div>
+        <div class="shutter__slat"></div><div class="shutter__slat"></div>
+      </div>
+      <span class="shutter__label">душа отдыхает</span>
+    </div>
+  </div>
+
+  <!-- UI -->
+  <div class="relax-ui">
+    <header class="relax-header" id="relax-header">
+      <a href="index.html" class="relax-back">← Главная</a>
+      <span class="relax-title">✦ Комната отдыха</span>
+      <button class="relax-sound-btn" id="sound-btn">♪ Звук</button>
+    </header>
+
+    <!-- Дыхательный круг -->
+    <div class="breathe-wrap" id="breathe-wrap">
+      <div class="breathe-outer" id="breathe-outer" title="нажми чтобы пауза">
+        <div class="breathe-ring">
+          <div class="breathe-dot"></div>
+        </div>
+      </div>
+      <p class="breathe-label" id="breathe-label">вдыхай...</p>
+      <p class="breathe-hint">нажми на круг — пауза</p>
+    </div>
+
+    <!-- Нижние кнопки -->
+    <div class="relax-bottom" id="relax-bottom">
+      <button class="relax-btn" id="btn-timer-5">⏱ 5 мин</button>
+      <button class="relax-btn" id="btn-timer-10">⏱ 10 мин</button>
+      <button class="relax-btn" id="btn-timer-15">⏱ 15 мин</button>
+      <a href="guardian.html" class="relax-btn">✦ Хранитель</a>
+    </div>
+  </div>
+
+  <!-- Таймер -->
+  <div class="relax-timer-display" id="timer-display"></div>
+  <div class="relax-bell" id="relax-bell">🔔 Медитация завершена</div>
+
+  <script>
+  /* ══════════════════════════════════════════════
+     ЗВЁЗДНЫЙ ХОЛСТ
+     ══════════════════════════════════════════════ */
+  const canvas = document.getElementById('star-canvas');
+  const ctx    = canvas.getContext('2d');
+
+  function resize() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  /* Генерация звёзд на сфере */
+  const STAR_COUNT = 700;
+  const stars = [];
+  for (let i = 0; i < STAR_COUNT; i++) {
+    // Равномерное распределение по сфере
+    const theta = Math.random() * Math.PI * 2;
+    const phi   = Math.acos(2 * Math.random() - 1);
+    stars.push({
+      x: Math.sin(phi) * Math.cos(theta),
+      y: Math.sin(phi) * Math.sin(theta),
+      z: Math.cos(phi),
+      size: Math.pow(Math.random(), 2.5) * 2.2 + 0.2,
+      brightness: Math.random() * 0.5 + 0.5,
+      twinkle: Math.random() * Math.PI * 2,
+      twinkleSpeed: Math.random() * 0.03 + 0.004,
+      color: pickColor(),
+    });
+  }
+
+  function pickColor() {
+    const r = Math.random();
+    if (r < 0.08) return [180, 205, 255]; // синие
+    if (r < 0.15) return [255, 225, 180]; // тёплые
+    if (r < 0.20) return [210, 255, 210]; // зелёные
+    return [255, 255, 255];
+  }
+
+  /* Метеоры */
+  const meteors = [];
+  function spawnMeteor() {
+    if (meteors.length < 4) {
+      meteors.push({
+        x: Math.random() * canvas.width * 0.9,
+        y: Math.random() * canvas.height * 0.4,
+        angle: Math.PI / 4 + (Math.random() - 0.5) * 0.4,
+        speed: Math.random() * 8 + 5,
+        life: 0,
+        maxLife: Math.random() * 35 + 20,
+        length: Math.random() * 160 + 80,
+        alpha: Math.random() * 0.4 + 0.5,
+      });
+    }
+    setTimeout(spawnMeteor, Math.random() * 6000 + 2500);
+  }
+  setTimeout(spawnMeteor, 4000);
+
+  /* Туманности */
+  const nebulae = [
+    { cx: 0.3, cy: 0.25, rx: 0.22, ry: 0.12, color: [80, 40, 160], alpha: 0.055 },
+    { cx: 0.7, cy: 0.65, rx: 0.18, ry: 0.10, color: [40, 80, 160], alpha: 0.04  },
+    { cx: 0.5, cy: 0.45, rx: 0.30, ry: 0.08, color: [120, 60, 180], alpha: 0.03  },
+  ];
+
+  let rotY = 0;
+  let time = 0;
+
+  function project(x, y, z) {
+    const cosR = Math.cos(rotY), sinR = Math.sin(rotY);
+    const rx = x * cosR - z * sinR;
+    const rz = x * sinR + z * cosR;
+    const fov = 1.8;
+    const d = fov / (fov + rz + 1.2);
+    return {
+      sx: canvas.width  / 2 + rx * d * canvas.width  * 0.55,
+      sy: canvas.height / 2 + y  * d * canvas.height * 0.55,
+      d,
+      visible: rz > -1.6,
+    };
+  }
+
+  function frame() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    /* Фон — глубокий космос */
+    const bg = ctx.createRadialGradient(
+      canvas.width * 0.5, canvas.height * 0.45, 0,
+      canvas.width * 0.5, canvas.height * 0.5, Math.max(canvas.width, canvas.height) * 0.8
+    );
+    bg.addColorStop(0,   '#080220');
+    bg.addColorStop(0.4, '#040115');
+    bg.addColorStop(1,   '#010008');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    /* Туманности */
+    for (const n of nebulae) {
+      const gx = ctx.createRadialGradient(
+        canvas.width * n.cx, canvas.height * n.cy, 0,
+        canvas.width * n.cx, canvas.height * n.cy,
+        canvas.width * n.rx
+      );
+      gx.addColorStop(0,   `rgba(${n.color},${n.alpha})`);
+      gx.addColorStop(0.5, `rgba(${n.color},${n.alpha * 0.5})`);
+      gx.addColorStop(1,   'rgba(0,0,0,0)');
+      ctx.beginPath();
+      ctx.ellipse(
+        canvas.width * n.cx, canvas.height * n.cy,
+        canvas.width * n.rx, canvas.height * n.ry,
+        0, 0, Math.PI * 2
+      );
+      ctx.fillStyle = gx;
+      ctx.fill();
+    }
+
+    /* Звёзды */
+    time += 0.016;
+    rotY += 0.00012;
+
+    for (const s of stars) {
+      const p = project(s.x, s.y, s.z);
+      if (!p.visible) continue;
+      const twinkle = Math.sin(time * s.twinkleSpeed * 60 + s.twinkle) * 0.18 + 0.82;
+      const alpha = s.brightness * twinkle * Math.min(1, (p.d + 0.2) * 1.6);
+      const r = s.size * p.d * 1.8;
+      if (r < 0.15) continue;
+      const [cr, cg, cb] = s.color;
+
+      if (s.size > 1.2) {
+        const glow = ctx.createRadialGradient(p.sx, p.sy, 0, p.sx, p.sy, r * 5);
+        glow.addColorStop(0,   `rgba(${cr},${cg},${cb},${alpha * 0.45})`);
+        glow.addColorStop(1,   `rgba(${cr},${cg},${cb},0)`);
+        ctx.beginPath();
+        ctx.arc(p.sx, p.sy, r * 5, 0, Math.PI * 2);
+        ctx.fillStyle = glow;
+        ctx.fill();
+      }
+      ctx.beginPath();
+      ctx.arc(p.sx, p.sy, Math.max(0.2, r), 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${cr},${cg},${cb},${alpha})`;
+      ctx.fill();
+    }
+
+    /* Метеоры */
+    for (let i = meteors.length - 1; i >= 0; i--) {
+      const m = meteors[i];
+      m.x += Math.cos(m.angle) * m.speed;
+      m.y += Math.sin(m.angle) * m.speed;
+      m.life++;
+      if (m.life > m.maxLife || m.x > canvas.width * 1.1 || m.y > canvas.height * 1.1) {
+        meteors.splice(i, 1);
+        continue;
+      }
+      const progress = m.life / m.maxLife;
+      const a = Math.sin(progress * Math.PI) * m.alpha;
+      const tx = m.x - Math.cos(m.angle) * m.length;
+      const ty = m.y - Math.sin(m.angle) * m.length;
+      const g = ctx.createLinearGradient(tx, ty, m.x, m.y);
+      g.addColorStop(0,   'rgba(255,255,255,0)');
+      g.addColorStop(0.5, `rgba(200,220,255,${a * 0.5})`);
+      g.addColorStop(1,   `rgba(255,255,255,${a})`);
+      ctx.beginPath();
+      ctx.moveTo(tx, ty);
+      ctx.lineTo(m.x, m.y);
+      ctx.strokeStyle = g;
+      ctx.lineWidth = 1.8;
+      ctx.stroke();
+      const hg = ctx.createRadialGradient(m.x, m.y, 0, m.x, m.y, 8);
+      hg.addColorStop(0, `rgba(255,255,255,${a})`);
+      hg.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.beginPath();
+      ctx.arc(m.x, m.y, 8, 0, Math.PI * 2);
+      ctx.fillStyle = hg;
+      ctx.fill();
+    }
+
+    requestAnimationFrame(frame);
+  }
+  frame();
+
+  /* ══════════════════════════════════════════════
+     ОТКРЫТИЕ СТВОРОК
+     ══════════════════════════════════════════════ */
+  setTimeout(function () {
+    document.getElementById('shutters').classList.add('open');
+    document.getElementById('relax-header').classList.add('visible');
+    document.getElementById('breathe-wrap').classList.add('visible');
+    document.getElementById('relax-bottom').classList.add('visible');
+  }, 700);
+
+  /* ══════════════════════════════════════════════
+     ДЫХАНИЕ (4 вдох · 2 задержка · 6 выдох = 12с)
+     ══════════════════════════════════════════════ */
+  const PHASES = [
+    { text: 'вдыхай...', ms: 4000 },
+    { text: 'задержи...', ms: 2000 },
+    { text: 'выдыхай...', ms: 6000 },
+  ];
+  let phaseIdx = 0;
+  let breatheOn = true;
+  const breatheLabel = document.getElementById('breathe-label');
+  const breatheOuter = document.getElementById('breathe-outer');
+  let breatheTimer;
+
+  function nextPhase() {
+    if (!breatheOn) return;
+    const p = PHASES[phaseIdx];
+    breatheLabel.textContent = p.text;
+    phaseIdx = (phaseIdx + 1) % PHASES.length;
+    breatheTimer = setTimeout(nextPhase, p.ms);
+  }
+  setTimeout(nextPhase, 3300);
+
+  breatheOuter.addEventListener('click', function () {
+    breatheOn = !breatheOn;
+    if (breatheOn) {
+      breatheOuter.style.animationPlayState = 'running';
+      breatheOuter.querySelectorAll('*').forEach(function (el) {
+        el.style.animationPlayState = 'running';
+      });
+      phaseIdx = 0;
+      nextPhase();
+    } else {
+      clearTimeout(breatheTimer);
+      breatheOuter.style.animationPlayState = 'paused';
+      breatheOuter.querySelectorAll('*').forEach(function (el) {
+        el.style.animationPlayState = 'paused';
+      });
+      breatheLabel.textContent = '— пауза —';
+    }
+  });
+
+  /* ══════════════════════════════════════════════
+     ЗВУК — Web Audio API медитативный дрон
+     ══════════════════════════════════════════════ */
+  let audioCtx = null;
+  let soundNodes = [];
+  let soundOn = false;
+
+  function startAmbient() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // Многослойный дрон: корень + кварта + квинта + октава
+    [55, 82.41, 110, 164.81].forEach(function (freq, i) {
+      const osc  = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      // Небольшое дрожание частоты для живого звука
+      const lfo  = audioCtx.createOscillator();
+      const lfoG = audioCtx.createGain();
+      lfo.frequency.value = 0.15 + i * 0.07;
+      lfoG.gain.value = 0.3;
+      lfo.connect(lfoG);
+      lfoG.connect(osc.frequency);
+      lfo.start();
+
+      osc.type = i % 2 === 0 ? 'sine' : 'triangle';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, audioCtx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.022 / (i + 1), audioCtx.currentTime + 4);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      soundNodes.push({ osc, gain, lfo });
+    });
+  }
+
+  function stopAmbient() {
+    soundNodes.forEach(function (n) {
+      n.gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 2);
+      setTimeout(function () { try { n.osc.stop(); n.lfo.stop(); } catch(e){} }, 2200);
+    });
+    soundNodes = [];
+  }
+
+  document.getElementById('sound-btn').addEventListener('click', function () {
+    soundOn = !soundOn;
+    this.textContent = soundOn ? '♪ Тишина' : '♪ Звук';
+    this.classList.toggle('on', soundOn);
+    if (soundOn) startAmbient(); else stopAmbient();
+  });
+
+  /* ══════════════════════════════════════════════
+     ТАЙМЕР МЕДИТАЦИИ
+     ══════════════════════════════════════════════ */
+  let timerInterval = null;
+  const timerDisplay = document.getElementById('timer-display');
+  const bellEl       = document.getElementById('relax-bell');
+
+  function ringBell() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    [432, 528, 639].forEach(function (freq, i) {
+      const osc = audioCtx.createOscillator();
+      const g   = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      g.gain.setValueAtTime(0.25, audioCtx.currentTime + i * 0.35);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.35 + 5);
+      osc.connect(g);
+      g.connect(audioCtx.destination);
+      osc.start(audioCtx.currentTime + i * 0.35);
+      osc.stop(audioCtx.currentTime + i * 0.35 + 5);
+    });
+  }
+
+  function startTimer(minutes) {
+    clearInterval(timerInterval);
+    const end = Date.now() + minutes * 60 * 1000;
+    document.querySelectorAll('.relax-btn[id^="btn-timer"]').forEach(function (b) { b.classList.remove('active'); });
+    const btn = document.getElementById('btn-timer-' + minutes);
+    if (btn) btn.classList.add('active');
+    timerDisplay.classList.add('visible');
+    bellEl.classList.remove('visible');
+
+    timerInterval = setInterval(function () {
+      const rem = end - Date.now();
+      if (rem <= 0) {
+        clearInterval(timerInterval);
+        timerDisplay.classList.remove('visible');
+        ringBell();
+        bellEl.classList.add('visible');
+        setTimeout(function () { bellEl.classList.remove('visible'); }, 5000);
+        if (btn) { btn.textContent = '✓ Готово'; btn.classList.remove('active'); }
+        return;
+      }
+      const m = Math.floor(rem / 60000);
+      const s = Math.floor((rem % 60000) / 1000);
+      timerDisplay.textContent = m + ':' + String(s).padStart(2, '0');
+    }, 500);
+  }
+
+  document.getElementById('btn-timer-5').addEventListener('click',  function () { startTimer(5);  });
+  document.getElementById('btn-timer-10').addEventListener('click', function () { startTimer(10); });
+  document.getElementById('btn-timer-15').addEventListener('click', function () { startTimer(15); });
+  </script>
+</body>
+</html>
