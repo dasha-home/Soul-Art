@@ -33,16 +33,15 @@
     .hut__img {
       width: 100%; height: 100%;
       object-fit: cover;
-      object-position: center 40%;
+      object-position: center 72%;
       animation: hut-breathe 5.5s ease-in-out infinite;
       display: block;
-      /* Только самый верхний краешек растворяется в небе — всё остальное как есть */
       mask-image: linear-gradient(to bottom, transparent 0%, black 6%, black 100%);
       -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 6%, black 100%);
     }
     @keyframes hut-breathe {
-      0%, 100% { filter: brightness(0.95); }
-      50%       { filter: brightness(1.0);  }
+      0%, 100% { filter: brightness(0.97); }
+      50%       { filter: brightness(1.02); }
     }
 
     /* Тёплое мерцание правого фонарика — только справа, не трогает чайник */
@@ -90,13 +89,31 @@
       50%       { opacity: 0.75; }
     }
 
+    /* ── Блеск чайника — белоснежный ── */
+    .teapot-glow {
+      position: fixed;
+      left: 9%; bottom: 24%;
+      width: 90px; height: 75px;
+      z-index: 5; pointer-events: none; border-radius: 50%;
+      background: radial-gradient(ellipse at 40% 35%,
+        rgba(255,255,255,0.38) 0%,
+        rgba(255,255,255,0.14) 28%,
+        transparent 65%
+      );
+      animation: teapot-shine 4.5s ease-in-out infinite;
+    }
+    @keyframes teapot-shine {
+      0%, 100% { opacity: 0.7; transform: scale(1); }
+      50%       { opacity: 1.0; transform: scale(1.04); }
+    }
+
     /* ══════════════════════════════
        ПАР ОТ ЧАЙНИКА — натуральный
        ══════════════════════════════ */
     .steam {
       position: fixed;
       left: 11.5%;
-      top: 56%;
+      top: 62%;
       z-index: 5;
       width: 56px;
       height: 100px;
@@ -348,6 +365,9 @@
 <div class="breath-figure breath-figure--left"></div>
 <div class="breath-figure breath-figure--right"></div>
 <div class="breath-figure breath-figure--cats"></div>
+
+<!-- Блеск чайника -->
+<div class="teapot-glow"></div>
 
 <!-- Пар от чайника -->
 <div class="steam">
