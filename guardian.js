@@ -400,38 +400,42 @@
   /* ── AI Horde: бесплатная генерация без регистрации ── */
   function generateViaHorde(prompt, onSuccess, onFail) {
     var HORDE = "https://stablehorde.net/api/v2";
-    var headers = { "Content-Type": "application/json", "apikey": "0000000000", "Client-Agent": "GuardianChat:1:anonymous" };
+    var hdrs = { "Content-Type": "application/json", "apikey": "0000000000", "Client-Agent": "GuardianChat:1:anon" };
 
     fetch(HORDE + "/generate/async", {
       method: "POST",
-      headers: headers,
+      headers: hdrs,
       body: JSON.stringify({
         prompt: prompt,
-        params: { n: 1, width: 512, height: 512, steps: 20, karras: true },
-        r2: false
+        params: { n: 1, width: 512, height: 512, steps: 20 }
+        /* r2 не указываем — Horde вернёт прямую ссылку */
       })
     })
-    .then(function(r) { return r.json(); })
+    .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
     .then(function(job) {
       if (!job.id) { onFail(); return; }
-      var maxWait = 30, waited = 0;
+      var attempts = 0, maxAttempts = 40; /* до ~2 минут */
       function poll() {
-        if (waited++ > maxWait) { onFail(); return; }
-        fetch(HORDE + "/generate/status/" + job.id, { headers: headers })
+        if (attempts++ >= maxAttempts) { onFail(); return; }
+        fetch(HORDE + "/generate/status/" + job.id, { headers: hdrs })
         .then(function(r) { return r.json(); })
         .then(function(s) {
           if (s.done && s.generations && s.generations.length) {
-            var g = s.generations[0];
-            onSuccess(g.img.startsWith("http") ? g.img : "data:image/webp;base64," + g.img);
+            var imgSrc = s.generations[0].img;
+            /* img — либо прямая ссылка, либо base64 */
+            if (!imgSrc.startsWith("http")) {
+              imgSrc = "data:image/webp;base64," + imgSrc;
+            }
+            onSuccess(imgSrc);
           } else {
             setTimeout(poll, 3000);
           }
         })
-        .catch(function() { setTimeout(poll, 3000); });
+        .catch(function() { setTimeout(poll, 4000); });
       }
-      setTimeout(poll, 4000);
+      setTimeout(poll, 5000); /* первый опрос через 5 сек */
     })
-    .catch(onFail);
+    .catch(function(e) { console.warn("[Horde] submit failed:", e); onFail(); });
   }
 
   /* ── Pollinations как запасной (когда оживёт) ── */
