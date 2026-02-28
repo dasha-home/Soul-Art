@@ -7,724 +7,826 @@
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
     html, body {
-      width: 100%; height: 100%;
-      overflow: hidden;
-      background: #02010a;
-      font-family: Georgia, serif;
-      color: #d8c89a;
+      width: 100%; height: 100%; overflow: hidden;
+      background: #01000a; font-family: Georgia, serif; color: #d8c89a;
     }
 
-    /* ── Звёздный холст ── */
+    /* ── Звёздный холст — за всем ── */
     #star-canvas {
-      position: fixed;
-      inset: 0;
-      width: 100%;
-      height: 100%;
+      position: fixed; inset: 0;
+      width: 100%; height: 100%;
       z-index: 0;
+      cursor: grab;
+    }
+    #star-canvas:active { cursor: grabbing; }
+
+    /* ── Подсказка по взаимодействию ── */
+    .sky-hint {
+      position: fixed; bottom: 44%; left: 50%;
+      transform: translateX(-50%);
+      z-index: 6; color: rgba(160,185,240,0.4);
+      font-size: 0.72rem; letter-spacing: 0.12em;
+      pointer-events: none; opacity: 0;
+      transition: opacity 1s ease 5s;
+      white-space: nowrap;
+    }
+    .sky-hint.visible { opacity: 1; }
+
+    /* ══════════════════════════════
+       ЯПОНСКАЯ ХИЖИНА — нижняя зона
+       ══════════════════════════════ */
+    .hut {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      height: 42%;
+      z-index: 4;
     }
 
-    /* ── Виньетка ── */
-    .relax-vignette {
-      position: fixed;
-      inset: 0;
-      z-index: 1;
-      background: radial-gradient(ellipse at 50% 50%, transparent 35%, rgba(1,0,8,0.5) 100%);
+    /* Задняя стена — тёмное дерево */
+    .hut__wall {
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 40%;
+      background:
+        repeating-linear-gradient(90deg,
+          rgba(100,65,20,0.18) 0px, transparent 1px,
+          transparent 28px, rgba(80,50,15,0.12) 29px
+        ),
+        linear-gradient(to bottom, #120a03, #1c0e05);
+      border-top: 1px solid rgba(140,100,40,0.2);
+    }
+
+    /* Татами — плетёный пол */
+    .hut__floor {
+      position: absolute; bottom: 0; left: 0; right: 0; height: 65%;
+      background:
+        repeating-linear-gradient(90deg,
+          rgba(200,165,75,0.12) 0px, transparent 1px, transparent 62px,
+          rgba(180,145,60,0.08) 63px
+        ),
+        repeating-linear-gradient(0deg,
+          rgba(200,165,75,0.10) 0px, transparent 1px, transparent 42px,
+          rgba(180,145,60,0.07) 43px
+        ),
+        linear-gradient(to top, #201208, #2e1a0a);
+    }
+
+    /* ── Бамбук — опоры хижины ── */
+    .bamboo {
+      position: fixed; bottom: 0;
+      z-index: 3;
+      border-radius: 8px 8px 0 0;
+    }
+    .bamboo__stalk {
+      position: absolute; left: 0; right: 0; bottom: 0;
+      border-radius: 8px 8px 0 0;
+      background:
+        repeating-linear-gradient(0deg,
+          transparent 0px, transparent 32px,
+          rgba(4,9,2,0.9) 32px, rgba(4,9,2,0.9) 36px
+        ),
+        linear-gradient(to top, #0c1a07, #14260c, #1c3210);
+    }
+    .bamboo--left  { left: 5%;  width: 14px; height: 72vh; animation: bamboo-sway-l 9s ease-in-out infinite; transform-origin: bottom center; }
+    .bamboo--left2 { left: 9%;  width: 10px; height: 55vh; animation: bamboo-sway-l 11s ease-in-out 2s infinite; transform-origin: bottom center; opacity: 0.7; }
+    .bamboo--right  { right: 5%;  width: 14px; height: 68vh; animation: bamboo-sway-r 10s ease-in-out 1s infinite; transform-origin: bottom center; }
+    .bamboo--right2 { right: 9%; width: 10px; height: 52vh; animation: bamboo-sway-r 8s ease-in-out 3s infinite; transform-origin: bottom center; opacity: 0.7; }
+
+    @keyframes bamboo-sway-l {
+      0%, 100% { transform: rotate(-2.5deg); }
+      50%       { transform: rotate(-1deg); }
+    }
+    @keyframes bamboo-sway-r {
+      0%, 100% { transform: rotate(2deg); }
+      50%       { transform: rotate(0.8deg); }
+    }
+
+    /* Листья бамбука */
+    .bamboo__leaf {
+      position: absolute;
+      width: 28px; height: 8px;
+      background: linear-gradient(to right, rgba(22,50,12,0.9), transparent);
+      border-radius: 0 50% 50% 0;
+      transform-origin: left center;
+    }
+
+    /* ── Медитирующие фигуры ── */
+    .figure {
+      position: absolute; bottom: 40%;
+      color: rgba(6, 3, 1, 0.92);
+      filter: drop-shadow(0 2px 8px rgba(255,160,40,0.08));
+    }
+    .figure--left  { left: 22%; }
+    .figure--right { right: 20%; }
+
+    /* ── Столик с чаем по центру ── */
+    .tea-wrap {
+      position: absolute; bottom: 36%; left: 50%;
+      transform: translateX(-50%);
+    }
+    .tea-table {
+      width: 70px; height: 8px;
+      background: linear-gradient(to bottom, #3a2008, #2d1806);
+      border-radius: 4px;
+      box-shadow: 0 3px 0 #1a0d04;
+    }
+    .tea-cup-wrap {
+      position: absolute; bottom: 100%;
+      left: 50%; transform: translateX(-50%);
+      margin-bottom: 2px;
+    }
+
+    /* ── Пар от чая ── */
+    .steam {
+      position: absolute; bottom: calc(100% + 4px);
+      left: 50%; transform: translateX(-50%);
+      width: 30px; height: 44px;
+      pointer-events: none;
+    }
+    .steam__puff {
+      position: absolute; bottom: 0;
+      width: 5px; height: 5px; border-radius: 50%;
+      background: rgba(220,200,170,0.28);
+      animation: steam-rise 2.4s ease-out infinite;
+    }
+    .steam__puff:nth-child(1) { left: 4px;  animation-delay: 0s;    --dx: -8px; }
+    .steam__puff:nth-child(2) { left: 12px; animation-delay: 0.9s;  --dx: 6px;  }
+    .steam__puff:nth-child(3) { left: 20px; animation-delay: 1.7s;  --dx: -4px; }
+
+    @keyframes steam-rise {
+      0%   { transform: translate(0, 0) scale(1);    opacity: 0; }
+      15%  { opacity: 0.65; }
+      70%  { opacity: 0.2; }
+      100% { transform: translate(var(--dx), -44px) scale(2.8); opacity: 0; }
+    }
+
+    /* ── Фонарик ── */
+    .lantern {
+      position: absolute; bottom: 55%; left: 48%;
+      width: 12px; height: 18px;
+      background: radial-gradient(ellipse, rgba(255,210,100,0.6) 0%, rgba(230,170,50,0.3) 50%, transparent 100%);
+      border-radius: 50%;
+      box-shadow: 0 0 18px rgba(255,190,60,0.45), 0 0 40px rgba(255,150,30,0.18);
+      animation: lantern-flicker 3.5s ease-in-out infinite;
+    }
+    @keyframes lantern-flicker {
+      0%, 100% { opacity: 0.8; transform: scale(1);    box-shadow: 0 0 18px rgba(255,190,60,0.45), 0 0 40px rgba(255,150,30,0.18); }
+      40%       { opacity: 1;   transform: scale(1.12); box-shadow: 0 0 28px rgba(255,200,70,0.6), 0 0 60px rgba(255,160,40,0.28); }
+      70%       { opacity: 0.7; transform: scale(0.95); }
+    }
+
+    /* Тёплое свечение внутри хижины */
+    .hut__glow {
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 50% 110%, rgba(255,160,40,0.12) 0%, transparent 60%);
       pointer-events: none;
     }
 
     /* ══════════════════════════════
-       СТВОРКИ — открываются при загрузке
+       СОЛОМЕННАЯ КРЫША — раздвигается
        ══════════════════════════════ */
-    .shutters {
-      position: fixed;
-      inset: 0;
-      z-index: 80;
+    .roof {
+      position: fixed; top: 0; left: 0; right: 0;
+      height: 60%;
+      z-index: 10;
       display: flex;
       pointer-events: none;
     }
-    .shutter {
+
+    .roof-panel {
       flex: 1;
+      transition: transform 3s cubic-bezier(0.76, 0, 0.24, 1);
+      position: relative; overflow: hidden;
+      /* Соломенная текстура */
       background:
-        repeating-linear-gradient(
-          0deg,
-          rgba(185,138,50,0.04) 0px, transparent 1px, transparent 40px,
-          rgba(185,138,50,0.03) 41px
+        repeating-linear-gradient(178deg,
+          rgba(210,160,55,0.22) 0px, rgba(185,135,40,0.14) 1px,
+          transparent 2px, transparent 5px
         ),
-        repeating-linear-gradient(
-          90deg,
-          rgba(255,210,130,0.025) 0px, transparent 1px, transparent 80px
+        repeating-linear-gradient(174deg,
+          rgba(240,185,65,0.12) 0px, transparent 1px, transparent 11px
         ),
-        linear-gradient(180deg, #12090400 0%, #0e0702 40%, #0c0501 100%);
-      transition: transform 2s cubic-bezier(0.76, 0, 0.24, 1);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+        repeating-linear-gradient(182deg,
+          rgba(170,120,35,0.15) 0px, transparent 2px, transparent 18px
+        ),
+        linear-gradient(175deg, #3d2108 0%, #4e2c0e 30%, #3a1e07 70%, #2c1605 100%);
     }
-    .shutter--left {
-      border-right: 1px solid rgba(185,138,50,0.18);
-      transform-origin: left center;
+    .roof-panel--left {
+      border-right: 2px solid rgba(80,50,15,0.6);
     }
-    .shutter--right {
-      border-left: 1px solid rgba(185,138,50,0.18);
-      transform-origin: right center;
-    }
-    /* Декоративные щели на створках */
-    .shutter__slats {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-    }
-    .shutter__slat {
-      flex: 1;
-      border-bottom: 1px solid rgba(140,100,35,0.08);
-    }
-    /* Текст в центре перед открытием */
-    .shutter--left .shutter__label {
-      position: absolute;
-      right: 1.8rem;
-      font-size: 0.75rem;
-      letter-spacing: 0.18em;
-      color: rgba(185,150,80,0.4);
-      writing-mode: vertical-rl;
-      text-orientation: mixed;
-      user-select: none;
-    }
-    .shutter--right .shutter__label {
-      position: absolute;
-      left: 1.8rem;
-      font-size: 0.75rem;
-      letter-spacing: 0.18em;
-      color: rgba(185,150,80,0.4);
-      writing-mode: vertical-rl;
-      user-select: none;
+    .roof-panel--right {
+      border-left: 1px solid rgba(80,50,15,0.4);
     }
 
-    .shutters.open .shutter--left  { transform: translateX(-100%); }
-    .shutters.open .shutter--right { transform: translateX(100%); }
+    /* Горизонтальные балки в крыше */
+    .roof-panel::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: repeating-linear-gradient(0deg,
+        transparent 0px, transparent 44px,
+        rgba(30,16,5,0.55) 44px, rgba(30,16,5,0.55) 49px
+      );
+    }
+    /* Вертикальные стойки */
+    .roof-panel::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: repeating-linear-gradient(90deg,
+        transparent 0px, transparent 88px,
+        rgba(25,13,4,0.35) 88px, rgba(25,13,4,0.35) 92px
+      );
+    }
+
+    /* Открытие */
+    .roof.open .roof-panel--left  { transform: translateX(-100%); }
+    .roof.open .roof-panel--right { transform: translateX(100%); }
+
+    /* Коньковый брус по центру */
+    .roof-ridge {
+      position: fixed; top: 0; left: 50%; transform: translateX(-50%);
+      width: 10px; height: 60%;
+      z-index: 11;
+      background: linear-gradient(to bottom, #1a0c04, #2a1508, #1e1006);
+      border-left:  1px solid rgba(140,100,40,0.2);
+      border-right: 1px solid rgba(140,100,40,0.2);
+      transition: transform 3s cubic-bezier(0.76, 0, 0.24, 1);
+      pointer-events: none;
+    }
+    .roof-ridge.open { transform: translateX(-50%) scaleX(0); opacity: 0; transition: transform 3s, opacity 2.5s ease 0.5s; }
+
+    /* ── Виньетка ── */
+    .vignette {
+      position: fixed; inset: 0; z-index: 2; pointer-events: none;
+      background: radial-gradient(ellipse at 50% 50%, transparent 35%, rgba(1,0,8,0.52) 100%);
+    }
 
     /* ══════════════════════════════
        UI-ОВЕРЛЕЙ
        ══════════════════════════════ */
     .relax-ui {
-      position: fixed;
-      inset: 0;
-      z-index: 10;
+      position: fixed; inset: 0; z-index: 20;
       pointer-events: none;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: space-between;
-      padding: max(1.2rem, env(safe-area-inset-top)) 1.5rem max(1.2rem, env(safe-area-inset-bottom));
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: space-between;
+      padding: max(1rem, env(safe-area-inset-top)) 1.2rem max(1rem, env(safe-area-inset-bottom));
     }
 
     /* Шапка */
     .relax-header {
-      width: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      pointer-events: all;
-      opacity: 0;
-      transition: opacity 1.2s ease 2.8s;
+      width: 100%; display: flex; align-items: center; justify-content: space-between;
+      pointer-events: all; opacity: 0;
+      transition: opacity 1.2s ease 3.2s;
     }
     .relax-header.visible { opacity: 1; }
     .relax-back {
-      font-size: 0.82rem;
-      color: rgba(200,175,130,0.55);
-      text-decoration: none;
-      letter-spacing: 0.05em;
-      transition: color 0.25s;
-      backdrop-filter: blur(4px);
-      padding: 0.35rem 0.7rem;
-      border-radius: 14px;
+      font-size: 0.8rem; color: rgba(200,175,130,0.5);
+      text-decoration: none; letter-spacing: 0.05em;
+      padding: 0.3rem 0.7rem; border-radius: 12px;
       border: 1px solid rgba(185,138,50,0.12);
+      backdrop-filter: blur(6px);
+      transition: all 0.25s;
     }
-    .relax-back:hover { color: rgba(220,195,150,0.9); border-color: rgba(185,138,50,0.3); }
+    .relax-back:hover { color: rgba(225,200,155,0.9); border-color: rgba(185,138,50,0.3); }
     .relax-title {
-      font-size: 0.85rem;
-      color: rgba(185,160,110,0.45);
-      letter-spacing: 0.22em;
+      font-size: 0.8rem; color: rgba(185,160,110,0.4); letter-spacing: 0.2em;
     }
     .relax-sound-btn {
-      background: rgba(15,8,3,0.55);
-      border: 1px solid rgba(185,138,50,0.18);
-      border-radius: 16px;
-      padding: 0.35rem 0.85rem;
-      color: rgba(200,175,130,0.6);
-      font-size: 0.8rem;
-      cursor: pointer;
-      letter-spacing: 0.05em;
-      transition: all 0.25s;
-      backdrop-filter: blur(8px);
-      font-family: Georgia, serif;
+      background: rgba(12,6,2,0.55);
+      border: 1px solid rgba(185,138,50,0.18); border-radius: 14px;
+      padding: 0.3rem 0.8rem; color: rgba(200,175,130,0.6);
+      font-size: 0.78rem; cursor: pointer; letter-spacing: 0.05em;
+      transition: all 0.25s; backdrop-filter: blur(8px); font-family: Georgia, serif;
       pointer-events: all;
     }
     .relax-sound-btn:hover { border-color: rgba(185,138,50,0.45); color: rgba(225,200,155,0.9); }
-    .relax-sound-btn.on {
-      border-color: rgba(140,180,255,0.4);
-      color: rgba(160,195,255,0.85);
-      background: rgba(100,140,255,0.07);
-    }
+    .relax-sound-btn.on { border-color: rgba(140,180,255,0.4); color: rgba(160,195,255,0.85); background: rgba(100,140,255,0.07); }
 
     /* ── Дыхательный круг ── */
     .breathe-wrap {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 1.1rem;
-      opacity: 0;
-      transition: opacity 1.2s ease 3.2s;
-      pointer-events: all;
-      user-select: none;
+      display: flex; flex-direction: column; align-items: center; gap: 0.9rem;
+      opacity: 0; transition: opacity 1.2s ease 3.6s; pointer-events: all;
+      margin-bottom: 44%; /* поднять над хижиной */
     }
     .breathe-wrap.visible { opacity: 1; }
-
     .breathe-outer {
-      width: 140px;
-      height: 140px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      width: 120px; height: 120px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
       border: 1px solid rgba(120,165,255,0.18);
-      animation: breathe-outer 12s ease-in-out infinite;
-      cursor: pointer;
-      position: relative;
+      animation: breathe-outer 12s ease-in-out infinite; cursor: pointer;
     }
     @keyframes breathe-outer {
-      0%   { transform: scale(1);    box-shadow: 0 0 15px rgba(100,150,255,0.06); border-color: rgba(120,165,255,0.18); }
-      33%  { transform: scale(1.5);  box-shadow: 0 0 70px rgba(100,150,255,0.22), 0 0 120px rgba(80,120,220,0.1); border-color: rgba(160,200,255,0.55); }
-      50%  { transform: scale(1.5);  box-shadow: 0 0 60px rgba(100,150,255,0.18); border-color: rgba(150,190,255,0.45); }
-      83%  { transform: scale(0.85); box-shadow: 0 0 10px rgba(100,150,255,0.04); border-color: rgba(100,140,220,0.12); }
-      100% { transform: scale(1);    box-shadow: 0 0 15px rgba(100,150,255,0.06); border-color: rgba(120,165,255,0.18); }
+      0%   { transform: scale(1);    box-shadow: 0 0 12px rgba(100,150,255,0.07);  border-color: rgba(120,165,255,0.18); }
+      33%  { transform: scale(1.48); box-shadow: 0 0 65px rgba(100,150,255,0.22), 0 0 110px rgba(80,120,220,0.1); border-color: rgba(160,200,255,0.55); }
+      50%  { transform: scale(1.48); border-color: rgba(150,190,255,0.45); }
+      83%  { transform: scale(0.85); box-shadow: 0 0 8px rgba(100,150,255,0.04);  border-color: rgba(100,140,220,0.12); }
+      100% { transform: scale(1);    box-shadow: 0 0 12px rgba(100,150,255,0.07);  border-color: rgba(120,165,255,0.18); }
     }
     .breathe-ring {
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: radial-gradient(circle, rgba(100,145,255,0.12) 0%, rgba(80,120,220,0.05) 50%, transparent 70%);
-      border: 1px solid rgba(120,165,255,0.25);
+      width: 86px; height: 86px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      border: 1px solid rgba(120,165,255,0.22);
+      background: radial-gradient(circle, rgba(100,145,255,0.12) 0%, transparent 70%);
       animation: breathe-ring 12s ease-in-out infinite;
     }
     @keyframes breathe-ring {
-      0%   { transform: scale(1);    background: radial-gradient(circle, rgba(100,145,255,0.12) 0%, transparent 70%); }
-      33%  { transform: scale(1.15); background: radial-gradient(circle, rgba(120,165,255,0.28) 0%, rgba(100,145,255,0.12) 50%, transparent 70%); }
-      50%  { transform: scale(1.15); }
+      0%   { transform: scale(1); }
+      33%  { transform: scale(1.12); background: radial-gradient(circle, rgba(120,165,255,0.3) 0%, transparent 70%); }
+      50%  { transform: scale(1.12); }
       83%  { transform: scale(0.88); background: radial-gradient(circle, rgba(80,120,200,0.07) 0%, transparent 70%); }
-      100% { transform: scale(1);    background: radial-gradient(circle, rgba(100,145,255,0.12) 0%, transparent 70%); }
+      100% { transform: scale(1); }
     }
     .breathe-dot {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(180,210,255,0.6) 0%, rgba(140,175,255,0.25) 60%, transparent 100%);
+      width: 20px; height: 20px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(180,210,255,0.65) 0%, rgba(140,175,255,0.25) 60%, transparent 100%);
       animation: breathe-dot 12s ease-in-out infinite;
     }
     @keyframes breathe-dot {
       0%   { transform: scale(1);   opacity: 0.6; }
-      33%  { transform: scale(1.5); opacity: 1;   }
-      50%  { transform: scale(1.5); opacity: 0.9; }
-      83%  { transform: scale(0.6); opacity: 0.3; }
+      33%  { transform: scale(1.55); opacity: 1; }
+      50%  { transform: scale(1.55); opacity: 0.9; }
+      83%  { transform: scale(0.55); opacity: 0.3; }
       100% { transform: scale(1);   opacity: 0.6; }
     }
-
     .breathe-label {
-      font-size: 0.78rem;
-      color: rgba(155,185,245,0.55);
-      letter-spacing: 0.14em;
-      text-align: center;
-      min-height: 1.2em;
-      transition: opacity 0.5s;
-    }
-    .breathe-hint {
-      font-size: 0.7rem;
-      color: rgba(140,165,220,0.35);
-      letter-spacing: 0.08em;
-      margin-top: -0.4rem;
+      font-size: 0.76rem; color: rgba(155,185,245,0.55); letter-spacing: 0.14em; text-align: center;
     }
 
     /* ── Нижние кнопки ── */
     .relax-bottom {
-      display: flex;
-      gap: 0.7rem;
-      flex-wrap: wrap;
-      justify-content: center;
-      pointer-events: all;
-      opacity: 0;
-      transition: opacity 1.2s ease 3.5s;
+      display: flex; gap: 0.6rem; flex-wrap: wrap; justify-content: center;
+      pointer-events: all; opacity: 0; transition: opacity 1.2s ease 4s;
     }
     .relax-bottom.visible { opacity: 1; }
     .relax-btn {
-      padding: 0.45rem 1.1rem;
-      border-radius: 18px;
+      padding: 0.4rem 1rem; border-radius: 16px;
       border: 1px solid rgba(185,138,50,0.18);
-      background: rgba(10,6,2,0.55);
-      color: rgba(200,175,130,0.6);
-      font-size: 0.78rem;
-      cursor: pointer;
-      backdrop-filter: blur(10px);
-      letter-spacing: 0.05em;
-      transition: all 0.25s;
-      font-family: Georgia, serif;
-      text-decoration: none;
-      display: inline-block;
+      background: rgba(10,5,2,0.6); color: rgba(200,175,130,0.6);
+      font-size: 0.76rem; cursor: pointer; backdrop-filter: blur(10px);
+      letter-spacing: 0.04em; transition: all 0.25s; font-family: Georgia, serif;
+      text-decoration: none; display: inline-block;
     }
-    .relax-btn:hover {
-      border-color: rgba(185,138,50,0.42);
-      color: rgba(220,195,150,0.95);
-      background: rgba(185,138,50,0.07);
-    }
-    .relax-btn.active {
-      border-color: rgba(140,180,255,0.38);
-      color: rgba(160,195,255,0.88);
-      background: rgba(100,140,255,0.08);
-    }
+    .relax-btn:hover { border-color: rgba(185,138,50,0.42); color: rgba(220,195,150,0.95); background: rgba(185,138,50,0.07); }
+    .relax-btn.active { border-color: rgba(140,180,255,0.38); color: rgba(160,195,255,0.88); background: rgba(100,140,255,0.08); }
 
     /* Таймер */
-    .relax-timer-display {
-      position: fixed;
-      bottom: 5rem;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 12;
-      font-size: 2rem;
-      color: rgba(160,195,255,0.35);
-      letter-spacing: 0.1em;
-      pointer-events: none;
-      font-variant-numeric: tabular-nums;
-      transition: opacity 0.5s;
-      opacity: 0;
+    .timer-display {
+      position: fixed; left: 50%; transform: translateX(-50%); bottom: 46%;
+      z-index: 22; font-size: 1.8rem; color: rgba(160,195,255,0.3);
+      letter-spacing: 0.1em; pointer-events: none;
+      font-variant-numeric: tabular-nums; opacity: 0; transition: opacity 0.5s;
     }
-    .relax-timer-display.visible { opacity: 1; }
-
-    /* Сообщение "время вышло" */
-    .relax-bell {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 20;
-      font-size: 1.1rem;
-      color: rgba(200,220,255,0.85);
-      letter-spacing: 0.15em;
-      text-align: center;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.8s;
+    .timer-display.visible { opacity: 1; }
+    .bell-msg {
+      position: fixed; top: 46%; left: 50%; transform: translateX(-50%);
+      z-index: 22; font-size: 1rem; color: rgba(200,220,255,0.85);
+      letter-spacing: 0.14em; text-align: center; pointer-events: none;
+      opacity: 0; transition: opacity 0.8s;
     }
-    .relax-bell.visible { opacity: 1; }
+    .bell-msg.visible { opacity: 1; }
 
     @media (max-width: 480px) {
-      .breathe-outer { width: 110px; height: 110px; }
-      .breathe-ring  { width: 78px;  height: 78px;  }
+      .breathe-outer { width: 100px; height: 100px; }
+      .breathe-ring  { width: 72px;  height: 72px; }
       .relax-title   { display: none; }
+      .figure--right { right: 14%; }
+      .figure--left  { left: 16%; }
     }
   </style>
 </head>
 <body>
 
-  <!-- Звёздный холст -->
-  <canvas id="star-canvas"></canvas>
-  <div class="relax-vignette"></div>
+<!-- ── ЗВЁЗДНЫЙ ХОЛСТ ── -->
+<canvas id="star-canvas"></canvas>
+<div class="vignette"></div>
 
-  <!-- Створки -->
-  <div class="shutters" id="shutters">
-    <div class="shutter shutter--left">
-      <div class="shutter__slats">
-        <div class="shutter__slat"></div><div class="shutter__slat"></div>
-        <div class="shutter__slat"></div><div class="shutter__slat"></div>
-        <div class="shutter__slat"></div><div class="shutter__slat"></div>
-        <div class="shutter__slat"></div><div class="shutter__slat"></div>
-        <div class="shutter__slat"></div><div class="shutter__slat"></div>
-        <div class="shutter__slat"></div><div class="shutter__slat"></div>
-      </div>
-      <span class="shutter__label">комната отдыха</span>
-    </div>
-    <div class="shutter shutter--right">
-      <div class="shutter__slats">
-        <div class="shutter__slat"></div><div class="shutter__slat"></div>
-        <div class="shutter__slat"></div><div class="shutter__slat"></div>
-        <div class="shutter__slat"></div><div class="shutter__slat"></div>
-        <div class="shutter__slat"></div><div class="shutter__slat"></div>
-        <div class="shutter__slat"></div><div class="shutter__slat"></div>
-        <div class="shutter__slat"></div><div class="shutter__slat"></div>
-      </div>
-      <span class="shutter__label">душа отдыхает</span>
-    </div>
+<!-- ══════════════════════════════
+     ЯПОНСКАЯ ХИЖИНА
+     ══════════════════════════════ -->
+<div class="hut">
+  <div class="hut__wall"></div>
+  <div class="hut__floor"></div>
+  <div class="hut__glow"></div>
+
+  <!-- Фонарик -->
+  <div class="lantern"></div>
+
+  <!-- Фигура слева — медитирует -->
+  <div class="figure figure--left">
+    <svg viewBox="0 0 72 70" width="65" height="63" fill="rgba(6,3,1,0.92)">
+      <ellipse cx="36" cy="10" rx="9" ry="10"/>
+      <path d="M30,19 Q36,23 42,19 L45,29 Q36,26 27,29 Z"/>
+      <path d="M16,64 Q16,36 36,28 Q56,36 56,64 Z"/>
+      <ellipse cx="18" cy="58" rx="11" ry="7"/>
+      <ellipse cx="54" cy="58" rx="11" ry="7"/>
+      <ellipse cx="17" cy="48" rx="6" ry="4"/>
+      <ellipse cx="55" cy="48" rx="6" ry="4"/>
+    </svg>
   </div>
 
-  <!-- UI -->
-  <div class="relax-ui">
-    <header class="relax-header" id="relax-header">
-      <a href="index.html" class="relax-back">← Главная</a>
-      <span class="relax-title">✦ Комната отдыха</span>
-      <button class="relax-sound-btn" id="sound-btn">♪ Звук</button>
-    </header>
-
-    <!-- Дыхательный круг -->
-    <div class="breathe-wrap" id="breathe-wrap">
-      <div class="breathe-outer" id="breathe-outer" title="нажми чтобы пауза">
-        <div class="breathe-ring">
-          <div class="breathe-dot"></div>
-        </div>
-      </div>
-      <p class="breathe-label" id="breathe-label">вдыхай...</p>
-      <p class="breathe-hint">нажми на круг — пауза</p>
-    </div>
-
-    <!-- Нижние кнопки -->
-    <div class="relax-bottom" id="relax-bottom">
-      <button class="relax-btn" id="btn-timer-5">⏱ 5 мин</button>
-      <button class="relax-btn" id="btn-timer-10">⏱ 10 мин</button>
-      <button class="relax-btn" id="btn-timer-15">⏱ 15 мин</button>
-      <a href="guardian.html" class="relax-btn">✦ Хранитель</a>
-    </div>
+  <!-- Фигура справа — медитирует -->
+  <div class="figure figure--right">
+    <svg viewBox="0 0 72 70" width="60" height="58" fill="rgba(6,3,1,0.88)">
+      <ellipse cx="36" cy="10" rx="8" ry="9"/>
+      <path d="M30,18 Q36,22 42,18 L44,27 Q36,24 28,27 Z"/>
+      <path d="M18,64 Q18,38 36,30 Q54,38 54,64 Z"/>
+      <ellipse cx="20" cy="59" rx="10" ry="6"/>
+      <ellipse cx="52" cy="59" rx="10" ry="6"/>
+      <ellipse cx="18" cy="49" rx="5" ry="3.5"/>
+      <ellipse cx="54" cy="49" rx="5" ry="3.5"/>
+    </svg>
   </div>
 
-  <!-- Таймер -->
-  <div class="relax-timer-display" id="timer-display"></div>
-  <div class="relax-bell" id="relax-bell">🔔 Медитация завершена</div>
+  <!-- Чайный столик по центру -->
+  <div class="tea-wrap">
+    <div class="tea-cup-wrap">
+      <!-- Пар -->
+      <div class="steam">
+        <div class="steam__puff"></div>
+        <div class="steam__puff"></div>
+        <div class="steam__puff"></div>
+      </div>
+      <!-- Чашка -->
+      <svg viewBox="0 0 50 40" width="44" height="34" fill="rgba(7,3,1,0.88)">
+        <path d="M8,13 L12,33 L38,33 L42,13 Z"/>
+        <ellipse cx="25" cy="13" rx="17" ry="4"/>
+        <ellipse cx="25" cy="33" rx="17" ry="3.5"/>
+        <ellipse cx="25" cy="37" rx="20" ry="3"/>
+        <path d="M42,17 Q54,19 54,26 Q54,33 42,30"
+              stroke="rgba(7,3,1,0.88)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="tea-table"></div>
+  </div>
+</div>
 
-  <script>
-  /* ══════════════════════════════════════════════
-     ЗВЁЗДНЫЙ ХОЛСТ
-     ══════════════════════════════════════════════ */
-  const canvas = document.getElementById('star-canvas');
-  const ctx    = canvas.getContext('2d');
+<!-- ── Бамбук ── -->
+<div class="bamboo bamboo--left">
+  <div class="bamboo__stalk" style="height:100%"></div>
+  <div class="bamboo__leaf" style="top:22%;left:14px;transform:rotate(-28deg)"></div>
+  <div class="bamboo__leaf" style="top:38%;left:14px;transform:rotate(-20deg) scaleX(-1)"></div>
+  <div class="bamboo__leaf" style="top:54%;left:14px;transform:rotate(-32deg)"></div>
+</div>
+<div class="bamboo bamboo--left2">
+  <div class="bamboo__stalk" style="height:100%"></div>
+  <div class="bamboo__leaf" style="top:30%;left:10px;transform:rotate(-25deg)"></div>
+  <div class="bamboo__leaf" style="top:50%;left:10px;transform:rotate(-30deg) scaleX(-1)"></div>
+</div>
+<div class="bamboo bamboo--right">
+  <div class="bamboo__stalk" style="height:100%"></div>
+  <div class="bamboo__leaf" style="top:25%;right:14px;left:auto;transform:rotate(25deg) scaleX(-1)"></div>
+  <div class="bamboo__leaf" style="top:42%;right:14px;left:auto;transform:rotate(22deg)"></div>
+  <div class="bamboo__leaf" style="top:58%;right:14px;left:auto;transform:rotate(30deg) scaleX(-1)"></div>
+</div>
+<div class="bamboo bamboo--right2">
+  <div class="bamboo__stalk" style="height:100%"></div>
+  <div class="bamboo__leaf" style="top:35%;right:10px;left:auto;transform:rotate(28deg) scaleX(-1)"></div>
+  <div class="bamboo__leaf" style="top:55%;right:10px;left:auto;transform:rotate(20deg)"></div>
+</div>
 
-  function resize() {
-    canvas.width  = window.innerWidth;
-    canvas.height = window.innerHeight;
-  }
-  resize();
-  window.addEventListener('resize', resize);
+<!-- ══════════════════════════════
+     СОЛОМЕННАЯ КРЫША
+     ══════════════════════════════ -->
+<div class="roof" id="roof">
+  <div class="roof-panel roof-panel--left"></div>
+  <div class="roof-panel roof-panel--right"></div>
+</div>
+<div class="roof-ridge" id="roof-ridge"></div>
 
-  /* Генерация звёзд на сфере */
-  const STAR_COUNT = 700;
-  const stars = [];
-  for (let i = 0; i < STAR_COUNT; i++) {
-    // Равномерное распределение по сфере
-    const theta = Math.random() * Math.PI * 2;
-    const phi   = Math.acos(2 * Math.random() - 1);
-    stars.push({
-      x: Math.sin(phi) * Math.cos(theta),
-      y: Math.sin(phi) * Math.sin(theta),
-      z: Math.cos(phi),
-      size: Math.pow(Math.random(), 2.5) * 2.2 + 0.2,
-      brightness: Math.random() * 0.5 + 0.5,
-      twinkle: Math.random() * Math.PI * 2,
-      twinkleSpeed: Math.random() * 0.03 + 0.004,
-      color: pickColor(),
+<!-- Подсказка -->
+<div class="sky-hint" id="sky-hint">перетащи небо · прокрути для приближения</div>
+
+<!-- ══════════════════════════════
+     UI
+     ══════════════════════════════ -->
+<div class="relax-ui">
+  <header class="relax-header" id="relax-header">
+    <a href="index.html" class="relax-back">← Главная</a>
+    <span class="relax-title">✦ Комната отдыха</span>
+    <button class="relax-sound-btn" id="sound-btn">♪ Звук</button>
+  </header>
+
+  <div class="breathe-wrap" id="breathe-wrap">
+    <div class="breathe-outer" id="breathe-outer">
+      <div class="breathe-ring">
+        <div class="breathe-dot"></div>
+      </div>
+    </div>
+    <p class="breathe-label" id="breathe-label">вдыхай...</p>
+  </div>
+
+  <div class="relax-bottom" id="relax-bottom">
+    <button class="relax-btn" id="btn-timer-5">⏱ 5 мин</button>
+    <button class="relax-btn" id="btn-timer-10">⏱ 10 мин</button>
+    <button class="relax-btn" id="btn-timer-15">⏱ 15 мин</button>
+    <a href="guardian.html" class="relax-btn">✦ Хранитель</a>
+  </div>
+</div>
+
+<div class="timer-display" id="timer-display"></div>
+<div class="bell-msg"      id="bell-msg">🔔 Медитация завершена</div>
+
+<script>
+/* ══════════════════════════════════════════════
+   ЗВЁЗДНАЯ СФЕРА
+   ══════════════════════════════════════════════ */
+const canvas = document.getElementById('star-canvas');
+const ctx    = canvas.getContext('2d');
+
+function resize() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+/* Генерация звёзд */
+const STAR_N = 750;
+const stars  = [];
+for (let i = 0; i < STAR_N; i++) {
+  const theta = Math.random() * Math.PI * 2;
+  const phi   = Math.acos(2 * Math.random() - 1);
+  stars.push({
+    x: Math.sin(phi) * Math.cos(theta),
+    y: Math.sin(phi) * Math.sin(theta),
+    z: Math.cos(phi),
+    size: Math.pow(Math.random(), 2.2) * 2.4 + 0.2,
+    bright: Math.random() * 0.5 + 0.5,
+    tw: Math.random() * Math.PI * 2,
+    twS: Math.random() * 0.025 + 0.003,
+    col: pickCol(),
+  });
+}
+function pickCol() {
+  const r = Math.random();
+  if (r < 0.07) return [175, 200, 255];
+  if (r < 0.14) return [255, 225, 175];
+  if (r < 0.19) return [200, 255, 200];
+  return [255, 255, 255];
+}
+
+/* Метеоры */
+const meteors = [];
+function spawnMeteor() {
+  if (meteors.length < 3) {
+    meteors.push({
+      x: Math.random() * canvas.width * 0.85,
+      y: Math.random() * canvas.height * 0.45,
+      angle: Math.PI / 4 + (Math.random() - 0.5) * 0.45,
+      speed: Math.random() * 9 + 5,
+      life: 0, maxLife: Math.random() * 32 + 18,
+      len: Math.random() * 180 + 80,
+      a: Math.random() * 0.4 + 0.5,
     });
   }
+  setTimeout(spawnMeteor, Math.random() * 6500 + 2000);
+}
+setTimeout(spawnMeteor, 4500);
 
-  function pickColor() {
-    const r = Math.random();
-    if (r < 0.08) return [180, 205, 255]; // синие
-    if (r < 0.15) return [255, 225, 180]; // тёплые
-    if (r < 0.20) return [210, 255, 210]; // зелёные
-    return [255, 255, 255];
+/* Туманности */
+const nebs = [
+  { cx: 0.28, cy: 0.22, rx: 0.24, ry: 0.13, c: [70,35,160], a: 0.06 },
+  { cx: 0.72, cy: 0.60, rx: 0.20, ry: 0.11, c: [35,75,165], a: 0.045 },
+  { cx: 0.50, cy: 0.38, rx: 0.32, ry: 0.09, c: [110,55,175], a: 0.035 },
+];
+
+/* Вращение — авто + ручное */
+let autoRotY = 0;
+let manRotX  = 0;
+let manRotY  = 0;
+let fov      = 1.85;
+let dragging = false, lastMX = 0, lastMY = 0;
+let time = 0;
+
+/* Интерактивность */
+canvas.addEventListener('mousedown',  e => { dragging = true; lastMX = e.clientX; lastMY = e.clientY; });
+window.addEventListener('mouseup',    ()  => { dragging = false; });
+window.addEventListener('mousemove',  e  => {
+  if (!dragging) return;
+  manRotY += (e.clientX - lastMX) * 0.003;
+  manRotX += (e.clientY - lastMY) * 0.003;
+  lastMX = e.clientX; lastMY = e.clientY;
+});
+canvas.addEventListener('wheel', e => {
+  fov = Math.max(0.75, Math.min(3.8, fov + e.deltaY * 0.0025));
+  e.preventDefault();
+}, { passive: false });
+
+/* Touch */
+let lastDist = 0;
+canvas.addEventListener('touchstart', e => {
+  if (e.touches.length === 1) { dragging = true; lastMX = e.touches[0].clientX; lastMY = e.touches[0].clientY; }
+  else if (e.touches.length === 2) {
+    dragging = false;
+    lastDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+  }
+}, { passive: true });
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (e.touches.length === 1 && dragging) {
+    manRotY += (e.touches[0].clientX - lastMX) * 0.004;
+    manRotX += (e.touches[0].clientY - lastMY) * 0.004;
+    lastMX = e.touches[0].clientX; lastMY = e.touches[0].clientY;
+  } else if (e.touches.length === 2) {
+    const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+    fov = Math.max(0.75, Math.min(3.8, fov - (d - lastDist) * 0.006));
+    lastDist = d;
+  }
+}, { passive: false });
+canvas.addEventListener('touchend', () => { dragging = false; });
+
+function project(x, y, z) {
+  const ry = autoRotY + manRotY;
+  const cosY = Math.cos(ry), sinY = Math.sin(ry);
+  const rx1 = x * cosY - z * sinY;
+  const rz1 = x * sinY + z * cosY;
+  const cosX = Math.cos(manRotX), sinX = Math.sin(manRotX);
+  const ry1 = y * cosX - rz1 * sinX;
+  const rz2 = y * sinX + rz1 * cosX;
+  const d = fov / (fov + rz2 + 1.2);
+  return { sx: canvas.width/2 + rx1*d*canvas.width*0.56,
+           sy: canvas.height/2 + ry1*d*canvas.height*0.56,
+           d, ok: rz2 > -1.65 };
+}
+
+function frame() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  /* Фон */
+  const bg = ctx.createRadialGradient(canvas.width*.5, canvas.height*.42, 0,
+                                       canvas.width*.5, canvas.height*.5, Math.max(canvas.width, canvas.height)*.82);
+  bg.addColorStop(0,  '#09021f');
+  bg.addColorStop(.4, '#050115');
+  bg.addColorStop(1,  '#010009');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  /* Туманности */
+  for (const n of nebs) {
+    const g = ctx.createRadialGradient(canvas.width*n.cx, canvas.height*n.cy, 0,
+                                        canvas.width*n.cx, canvas.height*n.cy, canvas.width*n.rx);
+    g.addColorStop(0, `rgba(${n.c},${n.a})`);
+    g.addColorStop(.5, `rgba(${n.c},${n.a*.5})`);
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.beginPath();
+    ctx.ellipse(canvas.width*n.cx, canvas.height*n.cy, canvas.width*n.rx, canvas.height*n.ry, 0, 0, Math.PI*2);
+    ctx.fillStyle = g; ctx.fill();
+  }
+
+  /* Звёзды */
+  time += 0.016; autoRotY += 0.0001;
+  for (const s of stars) {
+    const p = project(s.x, s.y, s.z);
+    if (!p.ok) continue;
+    const tw = Math.sin(time * s.twS * 60 + s.tw) * 0.16 + 0.84;
+    const al = s.bright * tw * Math.min(1, (p.d + 0.2) * 1.7);
+    const r  = s.size * p.d * 1.85;
+    if (r < 0.15) continue;
+    const [cr,cg,cb] = s.col;
+    if (s.size > 1.1) {
+      const gw = ctx.createRadialGradient(p.sx, p.sy, 0, p.sx, p.sy, r*5.5);
+      gw.addColorStop(0, `rgba(${cr},${cg},${cb},${al*.4})`);
+      gw.addColorStop(1, `rgba(${cr},${cg},${cb},0)`);
+      ctx.beginPath(); ctx.arc(p.sx, p.sy, r*5.5, 0, Math.PI*2);
+      ctx.fillStyle = gw; ctx.fill();
+    }
+    ctx.beginPath(); ctx.arc(p.sx, p.sy, Math.max(.2,r), 0, Math.PI*2);
+    ctx.fillStyle = `rgba(${cr},${cg},${cb},${al})`; ctx.fill();
   }
 
   /* Метеоры */
-  const meteors = [];
-  function spawnMeteor() {
-    if (meteors.length < 4) {
-      meteors.push({
-        x: Math.random() * canvas.width * 0.9,
-        y: Math.random() * canvas.height * 0.4,
-        angle: Math.PI / 4 + (Math.random() - 0.5) * 0.4,
-        speed: Math.random() * 8 + 5,
-        life: 0,
-        maxLife: Math.random() * 35 + 20,
-        length: Math.random() * 160 + 80,
-        alpha: Math.random() * 0.4 + 0.5,
-      });
-    }
-    setTimeout(spawnMeteor, Math.random() * 6000 + 2500);
-  }
-  setTimeout(spawnMeteor, 4000);
-
-  /* Туманности */
-  const nebulae = [
-    { cx: 0.3, cy: 0.25, rx: 0.22, ry: 0.12, color: [80, 40, 160], alpha: 0.055 },
-    { cx: 0.7, cy: 0.65, rx: 0.18, ry: 0.10, color: [40, 80, 160], alpha: 0.04  },
-    { cx: 0.5, cy: 0.45, rx: 0.30, ry: 0.08, color: [120, 60, 180], alpha: 0.03  },
-  ];
-
-  let rotY = 0;
-  let time = 0;
-
-  function project(x, y, z) {
-    const cosR = Math.cos(rotY), sinR = Math.sin(rotY);
-    const rx = x * cosR - z * sinR;
-    const rz = x * sinR + z * cosR;
-    const fov = 1.8;
-    const d = fov / (fov + rz + 1.2);
-    return {
-      sx: canvas.width  / 2 + rx * d * canvas.width  * 0.55,
-      sy: canvas.height / 2 + y  * d * canvas.height * 0.55,
-      d,
-      visible: rz > -1.6,
-    };
+  for (let i = meteors.length-1; i >= 0; i--) {
+    const m = meteors[i];
+    m.x += Math.cos(m.angle)*m.speed; m.y += Math.sin(m.angle)*m.speed; m.life++;
+    if (m.life > m.maxLife || m.x > canvas.width*1.1 || m.y > canvas.height*1.1) { meteors.splice(i,1); continue; }
+    const prog = m.life/m.maxLife;
+    const a = Math.sin(prog*Math.PI)*m.a;
+    const tx = m.x - Math.cos(m.angle)*m.len, ty = m.y - Math.sin(m.angle)*m.len;
+    const gr = ctx.createLinearGradient(tx,ty,m.x,m.y);
+    gr.addColorStop(0,'rgba(255,255,255,0)');
+    gr.addColorStop(.5,`rgba(200,220,255,${a*.5})`);
+    gr.addColorStop(1,`rgba(255,255,255,${a})`);
+    ctx.beginPath(); ctx.moveTo(tx,ty); ctx.lineTo(m.x,m.y);
+    ctx.strokeStyle=gr; ctx.lineWidth=1.8; ctx.stroke();
+    const hg = ctx.createRadialGradient(m.x,m.y,0,m.x,m.y,7);
+    hg.addColorStop(0,`rgba(255,255,255,${a})`); hg.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.beginPath(); ctx.arc(m.x,m.y,7,0,Math.PI*2); ctx.fillStyle=hg; ctx.fill();
   }
 
-  function frame() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  requestAnimationFrame(frame);
+}
+frame();
 
-    /* Фон — глубокий космос */
-    const bg = ctx.createRadialGradient(
-      canvas.width * 0.5, canvas.height * 0.45, 0,
-      canvas.width * 0.5, canvas.height * 0.5, Math.max(canvas.width, canvas.height) * 0.8
-    );
-    bg.addColorStop(0,   '#080220');
-    bg.addColorStop(0.4, '#040115');
-    bg.addColorStop(1,   '#010008');
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+/* ══════════════════════════════════════════════
+   ОТКРЫТИЕ КРЫШИ
+   ══════════════════════════════════════════════ */
+setTimeout(function () {
+  document.getElementById('roof').classList.add('open');
+  document.getElementById('roof-ridge').classList.add('open');
+  document.getElementById('relax-header').classList.add('visible');
+  document.getElementById('breathe-wrap').classList.add('visible');
+  document.getElementById('relax-bottom').classList.add('visible');
+  document.getElementById('sky-hint').classList.add('visible');
+}, 900);
 
-    /* Туманности */
-    for (const n of nebulae) {
-      const gx = ctx.createRadialGradient(
-        canvas.width * n.cx, canvas.height * n.cy, 0,
-        canvas.width * n.cx, canvas.height * n.cy,
-        canvas.width * n.rx
-      );
-      gx.addColorStop(0,   `rgba(${n.color},${n.alpha})`);
-      gx.addColorStop(0.5, `rgba(${n.color},${n.alpha * 0.5})`);
-      gx.addColorStop(1,   'rgba(0,0,0,0)');
-      ctx.beginPath();
-      ctx.ellipse(
-        canvas.width * n.cx, canvas.height * n.cy,
-        canvas.width * n.rx, canvas.height * n.ry,
-        0, 0, Math.PI * 2
-      );
-      ctx.fillStyle = gx;
-      ctx.fill();
-    }
+/* ══════════════════════════════════════════════
+   ДЫХАНИЕ 4-2-6 = 12с
+   ══════════════════════════════════════════════ */
+const PHASES = [
+  { t: 'вдыхай...', ms: 4000 },
+  { t: 'задержи...', ms: 2000 },
+  { t: 'выдыхай...', ms: 6000 },
+];
+let phaseIdx = 0, breatheOn = true;
+const breatheLabel  = document.getElementById('breathe-label');
+const breatheOuter  = document.getElementById('breathe-outer');
+let breatheTimer;
 
-    /* Звёзды */
-    time += 0.016;
-    rotY += 0.00012;
+function nextPhase() {
+  if (!breatheOn) return;
+  const p = PHASES[phaseIdx];
+  breatheLabel.textContent = p.t;
+  phaseIdx = (phaseIdx+1) % PHASES.length;
+  breatheTimer = setTimeout(nextPhase, p.ms);
+}
+setTimeout(nextPhase, 3800);
 
-    for (const s of stars) {
-      const p = project(s.x, s.y, s.z);
-      if (!p.visible) continue;
-      const twinkle = Math.sin(time * s.twinkleSpeed * 60 + s.twinkle) * 0.18 + 0.82;
-      const alpha = s.brightness * twinkle * Math.min(1, (p.d + 0.2) * 1.6);
-      const r = s.size * p.d * 1.8;
-      if (r < 0.15) continue;
-      const [cr, cg, cb] = s.color;
+breatheOuter.addEventListener('click', function () {
+  breatheOn = !breatheOn;
+  const state = breatheOn ? 'running' : 'paused';
+  [this, ...this.querySelectorAll('*')].forEach(el => el.style.animationPlayState = state);
+  if (breatheOn) { phaseIdx = 0; nextPhase(); }
+  else { clearTimeout(breatheTimer); breatheLabel.textContent = '· пауза ·'; }
+});
 
-      if (s.size > 1.2) {
-        const glow = ctx.createRadialGradient(p.sx, p.sy, 0, p.sx, p.sy, r * 5);
-        glow.addColorStop(0,   `rgba(${cr},${cg},${cb},${alpha * 0.45})`);
-        glow.addColorStop(1,   `rgba(${cr},${cg},${cb},0)`);
-        ctx.beginPath();
-        ctx.arc(p.sx, p.sy, r * 5, 0, Math.PI * 2);
-        ctx.fillStyle = glow;
-        ctx.fill();
-      }
-      ctx.beginPath();
-      ctx.arc(p.sx, p.sy, Math.max(0.2, r), 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(${cr},${cg},${cb},${alpha})`;
-      ctx.fill();
-    }
-
-    /* Метеоры */
-    for (let i = meteors.length - 1; i >= 0; i--) {
-      const m = meteors[i];
-      m.x += Math.cos(m.angle) * m.speed;
-      m.y += Math.sin(m.angle) * m.speed;
-      m.life++;
-      if (m.life > m.maxLife || m.x > canvas.width * 1.1 || m.y > canvas.height * 1.1) {
-        meteors.splice(i, 1);
-        continue;
-      }
-      const progress = m.life / m.maxLife;
-      const a = Math.sin(progress * Math.PI) * m.alpha;
-      const tx = m.x - Math.cos(m.angle) * m.length;
-      const ty = m.y - Math.sin(m.angle) * m.length;
-      const g = ctx.createLinearGradient(tx, ty, m.x, m.y);
-      g.addColorStop(0,   'rgba(255,255,255,0)');
-      g.addColorStop(0.5, `rgba(200,220,255,${a * 0.5})`);
-      g.addColorStop(1,   `rgba(255,255,255,${a})`);
-      ctx.beginPath();
-      ctx.moveTo(tx, ty);
-      ctx.lineTo(m.x, m.y);
-      ctx.strokeStyle = g;
-      ctx.lineWidth = 1.8;
-      ctx.stroke();
-      const hg = ctx.createRadialGradient(m.x, m.y, 0, m.x, m.y, 8);
-      hg.addColorStop(0, `rgba(255,255,255,${a})`);
-      hg.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.beginPath();
-      ctx.arc(m.x, m.y, 8, 0, Math.PI * 2);
-      ctx.fillStyle = hg;
-      ctx.fill();
-    }
-
-    requestAnimationFrame(frame);
-  }
-  frame();
-
-  /* ══════════════════════════════════════════════
-     ОТКРЫТИЕ СТВОРОК
-     ══════════════════════════════════════════════ */
-  setTimeout(function () {
-    document.getElementById('shutters').classList.add('open');
-    document.getElementById('relax-header').classList.add('visible');
-    document.getElementById('breathe-wrap').classList.add('visible');
-    document.getElementById('relax-bottom').classList.add('visible');
-  }, 700);
-
-  /* ══════════════════════════════════════════════
-     ДЫХАНИЕ (4 вдох · 2 задержка · 6 выдох = 12с)
-     ══════════════════════════════════════════════ */
-  const PHASES = [
-    { text: 'вдыхай...', ms: 4000 },
-    { text: 'задержи...', ms: 2000 },
-    { text: 'выдыхай...', ms: 6000 },
-  ];
-  let phaseIdx = 0;
-  let breatheOn = true;
-  const breatheLabel = document.getElementById('breathe-label');
-  const breatheOuter = document.getElementById('breathe-outer');
-  let breatheTimer;
-
-  function nextPhase() {
-    if (!breatheOn) return;
-    const p = PHASES[phaseIdx];
-    breatheLabel.textContent = p.text;
-    phaseIdx = (phaseIdx + 1) % PHASES.length;
-    breatheTimer = setTimeout(nextPhase, p.ms);
-  }
-  setTimeout(nextPhase, 3300);
-
-  breatheOuter.addEventListener('click', function () {
-    breatheOn = !breatheOn;
-    if (breatheOn) {
-      breatheOuter.style.animationPlayState = 'running';
-      breatheOuter.querySelectorAll('*').forEach(function (el) {
-        el.style.animationPlayState = 'running';
-      });
-      phaseIdx = 0;
-      nextPhase();
-    } else {
-      clearTimeout(breatheTimer);
-      breatheOuter.style.animationPlayState = 'paused';
-      breatheOuter.querySelectorAll('*').forEach(function (el) {
-        el.style.animationPlayState = 'paused';
-      });
-      breatheLabel.textContent = '— пауза —';
-    }
+/* ══════════════════════════════════════════════
+   ЗВУК — медитативный дрон
+   ══════════════════════════════════════════════ */
+let audioCtx = null, soundNodes = [], soundOn = false;
+function startSound() {
+  if (!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  [55, 82.41, 110, 164.81].forEach(function(f, i) {
+    const osc=audioCtx.createOscillator(), gain=audioCtx.createGain();
+    const lfo=audioCtx.createOscillator(), lfoG=audioCtx.createGain();
+    lfo.frequency.value=0.12+i*.06; lfoG.gain.value=0.25;
+    lfo.connect(lfoG); lfoG.connect(osc.frequency); lfo.start();
+    osc.type = i%2===0?'sine':'triangle'; osc.frequency.value=f;
+    gain.gain.setValueAtTime(0,audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.02/(i+1), audioCtx.currentTime+4);
+    osc.connect(gain); gain.connect(audioCtx.destination); osc.start();
+    soundNodes.push({osc,gain,lfo});
   });
-
-  /* ══════════════════════════════════════════════
-     ЗВУК — Web Audio API медитативный дрон
-     ══════════════════════════════════════════════ */
-  let audioCtx = null;
-  let soundNodes = [];
-  let soundOn = false;
-
-  function startAmbient() {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    // Многослойный дрон: корень + кварта + квинта + октава
-    [55, 82.41, 110, 164.81].forEach(function (freq, i) {
-      const osc  = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      // Небольшое дрожание частоты для живого звука
-      const lfo  = audioCtx.createOscillator();
-      const lfoG = audioCtx.createGain();
-      lfo.frequency.value = 0.15 + i * 0.07;
-      lfoG.gain.value = 0.3;
-      lfo.connect(lfoG);
-      lfoG.connect(osc.frequency);
-      lfo.start();
-
-      osc.type = i % 2 === 0 ? 'sine' : 'triangle';
-      osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0, audioCtx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.022 / (i + 1), audioCtx.currentTime + 4);
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start();
-      soundNodes.push({ osc, gain, lfo });
-    });
-  }
-
-  function stopAmbient() {
-    soundNodes.forEach(function (n) {
-      n.gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 2);
-      setTimeout(function () { try { n.osc.stop(); n.lfo.stop(); } catch(e){} }, 2200);
-    });
-    soundNodes = [];
-  }
-
-  document.getElementById('sound-btn').addEventListener('click', function () {
-    soundOn = !soundOn;
-    this.textContent = soundOn ? '♪ Тишина' : '♪ Звук';
-    this.classList.toggle('on', soundOn);
-    if (soundOn) startAmbient(); else stopAmbient();
+}
+function stopSound() {
+  soundNodes.forEach(function(n) {
+    n.gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime+2);
+    setTimeout(function(){try{n.osc.stop();n.lfo.stop();}catch(e){}}, 2200);
   });
+  soundNodes=[];
+}
+document.getElementById('sound-btn').addEventListener('click', function() {
+  soundOn=!soundOn;
+  this.textContent=soundOn?'♪ Тишина':'♪ Звук';
+  this.classList.toggle('on',soundOn);
+  if(soundOn) startSound(); else stopSound();
+});
 
-  /* ══════════════════════════════════════════════
-     ТАЙМЕР МЕДИТАЦИИ
-     ══════════════════════════════════════════════ */
-  let timerInterval = null;
-  const timerDisplay = document.getElementById('timer-display');
-  const bellEl       = document.getElementById('relax-bell');
-
-  function ringBell() {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    [432, 528, 639].forEach(function (freq, i) {
-      const osc = audioCtx.createOscillator();
-      const g   = audioCtx.createGain();
-      osc.type = 'sine';
-      osc.frequency.value = freq;
-      g.gain.setValueAtTime(0.25, audioCtx.currentTime + i * 0.35);
-      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.35 + 5);
-      osc.connect(g);
-      g.connect(audioCtx.destination);
-      osc.start(audioCtx.currentTime + i * 0.35);
-      osc.stop(audioCtx.currentTime + i * 0.35 + 5);
-    });
-  }
-
-  function startTimer(minutes) {
-    clearInterval(timerInterval);
-    const end = Date.now() + minutes * 60 * 1000;
-    document.querySelectorAll('.relax-btn[id^="btn-timer"]').forEach(function (b) { b.classList.remove('active'); });
-    const btn = document.getElementById('btn-timer-' + minutes);
-    if (btn) btn.classList.add('active');
-    timerDisplay.classList.add('visible');
-    bellEl.classList.remove('visible');
-
-    timerInterval = setInterval(function () {
-      const rem = end - Date.now();
-      if (rem <= 0) {
-        clearInterval(timerInterval);
-        timerDisplay.classList.remove('visible');
-        ringBell();
-        bellEl.classList.add('visible');
-        setTimeout(function () { bellEl.classList.remove('visible'); }, 5000);
-        if (btn) { btn.textContent = '✓ Готово'; btn.classList.remove('active'); }
-        return;
-      }
-      const m = Math.floor(rem / 60000);
-      const s = Math.floor((rem % 60000) / 1000);
-      timerDisplay.textContent = m + ':' + String(s).padStart(2, '0');
-    }, 500);
-  }
-
-  document.getElementById('btn-timer-5').addEventListener('click',  function () { startTimer(5);  });
-  document.getElementById('btn-timer-10').addEventListener('click', function () { startTimer(10); });
-  document.getElementById('btn-timer-15').addEventListener('click', function () { startTimer(15); });
-  </script>
+/* ══════════════════════════════════════════════
+   ТАЙМЕР
+   ══════════════════════════════════════════════ */
+let timerInterval=null;
+const timerEl=document.getElementById('timer-display');
+const bellEl =document.getElementById('bell-msg');
+function ringBell() {
+  if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  [432,528,639].forEach(function(f,i){
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+    o.type='sine'; o.frequency.value=f;
+    g.gain.setValueAtTime(0.28, audioCtx.currentTime+i*.38);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime+i*.38+5);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(audioCtx.currentTime+i*.38); o.stop(audioCtx.currentTime+i*.38+5);
+  });
+}
+function startTimer(min) {
+  clearInterval(timerInterval);
+  const end=Date.now()+min*60000;
+  document.querySelectorAll('.relax-btn[id^="btn-timer"]').forEach(b=>b.classList.remove('active'));
+  const btn=document.getElementById('btn-timer-'+min);
+  if(btn) btn.classList.add('active');
+  timerEl.classList.add('visible'); bellEl.classList.remove('visible');
+  timerInterval=setInterval(function(){
+    const rem=end-Date.now();
+    if(rem<=0){
+      clearInterval(timerInterval); timerEl.classList.remove('visible');
+      ringBell(); bellEl.classList.add('visible');
+      setTimeout(()=>bellEl.classList.remove('visible'),6000);
+      if(btn){btn.textContent='✓ Готово';btn.classList.remove('active');}
+      return;
+    }
+    const m=Math.floor(rem/60000), s=Math.floor((rem%60000)/1000);
+    timerEl.textContent=m+':'+String(s).padStart(2,'0');
+  },500);
+}
+document.getElementById('btn-timer-5').addEventListener('click', ()=>startTimer(5));
+document.getElementById('btn-timer-10').addEventListener('click',()=>startTimer(10));
+document.getElementById('btn-timer-15').addEventListener('click',()=>startTimer(15));
+</script>
 </body>
 </html>
