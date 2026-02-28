@@ -41,11 +41,11 @@ export default {
       const prompt = body.prompt || "beautiful landscape";
       try {
         const result = await env.AI.run("@cf/black-forest-labs/flux-1-schnell", { prompt });
-        const base64 = btoa(String.fromCharCode(...new Uint8Array(result)));
-        return new Response(
-          JSON.stringify({ image: "data:image/png;base64," + base64 }),
-          { status: 200, headers: { "Content-Type": "application/json", ...cors } }
-        );
+        /* Возвращаем PNG-бинарник напрямую */
+        return new Response(result, {
+          status: 200,
+          headers: { "Content-Type": "image/png", ...cors }
+        });
       } catch (err) {
         return new Response(
           JSON.stringify({ error: "Image generation failed: " + err.message }),

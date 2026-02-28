@@ -379,10 +379,20 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ prompt: prompt })
     })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      if (data.image) { onSuccess(data.image); }
-      else { console.warn("[Guardian] CF Worker image error:", data.error); onFail(); }
+    .then(function(r) {
+      if (!r.ok) { onFail(); return null; }
+      var ct = r.headers.get("Content-Type") || "";
+      if (ct.indexOf("image") !== -1) {
+        /* Воркер вернул PNG напрямую → создаём blob URL */
+        return r.blob().then(function(blob) {
+          onSuccess(URL.createObjectURL(blob));
+        });
+      } else {
+        return r.json().then(function(data) {
+          if (data.image) { onSuccess(data.image); }
+          else { console.warn("[Guardian] CF Worker error:", data.error); onFail(); }
+        });
+      }
     })
     .catch(function(e) { console.warn("[Guardian] CF Worker fetch error:", e); onFail(); });
   }
