@@ -36,29 +36,13 @@
       object-position: center center;
       animation: hut-breathe 5.5s ease-in-out infinite;
       display: block;
-      /* Верх плавно тает в звёздное небо, низ непрозрачный */
-      mask-image: linear-gradient(
-        to bottom,
-        transparent     0%,
-        transparent    12%,
-        rgba(0,0,0,.2) 26%,
-        rgba(0,0,0,.6) 38%,
-        black          52%,
-        black         100%
-      );
-      -webkit-mask-image: linear-gradient(
-        to bottom,
-        transparent     0%,
-        transparent    12%,
-        rgba(0,0,0,.2) 26%,
-        rgba(0,0,0,.6) 38%,
-        black          52%,
-        black         100%
-      );
+      /* Только самый верхний краешек растворяется в небе — всё остальное как есть */
+      mask-image: linear-gradient(to bottom, transparent 0%, black 6%, black 100%);
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 6%, black 100%);
     }
     @keyframes hut-breathe {
-      0%, 100% { filter: brightness(0.86) saturate(1.08) contrast(1.03); }
-      50%       { filter: brightness(0.96) saturate(1.02) contrast(1.01); }
+      0%, 100% { filter: brightness(0.95); }
+      50%       { filter: brightness(1.0);  }
     }
 
     /* Тёплое мерцание фонариков */
