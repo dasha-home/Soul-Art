@@ -630,6 +630,38 @@
   font-style: italic;
 }
 
+/* ── Кнопка «Открыть Творческую комнату» ── */
+.guardian-msg__draw-room-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  padding: 0.55rem 1.2rem;
+  border-radius: 24px;
+  border: 1px solid rgba(80, 180, 100, 0.5);
+  background: linear-gradient(135deg, rgba(40, 100, 55, 0.35), rgba(30, 80, 45, 0.35));
+  color: rgba(160, 240, 170, 0.92);
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 0 16px rgba(60, 180, 80, 0.15);
+}
+.guardian-msg__draw-room-btn:hover {
+  background: linear-gradient(135deg, rgba(50, 130, 70, 0.55), rgba(40, 100, 58, 0.55));
+  color: #d0ffd8;
+  border-color: rgba(100, 220, 120, 0.7);
+  box-shadow: 0 0 24px rgba(80, 220, 100, 0.28);
+}
+.guardian-msg__draw-room-hint {
+  font-size: 0.72rem;
+  color: rgba(150, 200, 160, 0.5);
+  margin: 0.3rem 0 0;
+  font-style: italic;
+}
+
 .guardian-msg__route-btn {
   display: inline-flex;
   align-items: center;
