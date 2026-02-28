@@ -426,36 +426,43 @@
 }
 
 /* ══════════════════════════════
-   ПОЛЕ ВВОДА
+   ПОЛЕ ВВОДА — большое, красивое, внизу
    ══════════════════════════════ */
 
 .guardian-chat__input-wrap {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.6rem;
   align-items: flex-end;
   flex-shrink: 0;
+  padding: 0.85rem 0 0;
+  margin-top: 0.5rem;
+  border-top: 1px solid rgba(162, 118, 40, 0.18);
+  background: linear-gradient(to top, rgba(8, 5, 2, 0.75) 0%, transparent 100%);
+  backdrop-filter: blur(8px);
 }
 
 .guardian-chat__input {
   flex: 1;
-  min-height: 46px;
-  padding: 0.6rem 0.95rem;
-  border-radius: 10px;
-  border: 1px solid rgba(162, 118, 40, 0.32);
-  background: rgba(8, 5, 2, 0.9);
+  min-height: 88px;
+  max-height: 220px;
+  padding: 0.9rem 1.1rem;
+  border-radius: 14px;
+  border: 1px solid rgba(162, 118, 40, 0.35);
+  background: rgba(12, 8, 3, 0.92);
   color: #ecddc0;
   font: inherit;
-  font-size: 0.96rem;
-  line-height: 1.45;
+  font-size: 1.02rem;
+  line-height: 1.5;
   resize: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  backdrop-filter: blur(10px);
+  transition: border-color 0.25s, box-shadow 0.25s;
+  backdrop-filter: blur(12px);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2), 0 2px 12px rgba(0, 0, 0, 0.15);
 }
-.guardian-chat__input::placeholder { color: rgba(185, 155, 90, 0.4); }
+.guardian-chat__input::placeholder { color: rgba(185, 155, 90, 0.5); }
 .guardian-chat__input:focus {
   outline: none;
-  border-color: rgba(215, 162, 48, 0.55);
-  box-shadow: 0 0 0 3px rgba(185, 132, 28, 0.12), 0 0 22px rgba(180, 125, 25, 0.08);
+  border-color: rgba(215, 162, 48, 0.6);
+  box-shadow: 0 0 0 3px rgba(185, 132, 28, 0.15), 0 0 28px rgba(180, 125, 25, 0.12), inset 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .guardian-chat__send {

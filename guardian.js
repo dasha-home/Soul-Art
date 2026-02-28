@@ -334,7 +334,7 @@
   /* ═══════ КАРТИНКИ: по желанию Хранителя или только по просьбе ═══════ */
 
   var IMAGES_STORAGE_KEY = "guardian_images_mode";
-  var imagesMode = localStorage.getItem(IMAGES_STORAGE_KEY) || "auto"; // "auto" | "request"
+  var imagesMode = localStorage.getItem(IMAGES_STORAGE_KEY) || "request"; // по умолчанию только по просьбе
   var imagesToggleBtn = document.getElementById("guardian-images-toggle");
 
   function updateImagesUI() {
@@ -379,7 +379,7 @@
         var transcript = e.results[0][0].transcript;
         inputEl.value = transcript;
         inputEl.style.height = "auto";
-        inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + "px";
+        inputEl.style.height = Math.min(inputEl.scrollHeight, 220) + "px";
         stopRecording();
         sendMessage();
       };
@@ -989,7 +989,7 @@
   /* Плавное изменение высоты textarea */
   inputEl.addEventListener("input", function () {
     this.style.height = "auto";
-    this.style.height = Math.min(this.scrollHeight, 120) + "px";
+    this.style.height = Math.min(this.scrollHeight, 220) + "px";
   });
 
   /* Восстанавливаем сохранённые картинки при загрузке */
