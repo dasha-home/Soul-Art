@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Комната отдыха · Soul-Art</title>
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -353,6 +353,8 @@
     <button class="relax-btn" id="btn-timer-10">⏱ 10 мин</button>
     <button class="relax-btn" id="btn-timer-15">⏱ 15 мин</button>
     <a href="guardian.html" class="relax-btn">✦ Хранитель</a>
+    <a href="draw.html" class="relax-btn">🎨 Рисовать</a>
+    <a href="stories.html" class="relax-btn">📖 Рассказы</a>
   </div>
 </div>
 
@@ -455,6 +457,22 @@ function startTimer(min) {
 document.getElementById('btn-timer-5').addEventListener('click',  function() { startTimer(5);  });
 document.getElementById('btn-timer-10').addEventListener('click', function() { startTimer(10); });
 document.getElementById('btn-timer-15').addEventListener('click', function() { startTimer(15); });
+</script>
+<div id="globe-container" class="globe-fixed"></div>
+<div id="atmosphere-widget" class="atmosphere-widget" aria-label="Настройки атмосферы"></div>
+<script src="i18n.js" defer></script>
+<script src="atmosphere.js" defer></script>
+<script>
+(function () {
+  function init() {
+    if (!window.I18n) return;
+    var c = document.getElementById("globe-container");
+    if (c) window.I18n.init(c); else window.I18n.applyToPage();
+    setTimeout(function() { if (window.I18n) window.I18n.applyToPage(); }, 0);
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
+})();
 </script>
 </body>
 </html>
